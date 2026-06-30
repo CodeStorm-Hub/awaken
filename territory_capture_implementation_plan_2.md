@@ -1,100 +1,187 @@
-# Territory Capture Feature - Comprehensive Implementation Plan
+# Territory Capture Feature - Implementation Plan (Revised)
 
-This document outlines the end-to-end technical and design architecture for implementing the Territory Capture feature in the Awaken app, formulated from deep research into location-based game mechanics, Flutter UI/UX trends, and Supabase PostGIS spatial operations.
+This document outlines the end-to-end technical and design architecture for implementing the Territory Capture feature in the Awaken app. Revised from the original Plan 2 to close gaps found while cross-checking against `territory_capture_user_story.md` and the existing `lib/` architecture.
+
+## Scope
+
+In scope: User Stories 1–4 (Track the Run, Claim & Expand Territory, Steal Rival Territory, The Leaderboard) and the three Critical Mechanic Refinements (Drive-by Cheat, GPS Drift, Dead Zone / Decay).
+
+**Explicitly out of scope for this plan**: Fog of War, Fortresses/Home Base, Team Mode (Factions) — the user story's "Suggested Feature Improvements" section. Deferred by user decision; revisit as a separate plan once the core loop ships and is validated.
 
 ## User Review Required
 > [!IMPORTANT]
-> **Dependencies**: Implementing this will require adding several heavy dependencies: `flutter_map` (for map rendering), `geolocator` (for GPS), and native activity recognition plugins (for anti-cheat). 
-> **Database Extensions**: PostGIS must be explicitly enabled on the Supabase project, and a `pg_cron` extension will be used for daily territory decay.
+> **Dependencies**: `flutter_map` (map rendering), `geolocator` (GPS), native activity-recognition plugins (`flutter_activity_recognition` or platform channels to Android Activity Recognition API / iOS Core Motion) for anti-cheat. All free/open-source — no paid licenses required, unlike `flutter_background_geolocation` evaluated and rejected in Plan 1.
+> **Database Extensions**: PostGIS must be explicitly enabled on the Supabase project (`fsdfqcnjcjtdmdjshrvu`), and `pg_cron` will be used for nightly territory decay.
+> **New feature module**: this introduces `lib/features/territory/` following the existing `data/{datasources,models,repositories}`, `domain/{entities,repositories,services}`, `presentation/{providers,screens,widgets}` structure used by `alarm`, `dashboard`, etc.
 > Please review the architecture and design choices below and approve to proceed.
 
 ---
 
 ## 1. Client UI/UX Architecture (Flutter)
 
-To achieve a modern, premium "cyberpunk" aesthetic suitable for a territory game, we will implement the following design systems:
-
 ### Map Engine Selection
-*   **`flutter_map`**: We will use `flutter_map` (OpenStreetMap based) rather than Google Maps. `flutter_map` excels at high polygon counts because it supports built-in **polygon culling** (only drawing what is on screen) and avoids the heavy platform-channel bridge overhead that causes UI freezing in Google Maps when rendering hundreds of territories.
+*   **`flutter_map`** (OpenStreetMap-based) over Google Maps — built-in polygon culling for high territory counts, avoids the platform-channel overhead that causes jank with hundreds of Google Maps polygons.
 
 ### Visual Aesthetics
-*   **Dark Mode Base Layer**: We will use a dark/night map tile server (e.g., CartoDB Dark Matter) to provide high contrast.
-*   **Neon Polygons**: Territory overlays will use custom painters to create a "neon tube" effect—a solid, bright core (Neon Blue/Pink) surrounded by a semi-transparent shadow (`BoxShadow` with high blur radius).
-*   **Glassmorphism**: UI components floating above the map (like the territory stats Bottom Sheet) will use `BackdropFilter` (frosted glass). **Note:** We will ensure the Flutter **Impeller rendering engine** is enabled, as it handles shaders and blur effects exponentially better than Skia.
+*   Dark map tile server (e.g. CartoDB Dark Matter) — consistent with the app's dark-only theme (`AppColors`, no light mode anywhere per `app_theme.dart`).
+*   Territory overlays: custom-painted "neon tube" effect (solid core + blurred glow), using `AppColors` tokens rather than new raw hex literals, per the existing design-system convention.
+*   `BackdropFilter` glassmorphism for floating UI (territory stats sheet, leaderboard sheet); requires Impeller enabled for acceptable blur performance.
+*   HUD numerics (area owned, distance run, timer) use the existing `AwakenTypography` extension (Space Mono, tabular figures) — do not introduce a separate numeric style.
 
 ### Touch-First Ergonomics
-*   **The Thumb Zone**: All critical actions (Start Run, Capture) will be placed in the bottom third of the screen.
-*   **Haptics**: Native haptic feedback will be used to confirm successful territory captures and UI interactions, allowing users to play without staring at the screen while running.
+*   Start/Stop run controls in the bottom third of the screen (thumb zone).
+*   Haptic feedback on capture/steal events so users don't need to watch the screen mid-run.
 
 ### Performance & State Management
-*   **Isolates**: Heavy spatial processing on the client (like parsing GeoJSON or reducing polygon vertex counts) will be offloaded to Flutter Isolates using `compute()` to prevent UI jank.
-*   **Targeted Rebuilds**: Riverpod will be used to rebuild only specific map layers (e.g., the active user's trail) rather than calling `setState()` on the entire map widget.
+*   Heavy client-side spatial work (vertex reduction, RDP simplification) runs via `compute()` / Isolates — never on the UI thread.
+*   Riverpod providers scoped per map layer (active trail, owned territories, rival territories) so a tick of the live trail doesn't rebuild the whole map — same "hand-written providers" pattern as `alarm_providers.dart`, no new codegen dependency required for this feature.
 
 ---
 
 ## 2. Location Game Mechanics (Anti-Cheat & Physics)
 
-Raw GPS data is noisy and easily manipulated. The core gameplay loop will rely on these mathematical and algorithmic layers:
+### Centralized constants (fixes a contradiction in the user story)
+The user story itself disagrees with its own refinement section: Story #1's acceptance criteria says **>25 km/h**, while the "Drive-by Cheat" refinement says **20–25 km/h**. Resolve this once, in code, rather than letting client and server drift independently:
+
+```dart
+// lib/core/constants/app_constants.dart (extend existing file, do not create a new one)
+static const double maxRunSpeedKmh = 25.0;       // single source of truth
+static const double loopClosureRadiusMeters = 20.0;
+static const double minLoopAreaSqMeters = 50.0;  // new — see "Minimum loop area" below
+static const Duration minRunDuration = Duration(minutes: 2);
+static const double minRunDistanceMeters = 200.0;
+static const Duration territoryDecayGracePeriod = Duration(days: 7);
+```
 
 ### The Drive-by Cheat (Vehicle Prevention)
-*   **Sensor Fusion (Activity Recognition)**: Relying solely on GPS speed is flawed due to GPS jumps. We will integrate native OS sensor fusion (Android Activity Recognition API / iOS Core Motion) to detect the *rhythm* of footsteps. If the OS classifies the movement as `IN_VEHICLE`, the run is invalidated.
-*   **Rolling Average Speed**: We will calculate distance over time using the **Haversine formula**, keeping a rolling average over the last 5-10 pings to cap speed at a realistic human limit (~20 km/h).
+*   **Sensor Fusion**: native activity recognition (Android Activity Recognition API / iOS Core Motion) to detect footstep rhythm vs. vehicle motion. If classified `IN_VEHICLE`, invalidate the run.
+*   **Rolling Average Speed**: Haversine distance over a rolling window of the last 5–10 GPS pings, capped at `maxRunSpeedKmh`. Sustained excess (not a single GPS jump) triggers invalidation — a momentary spike from GPS noise should not nuke a legitimate run.
 
 ### GPS Drift and Path-Snapping
-*   **Kalman Filtering**: We will apply a real-time Kalman filter to smooth the incoming noisy GPS coordinates, preventing jagged spikes that cause accidental self-intersections.
-*   **RDP Simplification**: Post-run, we will run the **Ramer-Douglas-Peucker (RDP)** line simplification algorithm. This strips out hundreds of redundant micro-movement vertices, providing a clean polygon for the database and reducing rendering load.
+*   Real-time Kalman filter smooths incoming coordinates before they're drawn or evaluated, preventing jagged self-intersections from rendering as accidental loops.
+*   Post-run RDP simplification reduces vertex count before the polygon is sent to Supabase.
 
 ### Validating the "Bounded Loop"
-*   **Proximity Closure**: We will calculate the Haversine distance between $P_{start}$ and $P_{end}$. A run is considered a loop if $Distance \le 20\text{m}$.
-*   **Temporal & Traversal Constraints**: To prevent users from standing still and claiming a "loop", the total elapsed time must exceed 2 minutes, and the cumulative distance traveled must exceed 200 meters.
+*   **Proximity Closure**: loop counts if Haversine($P_{start}$, $P_{end}$) ≤ `loopClosureRadiusMeters` (20m).
+*   **Temporal & Traversal Constraints**: elapsed time > `minRunDuration` (2 min) AND cumulative distance > `minRunDistanceMeters` (200m) — prevents standing-still-and-closing-a-loop.
+*   **Minimum loop area (new — gap in the user story)**: the story only constrains start/end proximity and (here) time/distance, but never the *enclosed area*. A long, thin out-and-back path can satisfy both proximity and distance constraints while enclosing near-zero square meters. Enforce `ST_Area(new_geom::geography) > minLoopAreaSqMeters` server-side in the RPC (see §3) — reject before touching the `territories` table, not after, so slivers never get written and rolled back.
 
 ---
 
 ## 3. Database Architecture (Supabase PostGIS)
 
-All heavy spatial relationships (Union, Difference) will be handled directly in the database to prevent client-server latency and payload bloat.
+All heavy spatial relationships (Union, Difference) run in PostgreSQL, not on-device, to avoid client-server payload bloat and keep capture logic atomic.
 
 ### Schema Design
-We must use the `geometry(MultiPolygon, 4326)` type. Using standard `Polygon` will cause errors when a rival captures the middle of an existing territory, splitting it into two disconnected pieces.
-
 ```sql
 CREATE TABLE territories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
     geom geometry(MultiPolygon, 4326) NOT NULL,
     health INT DEFAULT 100,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_defended_at TIMESTAMPTZ DEFAULT NOW()  -- new: drives decay (see Territory Decay)
 );
--- A GiST index is strictly required for ST_Intersects performance
 CREATE INDEX territories_geom_gist_idx ON territories USING GIST (geom);
+CREATE INDEX territories_user_id_idx ON territories (user_id);
 ```
 
+`last_defended_at` replaces inferring decay eligibility from `created_at`, which would incorrectly decay long-held territory the user still actively runs through.
+
 ### Core RPC: Capture & Contest
-We will create a single PostgreSQL RPC function `capture_territory(user_uuid, new_geom)` that executes an ACID transaction:
-1.  **Validation**: Casts the incoming line string to a polygon using `ST_MakeValid` and `ST_Multi`.
-2.  **Self-Expansion (Union)**: Finds all existing territories owned by the user that intersect the new shape. It merges them using `ST_Union` and replaces the old rows.
-3.  **Contestation (Difference)**: Finds all rival territories intersecting the new shape. It uses `ST_Difference(rival_geom, new_merged_geom)` to subtract the stolen land. We will use `ST_CollectionExtract(..., 3)` to ensure stray points/lines leftover from the cut are discarded.
-4.  **Cleanup**: Deletes any rival territories whose `ST_Area` was reduced to < 1.0 sq meters.
+
+```sql
+CREATE OR REPLACE FUNCTION capture_territory(user_uuid UUID, new_geom GEOMETRY)
+RETURNS TABLE(...) AS $$
+DECLARE
+  merged_geom GEOMETRY;
+BEGIN
+  -- 0. Reject slivers before touching any row (see "Minimum loop area" above)
+  IF ST_Area(new_geom::geography) < 50.0 THEN
+    RAISE EXCEPTION 'loop_too_small';
+  END IF;
+
+  -- 1. Lock every existing row this capture will touch, in a stable order, BEFORE
+  --    reading/mutating any of them. This is the concurrency fix: without it, two
+  --    runners closing overlapping loops at the same instant can each read the same
+  --    rival polygon pre-mutation, compute their own ST_Difference against stale
+  --    data, and the second COMMIT silently clobbers the first steal.
+  PERFORM 1 FROM territories
+    WHERE ST_Intersects(geom, new_geom)
+    ORDER BY id
+    FOR UPDATE;
+
+  -- 2. Validation
+  new_geom := ST_Multi(ST_MakeValid(new_geom));
+
+  -- 3. Self-Expansion (Union): merge with the user's own intersecting territories
+  SELECT ST_Union(geom) INTO merged_geom
+    FROM territories WHERE user_id = user_uuid AND ST_Intersects(geom, new_geom);
+  merged_geom := ST_Union(COALESCE(merged_geom, ST_GeomFromText('MULTIPOLYGON EMPTY', 4326)), new_geom);
+  DELETE FROM territories WHERE user_id = user_uuid AND ST_Intersects(geom, new_geom);
+  INSERT INTO territories (user_id, geom, last_defended_at)
+    VALUES (user_uuid, merged_geom, NOW());
+
+  -- 4. Contestation (Difference): subtract the claimed area from every rival
+  --    territory it overlaps. Iterates all intersecting rivals in one pass — a
+  --    single closed loop can legitimately cut into multiple different rivals at
+  --    once (e.g. a loop straddling two neighboring rival plots), not just one.
+  UPDATE territories
+    SET geom = ST_CollectionExtract(ST_Difference(geom, merged_geom), 3)
+    WHERE user_id != user_uuid AND ST_Intersects(geom, merged_geom);
+
+  -- 5. Cleanup: drop slivers left behind by the cut
+  DELETE FROM territories WHERE user_id != user_uuid AND ST_Area(geom::geography) < 1.0;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Notes:
+- Runs at default `READ COMMITTED` isolation — the explicit `FOR UPDATE` lock is what guarantees correctness, so `SERIALIZABLE` (and its retry-on-conflict overhead) isn't needed.
+- `ORDER BY id` on the lock acquisition is required to prevent deadlock when two transactions intersect the same two rows in opposite order.
+- Step 4 deliberately does not stop at the first intersecting rival — the user story's acceptance criteria ("Any area where the shapes overlap is instantly subtracted from the rival") doesn't restrict this to a single rival, and the original Plan 2 RPC sketch was ambiguous on this point.
 
 ### Territory Decay
-We will use Supabase's native `pg_cron` to schedule a nightly cleanup job:
-*   **Spatial Shrink Strategy**: Every night at midnight, the job runs an `UPDATE` that physically shrinks all polygons by 5 meters using `ST_Buffer(geom::geography, -5.0)`. Any polygon that shrinks out of existence (`ST_IsEmpty`) is deleted.
+*   Nightly `pg_cron` job shrinks polygons with `last_defended_at` older than `territoryDecayGracePeriod` (7 days) via `ST_Buffer(geom::geography, -5.0)`; deletes any that shrink to `ST_IsEmpty`.
+*   `last_defended_at` is refreshed every time a user's `capture_territory` call touches that polygon (claim, merge, or successful defense against a steal attempt on it) — running *through* owned land via Story #1's tracking (not necessarily closing a new loop there) should also bump it, since the user story says "doesn't run through or near their territory."
+*   **New — decay warning (gap in the user story)**: the story specifies the shrink mechanic but never tells the user it's coming, which makes territory loss feel arbitrary. Add a scheduled check (same `pg_cron` job, or a separate daily query) that flags territories within 1–2 days of `territoryDecayGracePeriod` and triggers a push notification via the existing `flutter_local_notifications` setup ("Your territory near {area} is decaying — run there soon"), reusing the alarm feature's notification plumbing rather than building new notification infrastructure.
 
 ---
 
 ## 4. The Leaderboard
-*   **Global/Local**: A SQL view will calculate `SUM(ST_Area(geom::geography))` grouped by `user_id` to rank players by total square meters owned.
-*   **Realtime**: We will use Supabase Realtime subscriptions so that if someone steals territory while you are looking at the leaderboard, the ranking shifts live.
+
+*   **Scope (resolved — gap in the user story)**: the story's narrative framing says "I know who the dominant runners are *in my area*," but the acceptance criteria describe a flat global ranking. These conflict. Recommend shipping **both**: a global leaderboard (simple `SUM(ST_Area(geom::geography)) GROUP BY user_id`, matches the literal acceptance criteria) plus a geographic filter scoped to a bounding box or H3 cell around the viewer's current territory, so a new player in a sparse area isn't permanently invisible against someone who's dominated a dense city for months. Flag this back to the user/product owner as a scope decision before building the SQL view, not after — it changes the view's `GROUP BY` and indexing.
+*   **Realtime**: Supabase Realtime subscription on the leaderboard view/table so rankings shift live as territory changes hands.
 
 ---
+
 ## Verification Plan
 
 ### Automated Tests
-*   **Unit Tests**: Dart tests to verify the Haversine distance logic, the RDP simplification array output, and the speed-capping constraints.
-*   **Database Tests**: Execute direct SQL scripts to insert overlapping polygons and verify `ST_Union` and `ST_Difference` correctly calculate the resulting area.
+*   Dart unit tests: Haversine distance, RDP simplification output, speed-cap logic, minimum-loop-area rejection.
+*   Database tests: insert overlapping polygons, verify `ST_Union`/`ST_Difference` results, verify the multi-rival contestation path (one loop cutting two different rivals' territory in one transaction), verify sliver cleanup.
+*   **New — concurrency test**: open two concurrent DB sessions, call `capture_territory` from both against geometries that overlap the same rival polygon, and assert the combined resulting area is conserved (no double-subtraction, no resurrected stolen land). This is the regression test for the row-locking fix in §3.
 
 ### Manual Verification
-*   Launch the app in the iOS Simulator / Android Emulator.
-*   Use the emulator's GPS simulation feature to play a pre-recorded GPX file that runs in a loop.
-*   Verify the polygon renders correctly on the `flutter_map`.
-*   Simulate a second user cutting through the polygon and verify the first user's polygon is visibly sliced.
+*   Run in iOS Simulator / Android Emulator using GPS-simulated GPX playback of a closed loop.
+*   Verify polygon renders correctly on `flutter_map`.
+*   Simulate a second user's loop cutting through the first user's polygon; verify the slice is visible and correct.
+*   Manually trigger the decay cron job against a territory with a backdated `last_defended_at` and verify both the shrink and the warning notification fire.
+
+---
+
+## Product Decisions (resolved)
+
+These were open requirements gaps surfaced while reviewing the user story. Decided below so the plan can move to implementation without further sign-off; revisit only if a decision proves wrong in practice.
+
+1. **Leaderboard scope → both, global default + geographic filter.**
+   Ship the global view first since it's the literal acceptance criteria and is one `GROUP BY` — don't block v1 on it. Add the geographic filter (bounding box around the viewer's current map position, not a fixed city list) as a second view in the same release, since the story's own framing ("dominant runners *in my area*") makes a global-only leaderboard feel broken for any new player outside a dense city. Toggle between the two with a simple segmented control on the leaderboard screen; default to "Nearby" on first open (more motivating for a new player than seeing they're #4,812 globally), with "Global" one tap away.
+
+2. **Minimum loop area → 50 sqm, fixed (not distance-scaled).**
+   Distance-scaling adds a formula the user has to mentally model ("why did my loop not count this time") for marginal cheat-resistance benefit — the 200m minimum traversal distance from §2 already rules out trivially small loops, since any loop enclosing under ~50 sqm while also covering 200m of path is already geometrically a thin sliver, not a "real" lap. Keep the constant simple and tune it once with real usage data if 50 sqm proves too strict/loose, rather than guessing at a formula upfront.
+
+3. **Multi-rival contestation → confirmed as designed.**
+   One closed loop steals from every rival territory it overlaps in the same transaction, not just the first or largest. This matches the literal acceptance criteria in Story #3 ("any area where the shapes overlap is instantly subtracted") and is already how the RPC in §3 is written — no change needed, just confirming the design choice stands.
+
+4. **Decay warning channel → push notification, reusing existing alarm infra.**
+   Use `flutter_local_notifications` (already a dependency, already wired for alarms) rather than building a separate in-app badge system. A badge only reaches users who happen to open the app before decay hits; a push notification is what actually prevents the silent-loss experience the story's decay mechanic risks. An in-app badge can be added later as a cheap supplement (surface it on the dashboard alongside the existing streak ring) but isn't required for v1 — don't build two notification paths before one is validated.

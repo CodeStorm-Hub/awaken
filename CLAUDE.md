@@ -84,4 +84,4 @@ Project `fsdfqcnjcjtdmdjshrvu` (ap-northeast-1). Tables `alarms`, `sessions`, `s
 - `assets/audio/alarm.mp3` must exist for in-app alarm audio; Android falls back to the system alarm ringtone if missing, iOS will be silent.
 - Portrait-only, edge-to-edge (`SystemUiMode.edgeToEdge`, transparent system bars) — set in `main.dart`.
 - `flutter pub get` on Windows prints a symlink warning; harmless, only affects Windows desktop builds.
-- Further historical/architectural detail (full phase history, design tokens, user flows) lives in `awake_full_detail.md` and `codebase_review.md` at the repo root — consult them for context beyond what's summarized here.
+- Further historical/architectural detail (full phase history, design tokens, user flows) lives in `awake_full_detail.md` and `codebase_review.md` at the `docs` dir — consult them for context beyond what's summarized here.
