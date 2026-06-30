@@ -2,25 +2,79 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_providers.dart';
+import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
+import 'package:awaken/features/sessions/presentation/providers/session_providers.dart';
 import 'package:awaken/features/success/presentation/widgets/stat_reveal_item.dart';
 import 'package:awaken/features/success/presentation/widgets/streak_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class SuccessScreen extends ConsumerWidget {
+class SuccessScreen extends ConsumerStatefulWidget {
   const SuccessScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(dashboardStatsProvider);
-    final tt = Theme.of(context).extension<AwakenTypography>()!;
+  ConsumerState<SuccessScreen> createState() => _SuccessScreenState();
+}
 
-    // Simulate session values — Phase 4 will pass these via route extra
-    const sessionReps = 10;
-    const sessionCalories = 28;
-    const sessionSeconds = 47;
+class _SuccessScreenState extends ConsumerState<SuccessScreen> {
+  late final int _repsCompleted;
+  late final int _durationSeconds;
+  late final int _caloriesBurned;
+  bool _sessionRecorded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _repsCompleted = ref.read(repCountProvider);
+    final startTime = ref.read(sessionStartTimeProvider);
+    _durationSeconds =
+        startTime != null ? DateTime.now().difference(startTime).inSeconds : 0;
+    _caloriesBurned = SessionEntity.estimateCalories(_repsCompleted);
+
+    // Record session to Supabase if signed in (fire-and-forget — don't block UI)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recordSession());
+  }
+
+  Future<void> _recordSession() async {
+    if (_sessionRecorded) return;
+    _sessionRecorded = true;
+
+    final user = ref.read(currentUserProvider);
+    if (user == null) return; // Not signed in — local mode, no recording
+
+    try {
+      await ref.read(sessionRepositoryProvider).recordSession(
+            SessionEntity(
+              userId: user.id,
+              completedAt: DateTime.now(),
+              repsCompleted: _repsCompleted,
+              durationSeconds: _durationSeconds,
+              caloriesBurned: _caloriesBurned,
+            ),
+          );
+      // Invalidate dashboard stats so they refresh on next view
+      ref.invalidate(dashboardStatsProvider);
+    } catch (e) {
+      debugPrint('[Session] Failed to record: $e');
+    }
+  }
+
+  void _startMyDay() {
+    ref.read(repCountProvider.notifier).state = 0;
+    ref.read(repFeedbackProvider.notifier).state = RepFeedback.neutral;
+    ref.read(sessionStartTimeProvider.notifier).state = null;
+    context.go(AppRoutes.dashboard);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).extension<AwakenTypography>()!;
+    final statsAsync = ref.watch(dashboardStatsProvider);
+    final currentStreak = statsAsync.whenOrNull(data: (s) => s.currentStreak) ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -37,7 +91,7 @@ class SuccessScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // ── Streak badge ───────────────────────────────────────
-              StreakBadge(streak: stats.currentStreak),
+              StreakBadge(streak: currentStreak),
 
               const SizedBox(height: 48),
 
@@ -52,29 +106,29 @@ class SuccessScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              const StatRevealItem(
+              StatRevealItem(
                 icon: Icons.fitness_center_rounded,
                 label: 'Squats completed',
-                value: '$sessionReps',
+                value: '$_repsCompleted',
                 unit: 'reps',
                 delay: AppConstants.floatUpDelay0,
               ),
               const SizedBox(height: 14),
 
-              const StatRevealItem(
+              StatRevealItem(
                 icon: Icons.local_fire_department_rounded,
                 label: 'Calories burned',
-                value: '$sessionCalories',
+                value: '$_caloriesBurned',
                 unit: 'kcal',
                 delay: AppConstants.floatUpDelay1,
                 accentColor: AppColors.accent,
               ),
               const SizedBox(height: 14),
 
-              const StatRevealItem(
+              StatRevealItem(
                 icon: Icons.timer_outlined,
                 label: 'Wake-up time',
-                value: '$sessionSeconds',
+                value: '$_durationSeconds',
                 unit: 'sec',
                 delay: AppConstants.floatUpDelay2,
                 accentColor: AppColors.success,
@@ -88,7 +142,14 @@ class SuccessScreen extends ConsumerWidget {
               const SizedBox(height: 40),
 
               // ── CTA ───────────────────────────────────────────────
-              const _StartMyDayButton(),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _startMyDay,
+                  child: const Text('Start My Day'),
+                ),
+              ),
 
               const SizedBox(height: 16),
             ],
@@ -115,7 +176,6 @@ class _MotivationalQuote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Fixed quote per day — no random to keep it deterministic per session
     final idx = DateTime.now().day % _quotes.length;
 
     return Container(
@@ -134,21 +194,6 @@ class _MotivationalQuote extends StatelessWidget {
               height: 1.6,
             ),
         textAlign: TextAlign.center,
-      ),
-    );
-  }
-}
-
-class _StartMyDayButton extends ConsumerWidget {
-  const _StartMyDayButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () => context.go(AppRoutes.dashboard),
-        child: const Text('Start My Day'),
       ),
     );
   }

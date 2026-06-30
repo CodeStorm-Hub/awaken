@@ -42,6 +42,16 @@ class AlarmModel {
         if (label != null) 'label': label,
       };
 
+  /// Supabase upsert payload — includes user_id for RLS.
+  Map<String, dynamic> toSupabaseJson(String userId) => {
+        'id': id,
+        'user_id': userId,
+        'scheduled_time': scheduledTime.toUtc().toIso8601String(),
+        'required_reps': requiredReps,
+        'is_active': isActive,
+        if (label != null) 'label': label,
+      };
+
   AlarmEntity toEntity() => AlarmEntity(
         id: id,
         scheduledTime: scheduledTime,

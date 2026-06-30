@@ -28,6 +28,12 @@
 | Fonts | google_fonts | `^6.2.1` |
 | Linting | custom_lint + riverpod_lint | `^0.7.6` / `^2.3.10` |
 | Code gen | build_runner | `^2.4.9` |
+| Alarm scheduling | flutter_local_notifications | `^17.2.1` |
+| Timezone support | timezone + flutter_timezone | `^0.9.4` / `^1.0.8` |
+| In-app alarm audio | just_audio | `^0.9.36` |
+| Screen wakelock | wakelock_plus | `^1.2.0` |
+| Runtime permissions | permission_handler | `^11.3.1` |
+| Local persistence | shared_preferences | `^2.3.2` |
 
 **Critical font note:** Geist and Geist Mono (the design spec fonts) are **NOT on Google Fonts CDN** as of implementation. The codebase uses **Space Grotesk** (body) and **Space Mono** (HUD numerics) as visual equivalents via `google_fonts`. When Geist becomes available on Google Fonts, swap `GoogleFonts.spaceGrotesk` → `GoogleFonts.geist` and `GoogleFonts.spaceMono` → `GoogleFonts.geistMono` throughout `app_typography.dart` only.
 
@@ -41,18 +47,33 @@
 lib/
 ├── core/
 │   ├── constants/app_constants.dart     ← All magic numbers live here
-│   ├── router/app_router.dart           ← GoRouter + AppRoutes constants
+│   ├── router/
+│   │   ├── app_router.dart              ← GoRouter + AppRoutes + initialLocationProvider
+│   │   └── navigator_key.dart           ← GlobalKey<NavigatorState> (extracted to avoid circular import)
+│   ├── services/
+│   │   ├── alarm_notification_service.dart  ← flutter_local_notifications wrapper
+│   │   ├── alarm_audio_service.dart         ← just_audio (system ringtone fallback on Android)
+│   │   └── wake_lock_service.dart           ← wakelock_plus wrapper
 │   └── theme/
 │       ├── app_colors.dart              ← All Color constants (OKLCH→hex mapped)
 │       ├── app_typography.dart          ← TextTheme + AwakenTypography extension
 │       └── app_theme.dart               ← ThemeData.dark (ONLY theme, no light)
 ├── features/
 │   ├── alarm/
-│   │   ├── data/models/alarm_model.dart
-│   │   ├── domain/entities/alarm_entity.dart
+│   │   ├── data/
+│   │   │   ├── datasources/alarm_local_datasource.dart  ← SharedPreferences persistence
+│   │   │   ├── models/alarm_model.dart
+│   │   │   └── repositories/alarm_repository_impl.dart
+│   │   ├── domain/
+│   │   │   ├── entities/alarm_entity.dart
+│   │   │   └── repositories/alarm_repository.dart       ← abstract interface
 │   │   └── presentation/
-│   │       ├── providers/alarm_providers.dart
-│   │       ├── screens/active_alarm_screen.dart
+│   │       ├── providers/
+│   │       │   ├── alarm_providers.dart                 ← session state (repCount, feedback)
+│   │       │   └── alarm_schedule_providers.dart        ← alarm list, CRUD, next alarm
+│   │       ├── screens/
+│   │       │   ├── active_alarm_screen.dart             ← NOW: ConsumerStatefulWidget with audio+wakelock
+│   │       │   └── alarm_setup_screen.dart              ← NEW: time picker + rep count + ARM button
 │   │       └── widgets/
 │   │           ├── camera_hud_overlay.dart
 │   │           ├── rep_counter_display.dart
@@ -151,10 +172,13 @@ Two font families. Both accessed through **two mechanisms**:
 | Route | Path | Screen |
 |---|---|---|
 | Dashboard | `/` | `DashboardScreen` |
+| Alarm Setup | `/alarm/setup` | `AlarmSetupScreen` |
 | Active Alarm | `/alarm/active` | `ActiveAlarmScreen` |
 | Success | `/alarm/success` | `SuccessScreen` |
 
-Navigate with `context.go(AppRoutes.success)` etc.
+Navigate with `context.go(AppRoutes.success)` or `context.push(AppRoutes.alarmSetup)`.
+
+**Initial route override (notification launch):** `main.dart` calls `AlarmNotificationService.getInitialRoute()` before `runApp`. If the app was tapped from an alarm notification, it returns `'/alarm/active'` and this is passed via `ProviderScope.overrides([initialLocationProvider.overrideWithValue(...)])` so GoRouter starts at the alarm screen.
 
 ---
 
@@ -169,15 +193,26 @@ All providers in Phase 1–3 are **manual** (not `@riverpod` codegen). Phase 4+ 
 | `clockDisplayProvider` | `StreamProvider<String>` | Formatted "HH:MM", only emits on minute change |
 | `dashboardStatsProvider` | `Provider<DashboardStatsEntity>` | Stub with hardcoded mock data; replace with Supabase repo |
 
-### Alarm providers (`alarm_providers.dart`)
+### Alarm session providers (`alarm_providers.dart`)
 | Provider | Type | Description |
 |---|---|---|
 | `repCountProvider` | `StateProvider<int>` | Current rep count this session |
 | `repFeedbackProvider` | `StateProvider<RepFeedback>` | `neutral`/`success`/`failure` — drives border glow |
-| `requiredRepsProvider` | `StateProvider<int>` | Target rep count (default 10) |
+| `requiredRepsProvider` | `StateProvider<int>` | Target rep count (default 10, overridden on alarm start) |
 | `outOfFrameProvider` | `StateProvider<bool>` | True when user is out of camera frame |
 
 `RepFeedback` is an enum: `neutral`, `success`, `failure`.
+
+### Alarm scheduling providers (`alarm_schedule_providers.dart`) — Phase 4a NEW
+| Provider | Type | Description |
+|---|---|---|
+| `alarmRepositoryProvider` | `Provider<AlarmRepository>` | Provides `AlarmRepositoryImpl(AlarmLocalDatasource())` |
+| `alarmListProvider` | `AsyncNotifierProvider<AlarmListNotifier, List<AlarmEntity>>` | Full alarm list; add/remove/toggle methods |
+| `nextAlarmProvider` | `Provider<AlarmEntity?>` | Next upcoming active alarm (derived from `alarmListProvider`) |
+
+`AlarmListNotifier.addAlarm()` → saves to SharedPreferences + schedules notification.
+`AlarmListNotifier.removeAlarm()` → deletes from SharedPreferences + cancels notification.
+`AlarmListNotifier.toggleAlarm()` → flips `isActive`, reschedules or cancels accordingly.
 
 ---
 
@@ -245,16 +280,94 @@ All providers in Phase 1–3 are **manual** (not `@riverpod` codegen). Phase 4+ 
 - `ActiveAlarmScreen` — full layout with tap-to-rep interaction
 - `SuccessScreen` — full layout with animations
 
-### ❌ Phase 4 — NOT STARTED
-- ML Kit pose detection integration (`google_mlkit_pose_detection`)
-- Live camera feed (`camera` package — NOT yet in pubspec)
-- Supabase auth (Google Sign-In)
-- Supabase database: alarms, sessions, streaks tables
-- Background alarm scheduling (platform-channel or `flutter_local_notifications` + `android_alarm_manager_plus`)
-- Out-of-frame volume ramp-up
-- Emergency bypass token system
-- Accelerometer fallback for low-end devices
+### ✅ Phase 4a — DONE (Alarm Scheduling Engine)
+- `flutter_local_notifications` exact alarm scheduling with full-screen intent
+- `AlarmNotificationService` — schedule, cancel, request permissions, detect notification launch
+- `AlarmAudioService` — `just_audio` with system ringtone fallback on Android
+- `WakeLockService` — `wakelock_plus` keep screen on during alarm
+- `AlarmLocalDatasource` — SharedPreferences CRUD (pre-Supabase)
+- `AlarmRepository` + `AlarmRepositoryImpl` — domain/data split
+- `AlarmListNotifier` + `alarmListProvider` + `nextAlarmProvider` — real alarm state
+- `AlarmSetupScreen` — time picker + rep count selector + ARM button
+- `ActiveAlarmScreen` → `ConsumerStatefulWidget` (initState: audio+wakelock, dispose: cleanup)
+- Dashboard: real alarm from `nextAlarmProvider`, tappable no-alarm card, alarm list with swipe-delete, toggle switch
+- AndroidManifest: WAKE_LOCK, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED, POST_NOTIFICATIONS, USE_FULL_SCREEN_INTENT, FOREGROUND_SERVICE
+- Info.plist: NSUserNotificationUsageDescription, NSCameraUsageDescription, UIBackgroundModes audio+fetch
+- `navigatorKey` extracted to `navigator_key.dart` to prevent circular import between router and notification service
+- Timezone initialization in `main.dart` (flutter_timezone + timezone packages)
+
+**Audio file:** Place `assets/audio/alarm.mp3` in the assets directory. Android falls back to `content://settings/system/alarm_alert` if absent; iOS will be silent without it.
+
+### ✅ Phase 4b — DONE (Camera + ML Kit Pose Detection)
+- `camera: ^0.11.0` added to pubspec; CAMERA permission in AndroidManifest + Info.plist NSCameraUsageDescription
+- `SquatCounterService` — two-state machine (standing ↔ squatting) using knee joint angle from ML Kit landmarks. Thresholds: squat ≤ 100°, stand ≥ 150°. Averages left + right knee when both are confident (likelihood ≥ 0.5).
+- `PoseOverlayPainter` — CustomPainter that maps ML Kit image-space landmarks to screen-space, with correct rotation transformation for all 4 `InputImageRotation` values. Front camera mirror handled. Color shifts to `AppColors.success` when in squat phase.
+- `CameraHudOverlay` updated — now accepts `CameraController?`, `Pose?`, `imageSize`, `rotation`, `isFrontCamera`, `isSquatting`. Shows live `CameraPreview` (cover-fill via `FittedBox`); falls back to static `SkeletonWireframe` while initializing or if no pose detected.
+- `ActiveAlarmScreen` converted to `ConsumerStatefulWidget` with full camera lifecycle:
+  - `_initCamera()` — requests permission, finds front camera, `CameraController(ResolutionPreset.medium, nv21/bgra8888)`, then `startImageStream`
+  - `_onCameraImage()` — throttled to ~15 FPS (`66ms` skip), non-blocking (`_isDetecting` flag)
+  - `_processImage()` — converts `CameraImage` → `InputImage` (NV21 multi-plane concatenation on Android, single plane on iOS) → `PoseDetector.processImage()` → `SquatCounterService.processPose()` → auto-counts rep
+  - `dispose()` — `stopImageStream()`, `controller.dispose()`, `poseDetector.close()`, audio stop, wakelock disable
+  - `_router` captured in `initState` to avoid BuildContext-across-async-gap lint
+  - Tap fallback active when camera is loading or permission denied
+
+**Instruction bar states (Phase 4b):**
+- `CAMERA STARTING...` — controller not yet initialized
+- `CAMERA DENIED — TAP TO SIMULATE` — permission denied
+- `GET IN FRAME` — camera active but no pose detected
+- `DO A SQUAT` — pose detected, user is standing
+- `HOLD... COME BACK UP` — knee angle below squat threshold (rep in progress)
+- `PERFECT REP ✓` — rep just completed (150ms green flash)
+
+### ❌ Phase 4c — NOT STARTED
+- Out-of-frame penalty (sound ramp-up when `outOfFrameProvider` is true)
+- Bad form detection (shoulder/hip alignment check)
+- Accelerometer fallback for low-end devices without camera
+
+### ✅ Phase 5 — DONE (Supabase Auth + Cloud Sync)
+
+**Supabase project:** `fsdfqcnjcjtdmdjshrvu` (ap-northeast-1, awaken)
+**Project URL:** `https://fsdfqcnjcjtdmdjshrvu.supabase.co`
+**Anon key:** stored in `lib/core/constants/supabase_config.dart`
+
+**Auth:**
+- `google_sign_in: ^6.2.1` added to pubspec
+- `SupabaseAuthRepository` — `GoogleSignIn(serverClientId: webClientId)` → `signInWithIdToken(OAuthProvider.google)`
+- Auth providers: `authStateProvider` (StreamProvider), `isSignedInProvider`, `currentUserProvider`
+- `AuthScreen` — dark design with Google icon button + "Continue without account" skip link
+- `/auth` route added to GoRouter
+
+**Database (all tables have RLS, users own their own rows):**
+- `alarms` — `id text pk`, `user_id uuid`, `scheduled_time`, `required_reps`, `is_active`, `label`
+- `sessions` — `id uuid pk (gen_random_uuid())`, `user_id`, `alarm_id`, `completed_at`, `reps_completed`, `duration_seconds`, `calories_burned`
+- `streaks` — `user_id uuid pk`, `current_streak`, `best_streak`, `last_completed_date date`, `updated_at`
+
+**Repository switching:**
+- `alarmRepositoryProvider` watches `isSignedInProvider` — switches between `AlarmSupabaseRepositoryImpl` and `AlarmRepositoryImpl` (SharedPreferences) automatically
+- `AlarmListNotifier.build()` re-runs when auth state flips (local ↔ cloud)
+
+**Session recording:**
+- `sessionStartTimeProvider` (StateProvider<DateTime?>) set in `ActiveAlarmScreen.initState`
+- `SuccessScreen` reads `repCountProvider` + `sessionStartTimeProvider`, records `SessionEntity` to Supabase via `SupabaseSessionRepository.recordSession()`
+- `_updateStreak()` runs after each session — upserts `streaks` table using date arithmetic (yesterday continuation vs. reset)
+- `dashboardStatsProvider` changed from `Provider` → `FutureProvider` — fetches streak + weeklyReps + monthlyCalories from Supabase when signed in
+
+**Dashboard:**
+- Header shows account icon (green = signed in, grey = signed out); tap to sign in/out
+- Stats show `—` while loading or signed out
+- `_StreakCard` shows `CircularProgressIndicator` while stats are fetching
+
+**Google OAuth still needs (user must configure):**
+1. Google Cloud Console → create OAuth 2.0 credentials (Web + Android + iOS)
+2. Supabase Dashboard → Authentication → Providers → Google → paste Web client ID + secret
+3. Fill `googleWebClientId`, `googleAndroidClientId`, `googleIosClientId` in `supabase_config.dart`
+4. Android: add `google-services.json` to `android/app/`
+5. iOS: add `GIDClientID` to `Info.plist` (the iOS client ID from GCC)
+
+### ❌ Phase 6 — NOT STARTED
 - Push notifications for upcoming alarms
+- RevenueCat IAP
+- Onboarding flow
 
 ---
 

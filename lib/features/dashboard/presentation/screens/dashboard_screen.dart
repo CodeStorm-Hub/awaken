@@ -2,6 +2,9 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
+import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
+import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/armed_alarm_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/digital_clock.dart';
@@ -16,15 +19,18 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(dashboardStatsProvider);
+    final statsAsync = ref.watch(dashboardStatsProvider);
+    final nextAlarm = ref.watch(nextAlarmProvider);
+    final isSignedIn = ref.watch(isSignedInProvider);
+    final user = ref.watch(currentUserProvider);
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final size = MediaQuery.sizeOf(context);
 
-    // Date string — weekday + full date
     final now = DateTime.now();
-    final weekday = _weekday(now.weekday);
     final dateStr =
-        '$weekday, ${_month(now.month)} ${now.day}, ${now.year}';
+        '${_weekday(now.weekday)}, ${_month(now.month)} ${now.day}, ${now.year}';
+
+    final stats = statsAsync.valueOrNull;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,55 +44,58 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ────────────────────────────────────────────
-              _Header(dateStr: dateStr),
+              // ── Header ────────────────────────────────────────────────
+              _Header(
+                isSignedIn: isSignedIn,
+                displayName: user?.displayName,
+                onAddAlarm: () => context.push(AppRoutes.alarmSetup),
+                onSignIn: () => context.push(AppRoutes.auth),
+                onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+              ),
               SizedBox(height: size.height * 0.05),
 
-              // ── Oversized digital clock ───────────────────────────
+              // ── Digital clock ─────────────────────────────────────────
               const Center(child: DigitalClock()),
               const SizedBox(height: 8),
-
-              // Date sub-label
-              Center(
-                child: Text(dateStr, style: tt.eyebrow),
-              ),
+              Center(child: Text(dateStr, style: tt.eyebrow)),
 
               SizedBox(height: size.height * 0.05),
 
-              // ── Armed alarm card ──────────────────────────────────
-              if (stats.nextAlarm != null)
+              // ── Alarm card ────────────────────────────────────────────
+              if (nextAlarm != null)
                 ArmedAlarmCard(
-                  alarmTime: stats.nextAlarm!,
-                  requiredReps: stats.nextAlarmReps,
+                  alarmTime: nextAlarm.scheduledTime,
+                  requiredReps: nextAlarm.requiredReps,
                 )
               else
-                _NoAlarmCard(tt: tt),
+                _NoAlarmCard(
+                  tt: tt,
+                  onTap: () => context.push(AppRoutes.alarmSetup),
+                ),
 
               const SizedBox(height: 16),
 
-              // ── Stats row ─────────────────────────────────────────
+              // ── Stats row ─────────────────────────────────────────────
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Streak ring card
                     Expanded(
                       child: _StreakCard(
-                        progress: stats.streakProgress,
-                        current: stats.currentStreak,
-                        best: stats.bestStreak,
+                        progress: stats?.streakProgress ?? 0,
+                        current: stats?.currentStreak ?? 0,
+                        best: stats?.bestStreak ?? 0,
+                        loading: statsAsync.isLoading,
                       ),
                     ),
                     const SizedBox(width: 12),
-
-                    // Right column: reps + calories
                     Expanded(
                       child: Column(
                         children: [
                           Expanded(
                             child: StatCard(
                               label: 'This Week',
-                              value: '${stats.weeklyReps}',
+                              value: stats != null ? '${stats.weeklyReps}' : '—',
                               unit: 'reps',
                               icon: const Icon(
                                 Icons.fitness_center_rounded,
@@ -99,7 +108,9 @@ class DashboardScreen extends ConsumerWidget {
                           Expanded(
                             child: StatCard(
                               label: 'This Month',
-                              value: '${stats.monthlyCalories}',
+                              value: stats != null
+                                  ? '${stats.monthlyCalories}'
+                                  : '—',
                               unit: 'cal',
                               accentColor: AppColors.accent,
                               icon: const Icon(
@@ -118,8 +129,14 @@ class DashboardScreen extends ConsumerWidget {
 
               const SizedBox(height: 24),
 
-              // ── Test alarm trigger (Phase 3 only — remove in Phase 4) ──
-              const _TestAlarmButton(),
+              // ── Alarm list (swipe-to-delete) ──────────────────────────
+              _AlarmList(
+                  alarms: ref.watch(alarmListProvider).valueOrNull ?? []),
+
+              const SizedBox(height: 12),
+
+              // ── Dev shortcut ──────────────────────────────────────────
+              _TestAlarmButton(nextAlarm: nextAlarm),
             ],
           ),
         ),
@@ -158,9 +175,19 @@ class DashboardScreen extends ConsumerWidget {
 // ── Sub-widgets ────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
-  const _Header({required this.dateStr});
+  const _Header({
+    required this.isSignedIn,
+    required this.displayName,
+    required this.onAddAlarm,
+    required this.onSignIn,
+    required this.onSignOut,
+  });
 
-  final String dateStr;
+  final bool isSignedIn;
+  final String? displayName;
+  final VoidCallback onAddAlarm;
+  final VoidCallback onSignIn;
+  final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -179,22 +206,59 @@ class _Header extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'Good morning',
+              isSignedIn
+                  ? 'Good morning${displayName != null ? ', ${displayName!.split(' ').first}' : ''}'
+                  : 'Good morning',
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ],
         ),
-
-        // Settings icon placeholder
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.border),
-          ),
-          child: const Icon(Icons.settings_outlined, size: 18),
+        Row(
+          children: [
+            // Add alarm
+            GestureDetector(
+              onTap: onAddAlarm,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.add_alarm_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Auth button
+            GestureDetector(
+              onTap: isSignedIn ? onSignOut : onSignIn,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Icon(
+                  isSignedIn
+                      ? Icons.account_circle_rounded
+                      : Icons.login_rounded,
+                  size: 18,
+                  color: isSignedIn
+                      ? AppColors.success
+                      : AppColors.mutedForeground,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -206,11 +270,13 @@ class _StreakCard extends StatelessWidget {
     required this.progress,
     required this.current,
     required this.best,
+    required this.loading,
   });
 
   final double progress;
   final int current;
   final int best;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -228,11 +294,20 @@ class _StreakCard extends StatelessWidget {
         children: [
           Text('STREAK', style: tt.eyebrow),
           const SizedBox(height: 12),
-          StreakRing(
-            progress: progress,
-            currentStreak: current,
-            bestStreak: best,
-          ),
+          loading
+              ? const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : StreakRing(
+                  progress: progress,
+                  currentStreak: current,
+                  bestStreak: best,
+                ),
         ],
       ),
     );
@@ -240,15 +315,109 @@ class _StreakCard extends StatelessWidget {
 }
 
 class _NoAlarmCard extends StatelessWidget {
-  const _NoAlarmCard({required this.tt});
+  const _NoAlarmCard({required this.tt, required this.onTap});
 
   final AwakenTypography tt;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.add_alarm_rounded, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Text(
+              'Tap to set your alarm',
+              style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.primary),
+            ),
+            const Spacer(),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.primary,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Alarm list with swipe-to-delete ──────────────────────────────────────────
+
+class _AlarmList extends ConsumerWidget {
+  const _AlarmList({required this.alarms});
+
+  final List<AlarmEntity> alarms;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (alarms.isEmpty) return const SizedBox.shrink();
+
+    final tt = Theme.of(context).extension<AwakenTypography>()!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('SCHEDULED', style: tt.eyebrow),
+        const SizedBox(height: 12),
+        ...alarms.map(
+          (alarm) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Dismissible(
+              key: ValueKey(alarm.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.destructive.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.destructive,
+                ),
+              ),
+              onDismissed: (_) {
+                ref.read(alarmListProvider.notifier).removeAlarm(alarm);
+              },
+              child: _AlarmTile(alarm: alarm),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AlarmTile extends ConsumerWidget {
+  const _AlarmTile({required this.alarm});
+
+  final AlarmEntity alarm;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tt = Theme.of(context).extension<AwakenTypography>()!;
+    final time = TimeOfDay.fromDateTime(alarm.scheduledTime);
+    final hour = time.hourOfPeriod.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
@@ -256,9 +425,30 @@ class _NoAlarmCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.add_alarm_rounded, color: AppColors.mutedForeground),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$hour:$minute $period',
+                style: tt.statValue.copyWith(fontSize: 22),
+              ),
+              if (alarm.label != null)
+                Text(alarm.label!, style: tt.statLabel),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            '${alarm.requiredReps} squats',
+            style: tt.eyebrow.copyWith(color: AppColors.primary),
+          ),
           const SizedBox(width: 12),
-          Text('No alarm set', style: tt.statLabel.copyWith(fontSize: 14)),
+          Switch(
+            value: alarm.isActive,
+            onChanged: (_) {
+              ref.read(alarmListProvider.notifier).toggleAlarm(alarm);
+            },
+            activeThumbColor: AppColors.primary,
+          ),
         ],
       ),
     );
@@ -266,16 +456,25 @@ class _NoAlarmCard extends StatelessWidget {
 }
 
 class _TestAlarmButton extends ConsumerWidget {
-  const _TestAlarmButton();
+  const _TestAlarmButton({required this.nextAlarm});
+
+  final AlarmEntity? nextAlarm;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => context.go(AppRoutes.activeAlarm),
-        icon: const Icon(Icons.play_arrow_rounded, size: 20),
-        label: const Text('Test Alarm Now'),
+      child: OutlinedButton.icon(
+        onPressed: () => context.go(
+          AppRoutes.activeAlarm,
+          extra: nextAlarm,
+        ),
+        icon: const Icon(Icons.play_arrow_rounded, size: 18),
+        label: const Text('Test Active Alarm'),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.border),
+          foregroundColor: AppColors.mutedForeground,
+        ),
       ),
     );
   }

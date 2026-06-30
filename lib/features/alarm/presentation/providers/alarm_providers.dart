@@ -15,3 +15,7 @@ final requiredRepsProvider = StateProvider<int>((ref) => 10);
 
 /// Whether the out-of-frame penalty is currently active.
 final outOfFrameProvider = StateProvider<bool>((ref) => false);
+
+/// When the current alarm session started — set in ActiveAlarmScreen.initState.
+/// Used to compute duration_seconds when recording the session to Supabase.
+final sessionStartTimeProvider = StateProvider<DateTime?>((ref) => null);

@@ -1,29 +1,69 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:awaken/main.dart';
-import 'package:flutter/material.dart';
+import 'package:awaken/app.dart';
+import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
+import 'package:awaken/features/alarm/domain/repositories/alarm_repository.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
+import 'package:awaken/features/auth/domain/entities/app_user.dart';
+import 'package:awaken/features/auth/domain/repositories/auth_repository.dart';
+import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
+import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
+import 'package:awaken/features/sessions/domain/repositories/session_repository.dart';
+import 'package:awaken/features/sessions/presentation/providers/session_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class FakeAuthRepository implements AuthRepository {
+  @override
+  AppUser? get currentUser => null;
+
+  @override
+  Stream<AuthState> get authStateChanges => const Stream.empty();
+
+  @override
+  Future<void> signInWithGoogle() async {}
+
+  @override
+  Future<void> signOut() async {}
+}
+
+class FakeAlarmRepository implements AlarmRepository {
+  @override
+  Future<List<AlarmEntity>> getAlarms() async => [];
+
+  @override
+  Future<void> saveAlarm(AlarmEntity alarm) async {}
+
+  @override
+  Future<void> deleteAlarm(String id) async {}
+}
+
+class FakeSessionRepository implements SessionRepository {
+  @override
+  Future<void> recordSession(SessionEntity session) async {}
+
+  @override
+  Future<int> weeklyReps(String userId, {int days = 7}) async => 0;
+
+  @override
+  Future<int> monthlyCalories(String userId, {int days = 30}) async => 0;
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Awaken App smoke test', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+          alarmRepositoryProvider.overrideWithValue(FakeAlarmRepository()),
+          sessionRepositoryProvider.overrideWithValue(FakeSessionRepository()),
+          clockDisplayProvider.overrideWith((ref) => Stream.value('08:00')),
+        ],
+        child: const AwakenApp(),
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the title 'AWAKEN' exists.
+    expect(find.text('AWAKEN'), findsOneWidget);
   });
 }
