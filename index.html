@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Territory Capture UI Mockup</title>
+    <!-- Leaflet CSS for Map Simulation -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* Neon Polygon Glow Effect */
+        .neon-polygon {
+            filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
+            animation: neon-pulse 2s infinite alternate;
+        }
+
+        .neon-polygon-enemy {
+            filter: drop-shadow(0 0 8px rgba(255, 0, 128, 0.8)) drop-shadow(0 0 15px rgba(255, 0, 128, 0.5));
+            animation: neon-pulse-enemy 2s infinite alternate;
+        }
+
+        @keyframes neon-pulse {
+            0% { filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.7)); }
+            100% { filter: drop-shadow(0 0 15px rgba(0, 255, 255, 1)); }
+        }
+
+        @keyframes neon-pulse-enemy {
+            0% { filter: drop-shadow(0 0 8px rgba(255, 0, 128, 0.7)); }
+            100% { filter: drop-shadow(0 0 15px rgba(255, 0, 128, 1)); }
+        }
+
+        /* Glassmorphism Bottom Sheet */
+        .bottom-sheet {
+            position: absolute;
+            bottom: -300px; /* Hidden by default */
+            left: 0;
+            width: 100%;
+            height: 220px;
+            background: rgba(20, 20, 25, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px 24px 0 0;
+            z-index: 10;
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        }
+
+        .bottom-sheet.active {
+            bottom: 0;
+        }
+
+        .sheet-handle {
+            width: 40px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            margin: 0 auto 15px auto;
+        }
+
+        .territory-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .territory-owner {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            margin: 0 0 20px 0;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-box {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00FFFF;
+            box-shadow: 0 0 8px #00FFFF;
+        }
+
+        .color-dot.enemy {
+            background: #FF0080;
+            box-shadow: 0 0 8px #FF0080;
+        }
+
+        /* Floating Action Button (FAB) */
+        .fab-container {
+            position: absolute;
+            bottom: 40px;
+            right: 20px;
+            z-index: 5;
+            transition: bottom 0.4s ease;
+        }
+        
+        .fab-container.shifted {
+            bottom: 240px;
+        }
+
+        .fab {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00FFFF, #0080FF);
+            border: none;
+            color: #000;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .fab:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 255, 255, 0.6);
+        }
+        
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Top HUD / Player Status */
+        .hud {
+            position: absolute;
+            top: 40px;
+            left: 20px;
+            z-index: 5;
+            background: rgba(20, 20, 25, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #333;
+            border: 2px solid #00FFFF;
+        }
+
+        .hud-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hud-name { font-weight: 600; font-size: 14px; }
+        .hud-score { font-size: 12px; color: #00FFFF; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Leaflet Map Container -->
+    <div id="map"></div>
+
+    <!-- Top HUD -->
+    <div class="hud">
+        <div class="avatar"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Runner" style="width:100%; border-radius:50%;"></div>
+        <div class="hud-text">
+            <span class="hud-name">Player One</span>
+            <span class="hud-score">45.2 km² Owned</span>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab-container" id="fabContainer">
+        <button class="fab" title="Start Run">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </button>
+    </div>
+
+    <!-- Glassmorphism Bottom Sheet -->
+    <div class="bottom-sheet" id="bottomSheet">
+        <div class="sheet-handle"></div>
+        <h2 class="territory-title" id="tTitle"><div class="color-dot" id="tDot"></div> Central Park Loop</h2>
+        <p class="territory-owner" id="tOwner">Captured by: Player One</p>
+        
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Total Area</div>
+                <div class="stat-value" id="tArea">1.2 km²</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Health / Decay</div>
+                <div class="stat-value" id="tHealth">85%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Map with Dark Mode Tiles
+        var map = L.map('map', {zoomControl: false}).setView([40.7812, -73.9665], 14); // Central Park
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CartoDB</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Simulated Player Territory (Neon Blue)
+        var myTerritoryCoords = [
+            [40.7850, -73.9680],
+            [40.7800, -73.9720],
+            [40.7760, -73.9600],
+            [40.7820, -73.9550]
+        ];
+
+        var myTerritory = L.polygon(myTerritoryCoords, {
+            color: '#00FFFF',
+            weight: 3,
+            fillColor: '#00FFFF',
+            fillOpacity: 0.25,
+            className: 'neon-polygon'
+        }).addTo(map);
+
+        // Simulated Enemy Territory (Neon Pink)
+        var enemyTerritoryCoords = [
+            [40.7880, -73.9600],
+            [40.7820, -73.9550],
+            [40.7760, -73.9600],
+            [40.7810, -73.9480],
+            [40.7870, -73.9520]
+        ];
+
+        var enemyTerritory = L.polygon(enemyTerritoryCoords, {
+            color: '#FF0080',
+            weight: 3,
+            fillColor: '#FF0080',
+            fillOpacity: 0.25,
+            className: 'neon-polygon-enemy'
+        }).addTo(map);
+
+        // Interactions
+        const sheet = document.getElementById('bottomSheet');
+        const fab = document.getElementById('fabContainer');
+        const tTitle = document.getElementById('tTitle');
+        const tOwner = document.getElementById('tOwner');
+        const tArea = document.getElementById('tArea');
+        const tHealth = document.getElementById('tHealth');
+        const tDot = document.getElementById('tDot');
+
+        function openSheet(title, owner, area, health, isEnemy) {
+            tTitle.innerHTML = `<div class="color-dot ${isEnemy ? 'enemy' : ''}"></div> ${title}`;
+            tOwner.innerText = `Captured by: ${owner}`;
+            tArea.innerText = area;
+            tHealth.innerText = health;
+            
+            sheet.classList.add('active');
+            fab.classList.add('shifted');
+        }
+
+        // Map Click (Close Sheet)
+        map.on('click', function() {
+            sheet.classList.remove('active');
+            fab.classList.remove('shifted');
+        });
+
+        // Polygon Clicks
+        myTerritory.on('click', function(e) {
+            L.DomEvent.stopPropagation(e);
+            openSheet('Great Lawn Loop', 'Player One', '1.2 km²', '95% (Safe)', false);
+        });
+
+        enemyTerritory.on('click', function(e) {
+            L.DomEvent.stopPropagation(e);
+            openSheet('Reservoir Zone', 'RivalRunner99', '2.4 km²', '40% (Vulnerable)', true);
+        });
+    </script>
+</body>
+</html>
