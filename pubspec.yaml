@@ -24,6 +24,11 @@ dependencies:
   # ── Navigation ────────────────────────────────────────────────────
   go_router: ^13.2.0
 
+  # ── Territory capture: map + GPS ──────────────────────────────────
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.1
+
   # ── UI & animation ────────────────────────────────────────────────
   flutter_animate: ^4.5.0
   google_fonts: ^6.2.1

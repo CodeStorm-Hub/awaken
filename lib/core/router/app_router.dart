@@ -5,6 +5,8 @@ import 'package:awaken/features/alarm/presentation/screens/alarm_setup_screen.da
 import 'package:awaken/features/auth/presentation/screens/auth_screen.dart';
 import 'package:awaken/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:awaken/features/success/presentation/screens/success_screen.dart';
+import 'package:awaken/features/territory/presentation/screens/territory_leaderboard_screen.dart';
+import 'package:awaken/features/territory/presentation/screens/territory_run_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +19,8 @@ abstract final class AppRoutes {
   static const String activeAlarm = '/alarm/active';
   static const String alarmSetup = '/alarm/setup';
   static const String success = '/alarm/success';
+  static const String territoryRun = '/territory/run';
+  static const String territoryLeaderboard = '/territory/leaderboard';
 }
 
 /// Override this before runApp() when the app was launched from a notification.
@@ -52,6 +56,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.success,
         builder: (context, state) => const SuccessScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.territoryRun,
+        builder: (context, state) => const TerritoryRunScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.territoryLeaderboard,
+        builder: (context, state) => const TerritoryLeaderboardScreen(),
       ),
     ],
   );

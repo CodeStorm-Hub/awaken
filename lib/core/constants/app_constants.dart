@@ -38,4 +38,23 @@ abstract final class AppConstants {
   static const double glowBlurRadius = 12.0;
   static const double skeletonStrokeWidth = 2.5;
   static const double skeletonJointRadius = 4.0;
+
+  // ── Territory capture: anti-cheat & loop validation ────────────────
+  /// Single source of truth for the speed cap — the user story's own
+  /// acceptance criteria (>25 km/h) and "Drive-by Cheat" refinement
+  /// (20–25 km/h) disagree; resolved once here.
+  static const double maxRunSpeedKmh = 25.0;
+  static const double loopClosureRadiusMeters = 20.0;
+  static const double minLoopAreaSqMeters = 50.0;
+  static const Duration minRunDuration = Duration(minutes: 2);
+  static const double minRunDistanceMeters = 200.0;
+  static const Duration territoryDecayGracePeriod = Duration(days: 7);
+
+  /// Rolling window size (GPS pings) for sustained-speed-cap checks —
+  /// a single noisy ping should not invalidate a run.
+  static const int speedRollingWindowSize = 6;
+
+  /// RDP simplification epsilon (meters) applied to the run path before
+  /// it's sent to Supabase as the capture polygon.
+  static const double rdpSimplificationEpsilonMeters = 3.0;
 }

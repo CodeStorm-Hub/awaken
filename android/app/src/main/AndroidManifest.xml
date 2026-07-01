@@ -5,6 +5,10 @@
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
+    <!-- ── Territory capture: live GPS tracking ─────────────────────── -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
     <!-- ── Alarm & wake permissions ──────────────────────────────────── -->
     <!-- Keep CPU alive while alarm fires -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>

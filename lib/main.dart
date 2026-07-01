@@ -2,6 +2,7 @@ import 'package:awaken/app.dart';
 import 'package:awaken/core/constants/supabase_config.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
+import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,6 +31,7 @@ void main() async {
 
   // ── Alarm notification init ───────────────────────────────────────────────
   await AlarmNotificationService.initialize();
+  await TerritoryDecayNotificationService.initialize();
 
   // Detect if we were launched by tapping an alarm notification
   final initialRoute = await AlarmNotificationService.getInitialRoute();

@@ -1,5 +1,6 @@
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
+import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
@@ -10,6 +11,7 @@ import 'package:awaken/features/dashboard/presentation/widgets/armed_alarm_card.
 import 'package:awaken/features/dashboard/presentation/widgets/digital_clock.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/streak_ring.dart';
+import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +27,18 @@ class DashboardScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final size = MediaQuery.sizeOf(context);
+
+    // Surface a local notification once per dashboard load if any owned
+    // territory is within its decay grace period (Product Decision #4).
+    if (isSignedIn) {
+      ref.listen(decayWarningsProvider, (previous, next) {
+        next.whenData(
+          (warnings) => TerritoryDecayNotificationService.notifyIfDecaying(
+            territoryCount: warnings.length,
+          ),
+        );
+      });
+    }
 
     final now = DateTime.now();
     final dateStr =
@@ -72,6 +86,14 @@ class DashboardScreen extends ConsumerWidget {
                   tt: tt,
                   onTap: () => context.push(AppRoutes.alarmSetup),
                 ),
+
+              const SizedBox(height: 16),
+
+              // ── Territory capture entry point ──────────────────────────
+              _TerritoryCard(
+                tt: tt,
+                onTap: () => context.push(AppRoutes.territoryRun),
+              ),
 
               const SizedBox(height: 16),
 
@@ -348,6 +370,42 @@ class _NoAlarmCard extends StatelessWidget {
               color: AppColors.primary,
               size: 18,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TerritoryCard extends StatelessWidget {
+  const _TerritoryCard({required this.tt, required this.onTap});
+
+  final AwakenTypography tt;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.map_rounded, color: AppColors.accent),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Run a loop, claim territory',
+                style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.accent),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.accent, size: 18),
           ],
         ),
       ),
