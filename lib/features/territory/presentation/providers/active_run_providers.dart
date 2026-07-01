@@ -65,6 +65,16 @@ class ActiveRunState {
 /// Owns the full GPS run-tracking lifecycle: permission, live position
 /// stream, Kalman smoothing, rolling speed-cap anti-cheat, and — on
 /// stop — classification + territory capture.
+///
+/// Deliberately NOT `autoDispose`: an in-flight `finishRun()` awaits a
+/// Supabase round-trip, and autoDispose can tear the notifier down mid-await
+/// if watcher count transiently hits zero during a rebuild, silently
+/// orphaning the final `state = ...` write (and with it, the finished-state
+/// transition the UI listens for). Instead, navigating away from the run
+/// screen while tracking is intercepted (see `TerritoryRunScreen`'s
+/// `PopScope`) and explicitly calls `reset()`, which is what actually stops
+/// the position stream and timer — that's the real fix for the leak this
+/// used to guard against, without the orphaned-future risk.
 class ActiveRunNotifier extends Notifier<ActiveRunState> {
   StreamSubscription<Position>? _positionSubscription;
   Timer? _tickTimer;
@@ -187,7 +197,14 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
       }
 
       if (outcome != RunOutcome.territoryClaimed) {
-        await repo.touchDefense(simplifiedPoints);
+        // Best-effort: a failure here (auth hiccup, network blip) must not
+        // stop the run itself from being recorded — that's a legitimate
+        // workout per Story #2 even when territory bookkeeping fails.
+        try {
+          await repo.touchDefense(simplifiedPoints);
+        } on Object catch (_) {
+          // Ignored — defense-touch is a nice-to-have, not required to save the run.
+        }
       }
 
       final run = RunTrackEntity(
