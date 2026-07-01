@@ -92,7 +92,7 @@ class DashboardScreen extends ConsumerWidget {
               // ── Territory capture entry point ──────────────────────────
               _TerritoryCard(
                 tt: tt,
-                onTap: () => context.push(AppRoutes.territoryRun),
+                onTap: () => context.go(AppRoutes.territory),
               ),
 
               const SizedBox(height: 16),

@@ -9,6 +9,7 @@ import 'package:awaken/features/territory/domain/services/gps_kalman_filter.dart
 import 'package:awaken/features/territory/domain/services/rdp_simplifier.dart';
 import 'package:awaken/features/territory/domain/services/run_validation_service.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -118,12 +119,12 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
 
     _kalmanFilter.reset();
     _sawSustainedOverSpeed = false;
-    _startTime = DateTime.now();
+    _startTime = clock.now();
     state = const ActiveRunState(status: RunSessionStatus.tracking);
 
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_startTime == null) return;
-      state = state.copyWith(elapsed: DateTime.now().difference(_startTime!));
+      state = state.copyWith(elapsed: clock.now().difference(_startTime!));
     });
 
     _positionSubscription = Geolocator.getPositionStream(
@@ -196,7 +197,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
         }
       }
 
-      if (outcome != RunOutcome.territoryClaimed) {
+      if (outcome != RunOutcome.territoryClaimed && outcome != RunOutcome.invalidatedSpeedCap) {
         // Best-effort: a failure here (auth hiccup, network blip) must not
         // stop the run itself from being recorded — that's a legitimate
         // workout per Story #2 even when territory bookkeeping fails.

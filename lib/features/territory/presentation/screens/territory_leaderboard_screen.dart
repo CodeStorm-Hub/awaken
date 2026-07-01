@@ -7,16 +7,17 @@ import 'package:awaken/features/territory/presentation/providers/territory_provi
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 
 class TerritoryLeaderboardScreen extends ConsumerStatefulWidget {
   const TerritoryLeaderboardScreen({super.key});
 
   @override
-  ConsumerState<TerritoryLeaderboardScreen> createState() => _TerritoryLeaderboardScreenState();
+  ConsumerState<TerritoryLeaderboardScreen> createState() =>
+      _TerritoryLeaderboardScreenState();
 }
 
-class _TerritoryLeaderboardScreenState extends ConsumerState<TerritoryLeaderboardScreen> {
+class _TerritoryLeaderboardScreenState
+    extends ConsumerState<TerritoryLeaderboardScreen> {
   @override
   void initState() {
     super.initState();
@@ -36,7 +37,7 @@ class _TerritoryLeaderboardScreenState extends ConsumerState<TerritoryLeaderboar
         timestamp: DateTime.now(),
       );
     } catch (_) {
-      // No location available — provider falls back to the global view.
+      // No location — falls back to global view.
     }
   }
 
@@ -50,30 +51,44 @@ class _TerritoryLeaderboardScreenState extends ConsumerState<TerritoryLeaderboar
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.foreground),
-          onPressed: () => context.pop(),
-        ),
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
         title: Text('LEADERBOARD', style: hud.eyebrow),
         centerTitle: true,
+        actions: [
+          // Refresh
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded,
+                color: AppColors.mutedForeground, size: 20),
+            onPressed: () => ref.invalidate(leaderboardProvider),
+          ),
+        ],
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppConstants.screenPaddingH),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.screenPaddingH),
         child: Column(
           children: [
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
+            // ── Mode selector ──────────────────────────────────────────────
             _ModeSegmentedControl(
               mode: mode,
-              onChanged: (m) => ref.read(leaderboardModeProvider.notifier).state = m,
+              onChanged: (m) =>
+                  ref.read(leaderboardModeProvider.notifier).state = m,
             ),
             const SizedBox(height: 20),
+            // ── List ───────────────────────────────────────────────────────
             Expanded(
               child: leaderboardAsync.when(
-                data: (entries) => _LeaderboardList(entries: entries, mode: mode),
-                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                error: (error, stackTrace) => const Center(
+                data: (entries) =>
+                    _LeaderboardContent(entries: entries, mode: mode),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+                error: (_, __) => const Center(
                   child: Text(
-                    'Could not load leaderboard.',
+                    'Could not load leaderboard.\nCheck your connection.',
+                    textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.mutedForeground),
                   ),
                 ),
@@ -86,8 +101,11 @@ class _TerritoryLeaderboardScreenState extends ConsumerState<TerritoryLeaderboar
   }
 }
 
+// ── Mode tab ──────────────────────────────────────────────────────────────────
+
 class _ModeSegmentedControl extends StatelessWidget {
-  const _ModeSegmentedControl({required this.mode, required this.onChanged});
+  const _ModeSegmentedControl(
+      {required this.mode, required this.onChanged});
 
   final LeaderboardMode mode;
   final ValueChanged<LeaderboardMode> onChanged;
@@ -111,7 +129,8 @@ class _ModeSegmentedControl extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: selected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppConstants.chipRadius - 4),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.chipRadius - 4),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -132,8 +151,11 @@ class _ModeSegmentedControl extends StatelessWidget {
   }
 }
 
-class _LeaderboardList extends StatelessWidget {
-  const _LeaderboardList({required this.entries, required this.mode});
+// ── Content ───────────────────────────────────────────────────────────────────
+
+class _LeaderboardContent extends StatelessWidget {
+  const _LeaderboardContent(
+      {required this.entries, required this.mode});
 
   final List<LeaderboardEntryEntity> entries;
   final LeaderboardMode mode;
@@ -142,23 +164,171 @@ class _LeaderboardList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
       return Center(
-        child: Text(
-          mode == LeaderboardMode.nearby
-              ? 'No territory claimed near you yet.\nBe the first to run a loop!'
-              : 'No territory claimed yet.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.mutedForeground),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.map_outlined,
+                  color: AppColors.mutedForeground, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                mode == LeaderboardMode.nearby
+                    ? 'No territory claimed near you yet.\nBe the first to run a loop!'
+                    : 'No territory claimed yet.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: AppColors.mutedForeground, height: 1.6),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return ListView.separated(
-      itemCount: entries.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => _LeaderboardTile(entry: entries[index]),
+    final top3 = entries.take(3).toList();
+    final rest = entries.skip(3).toList();
+
+    return ListView(
+      children: [
+        // ── Podium ──────────────────────────────────────────────────────
+        if (top3.isNotEmpty) ...[
+          _Podium(entries: top3),
+          const SizedBox(height: 20),
+        ],
+        // ── Remaining ranks ──────────────────────────────────────────────
+        if (rest.isNotEmpty)
+          ...rest.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _LeaderboardTile(entry: e),
+            ),
+          ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }
+
+// ── Podium ────────────────────────────────────────────────────────────────────
+
+class _Podium extends StatelessWidget {
+  const _Podium({required this.entries});
+
+  final List<LeaderboardEntryEntity> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    // Podium order: 2nd | 1st | 3rd
+    final first = entries.isNotEmpty ? entries[0] : null;
+    final second = entries.length > 1 ? entries[1] : null;
+    final third = entries.length > 2 ? entries[2] : null;
+
+    final podiumEntries = [second, first, third];
+    final heights = [90.0, 120.0, 70.0];
+    final medals = ['🥈', '🥇', '🥉'];
+    final colors = [
+      const Color(0xFF9E9E9E), // silver
+      const Color(0xFFFFD700), // gold
+      const Color(0xFFCD7F32), // bronze
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: List.generate(3, (i) {
+          final entry = podiumEntries[i];
+          if (entry == null) return const Expanded(child: SizedBox.shrink());
+          return Expanded(
+            child: _PodiumSlot(
+              entry: entry,
+              barHeight: heights[i],
+              medal: medals[i],
+              color: colors[i],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _PodiumSlot extends StatelessWidget {
+  const _PodiumSlot({
+    required this.entry,
+    required this.barHeight,
+    required this.medal,
+    required this.color,
+  });
+
+  final LeaderboardEntryEntity entry;
+  final double barHeight;
+  final String medal;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final hud = Theme.of(context).extension<AwakenTypography>()!;
+    final areaKm2 = entry.totalAreaSqMeters / 1_000_000;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Medal emoji
+        Text(medal, style: const TextStyle(fontSize: 28)),
+        const SizedBox(height: 4),
+        // Name
+        Text(
+          entry.displayName ?? 'Runner',
+          style: const TextStyle(
+            color: AppColors.foreground,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        // Area
+        Text(
+          '${areaKm2.toStringAsFixed(3)} km²',
+          style: hud.statValue.copyWith(fontSize: 11, color: color),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        // Podium bar
+        Container(
+          height: barHeight,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(6),
+              topRight: Radius.circular(6),
+            ),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '#${entry.rank}',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Rank tile ─────────────────────────────────────────────────────────────────
 
 class _LeaderboardTile extends StatelessWidget {
   const _LeaderboardTile({required this.entry});
@@ -168,28 +338,47 @@ class _LeaderboardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hud = Theme.of(context).extension<AwakenTypography>()!;
-    final areaKm2 = entry.totalAreaSqMeters / 1000000;
+    final areaKm2 = entry.totalAreaSqMeters / 1_000_000;
+
+    final isTopRank = entry.rank <= 3;
+    final rankColor = isTopRank ? AppColors.accent : AppColors.mutedForeground;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        border: entry.rank <= 3 ? Border.all(color: AppColors.accent.withValues(alpha: 0.4)) : null,
+        border: isTopRank
+            ? Border.all(color: AppColors.accent.withValues(alpha: 0.3))
+            : Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 36,
+            width: 38,
             child: Text(
               '#${entry.rank}',
               style: hud.statValue.copyWith(
                 fontSize: 16,
-                color: entry.rank <= 3 ? AppColors.accent : AppColors.mutedForeground,
+                color: rankColor,
               ),
             ),
           ),
           const SizedBox(width: 8),
+          // Avatar placeholder (initials circle)
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+            child: Text(
+              (entry.displayName ?? 'R').substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               entry.displayName ?? 'Runner',

@@ -34,7 +34,12 @@ void main() async {
   await TerritoryDecayNotificationService.initialize();
 
   // Detect if we were launched by tapping an alarm notification
-  final initialRoute = await AlarmNotificationService.getInitialRoute();
+  // getInitialRoute() returns AppRoutes.dashboard ('/' in the old router) when
+  // not launched from a notification. Remap that to '/dashboard' (the shell
+  // branch root) so the new StatefulShellRoute resolves correctly.
+  final rawRoute = await AlarmNotificationService.getInitialRoute();
+  final initialRoute =
+      rawRoute == '/' ? AppRoutes.dashboard : rawRoute;
 
   // ── System UI ─────────────────────────────────────────────────────────────
   await SystemChrome.setPreferredOrientations([

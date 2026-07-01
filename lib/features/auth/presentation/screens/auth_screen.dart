@@ -17,8 +17,23 @@ class AuthScreen extends ConsumerStatefulWidget {
 }
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+
   bool _loading = false;
+  bool _isSignUp = false;
+  bool _obscurePassword = true;
   String? _error;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _signInWithGoogle() async {
     if (_loading) return;
@@ -39,6 +54,88 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  Future<void> _submit() async {
+    if (_loading) return;
+    if (!_formKey.currentState!.validate()) return;
+    
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      if (_isSignUp) {
+        await ref.read(authRepositoryProvider).signUpWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+          displayName: _nameController.text.trim().isEmpty
+              ? null
+              : _nameController.text.trim(),
+        );
+        if (mounted) {
+          final currentUser = ref.read(authRepositoryProvider).currentUser;
+          if (currentUser == null) {
+            // Email confirmation is likely enabled
+            setState(() {
+              _error = 'Sign up successful! Please check your email to confirm registration.';
+              _loading = false;
+            });
+          }
+        }
+      } else {
+        await ref.read(authRepositoryProvider).signInWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString()
+              .replaceFirst('Exception: ', '')
+              .replaceFirst('AuthException: ', '');
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  InputDecoration _inputDecoration({
+    required String labelText,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: const TextStyle(color: AppColors.mutedForeground),
+      prefixIcon: Icon(prefixIcon, color: AppColors.mutedForeground, size: 20),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: AppColors.card,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+        borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+        borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+        borderSide: const BorderSide(color: AppColors.destructive, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+        borderSide: const BorderSide(color: AppColors.destructive, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
@@ -46,84 +143,269 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.screenPaddingH,
-            vertical: AppConstants.screenPaddingV,
-          ),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.screenPaddingH,
+              vertical: AppConstants.screenPaddingV,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 24),
 
-              // ── Logo + tagline ────────────────────────────────────────
-              Text(
-                'AWAKEN',
-                style: tt.hudClock.copyWith(
-                  fontSize: 56,
-                  color: AppColors.primary,
-                  letterSpacing: -1,
-                ),
-              ).animate().fadeIn(duration: 400.ms),
-
-              const SizedBox(height: 12),
-
-              Text(
-                'The alarm you can\'t skip.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.mutedForeground,
-                    ),
-                textAlign: TextAlign.center,
-              ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
-
-              const Spacer(flex: 3),
-
-              // ── Error message ─────────────────────────────────────────
-              if (_error != null) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.destructive.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppConstants.chipRadius),
-                    border: Border.all(
-                      color: AppColors.destructive.withValues(alpha: 0.3),
-                    ),
+                  // ── Logo + tagline ────────────────────────────────────────
+                  Center(
+                    child: Text(
+                      'AWAKEN',
+                      style: tt.hudClock.copyWith(
+                        fontSize: 56,
+                        color: AppColors.primary,
+                        letterSpacing: -1,
+                      ),
+                    ).animate().fadeIn(duration: 400.ms),
                   ),
-                  child: Text(
-                    _error!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.destructive,
+
+                  const SizedBox(height: 12),
+
+                  Center(
+                    child: Text(
+                      'The alarm you can\'t skip.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.mutedForeground,
+                          ),
+                      textAlign: TextAlign.center,
+                    ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // ── Error message ─────────────────────────────────────────
+                  if (_error != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _error!.contains('successful')
+                            ? AppColors.success.withValues(alpha: 0.12)
+                            : AppColors.destructive.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+                        border: Border.all(
+                          color: _error!.contains('successful')
+                              ? AppColors.success.withValues(alpha: 0.3)
+                              : AppColors.destructive.withValues(alpha: 0.3),
                         ),
-                    textAlign: TextAlign.center,
+                      ),
+                      child: Text(
+                        _error!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: _error!.contains('successful')
+                                  ? AppColors.success
+                                  : AppColors.destructive,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // ── Name Field (Sign-up only) ─────────────────────────────
+                  if (_isSignUp) ...[
+                    TextFormField(
+                      controller: _nameController,
+                      textInputAction: TextInputAction.next,
+                      style: const TextStyle(color: AppColors.foreground),
+                      decoration: _inputDecoration(
+                        labelText: 'Display Name',
+                        prefixIcon: Icons.person_outline,
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty ? 'Please enter your name' : null,
+                    ).animate().fadeIn(duration: 200.ms).slideY(begin: -0.1, end: 0, duration: 200.ms),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // ── Email Field ───────────────────────────────────────────
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    style: const TextStyle(color: AppColors.foreground),
+                    decoration: _inputDecoration(
+                      labelText: 'Email Address',
+                      prefixIcon: Icons.email_outlined,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                      if (!emailRegex.hasMatch(value.trim())) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 16),
-              ],
 
-              // ── Google Sign-In button ─────────────────────────────────
-              _GoogleSignInButton(
-                loading: _loading,
-                onPressed: _signInWithGoogle,
-              ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+                  const SizedBox(height: 16),
 
-              // ── Skip link ─────────────────────────────────────────────
-              if (widget.onSkip != null) ...[
-                const SizedBox(height: 20),
-                GestureDetector(
-                  onTap: widget.onSkip,
-                  child: Text(
-                    'Continue without account',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  // ── Password Field ────────────────────────────────────────
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    style: const TextStyle(color: AppColors.foreground),
+                    decoration: _inputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icons.lock_outline,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                           color: AppColors.mutedForeground,
-                          decoration: TextDecoration.underline,
-                          decorationColor: AppColors.mutedForeground,
+                          size: 20,
                         ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                    onFieldSubmitted: (_) => _submit(),
                   ),
-                ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
-              ],
 
-              const SizedBox(height: 32),
-            ],
+                  const SizedBox(height: 24),
+
+                  // ── Submit Button ─────────────────────────────────────────
+                  SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _loading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.black,
+                        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.black,
+                              ),
+                            )
+                          : Text(
+                              _isSignUp ? 'Create Account' : 'Sign In',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Toggle Link ───────────────────────────────────────────
+                  Center(
+                    child: TextButton(
+                      onPressed: _loading
+                          ? null
+                          : () {
+                              setState(() {
+                                _isSignUp = !_isSignUp;
+                                _error = null;
+                              });
+                            },
+                      child: RichText(
+                        text: TextSpan(
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.mutedForeground,
+                              ),
+                          children: [
+                            TextSpan(
+                              text: _isSignUp
+                                  ? 'Already have an account? '
+                                  : 'Don\'t have an account? ',
+                            ),
+                            TextSpan(
+                              text: _isSignUp ? 'Sign In' : 'Sign Up',
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Divider ───────────────────────────────────────────────
+                  Row(
+                    children: [
+                      const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'OR',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.mutedForeground,
+                              ),
+                        ),
+                      ),
+                      const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Google Sign-In button ─────────────────────────────────
+                  _GoogleSignInButton(
+                    loading: _loading,
+                    onPressed: _signInWithGoogle,
+                  ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
+
+                  // ── Skip link ─────────────────────────────────────────────
+                  if (widget.onSkip != null) ...[
+                    const SizedBox(height: 20),
+                    Center(
+                      child: GestureDetector(
+                        onTap: widget.onSkip,
+                        child: Text(
+                          'Continue without account',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.mutedForeground,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.mutedForeground,
+                              ),
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
+                  ],
+
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
           ),
         ),
       ),

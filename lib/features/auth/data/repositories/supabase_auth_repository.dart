@@ -44,6 +44,27 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithEmailAndPassword(String email, String password) async {
+    await _client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  @override
+  Future<void> signUpWithEmailAndPassword(
+    String email,
+    String password, {
+    String? displayName,
+  }) async {
+    await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: displayName != null ? {'full_name': displayName} : null,
+    );
+  }
+
+  @override
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _client.auth.signOut();
