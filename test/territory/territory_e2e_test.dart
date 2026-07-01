@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:awaken/app.dart';
 import 'package:awaken/core/services/territory_decay_notification_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/repositories/alarm_repository.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
@@ -26,6 +24,7 @@ import 'package:awaken/features/territory/domain/services/run_validation_service
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,14 +78,14 @@ void main() {
 
     final originalOnError = FlutterError.onError;
     FlutterError.onError = (FlutterErrorDetails details) {
-      print('DEBUG FlutterError: ${details.exception}\n${details.stack}');
+      debugPrint('DEBUG FlutterError: ${details.exception}\n${details.stack}');
       if (originalOnError != null) {
         originalOnError(details);
       }
     };
 
     PlatformDispatcher.instance.onError = (error, stack) {
-      print('DEBUG PlatformDispatcher error: $error\n$stack');
+      debugPrint('DEBUG PlatformDispatcher error: $error\n$stack');
       return false;
     };
   });
@@ -838,12 +837,14 @@ void main() {
       expect(find.text('AWAKEN'), findsOneWidget);
 
       await tester.tap(find.text('Run a loop, claim territory'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('START RUN'), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.leaderboard_rounded));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('LEADERBOARD'), findsOneWidget);
     });

@@ -30,15 +30,13 @@ class DashboardScreen extends ConsumerWidget {
 
     // Surface a local notification once per dashboard load if any owned
     // territory is within its decay grace period (Product Decision #4).
-    if (isSignedIn) {
-      ref.listen(decayWarningsProvider, (previous, next) {
-        next.whenData(
-          (warnings) => TerritoryDecayNotificationService.notifyIfDecaying(
-            territoryCount: warnings.length,
-          ),
-        );
-      });
-    }
+    ref.listen(decayWarningsProvider, (previous, next) {
+      next.whenData(
+        (warnings) => TerritoryDecayNotificationService.notifyIfDecaying(
+          territoryCount: warnings.length,
+        ),
+      );
+    });
 
     final now = DateTime.now();
     final dateStr =

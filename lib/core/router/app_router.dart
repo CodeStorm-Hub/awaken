@@ -97,7 +97,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // ── Redirect bare '/' to '/dashboard' ────────────────────────────────
       GoRoute(
         path: '/',
-        redirect: (_, __) => AppRoutes.dashboard,
+        redirect: (_, _) => AppRoutes.dashboard,
       ),
     ],
   );

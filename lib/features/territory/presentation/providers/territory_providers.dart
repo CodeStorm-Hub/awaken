@@ -1,4 +1,6 @@
+import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/territory/data/datasources/territory_supabase_datasource.dart';
+import 'package:awaken/features/territory/data/repositories/territory_local_repository_impl.dart';
 import 'package:awaken/features/territory/data/repositories/territory_supabase_repository_impl.dart';
 import 'package:awaken/features/territory/domain/entities/decay_warning_entity.dart';
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
@@ -7,11 +9,15 @@ import 'package:awaken/features/territory/domain/entities/territory_entity.dart'
 import 'package:awaken/features/territory/domain/repositories/territory_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Territory capture is inherently multiplayer/cloud-backed — there is no
-/// local fallback repository the way alarms/sessions have one. Screens that
-/// read this assume the caller is signed in (gated by the router/UI).
+/// Picks the correct repository based on auth state:
+///   - Signed in  → Supabase (cloud-synced)
+///   - Signed out → SharedPreferences (local-only)
 final territoryRepositoryProvider = Provider<TerritoryRepository>((ref) {
-  return const TerritorySupabaseRepositoryImpl(TerritorySupabaseDatasource());
+  final signedIn = ref.watch(isSignedInProvider);
+  if (signedIn) {
+    return const TerritorySupabaseRepositoryImpl(TerritorySupabaseDatasource());
+  }
+  return TerritoryLocalRepositoryImpl();
 });
 
 /// Live view of the shared map — every player's territory, updated via

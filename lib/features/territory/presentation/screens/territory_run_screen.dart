@@ -160,7 +160,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
         final discard = await _confirmDiscardRun();
         if (discard) {
           ref.read(activeRunProvider.notifier).reset();
-          if (!mounted) return;
+          if (!context.mounted) return;
           Navigator.of(context).pop();
         }
       },
@@ -203,7 +203,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                         final discard = await _confirmDiscardRun();
                         if (discard) {
                           ref.read(activeRunProvider.notifier).reset();
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           context.pop();
                         }
                       },
@@ -291,11 +291,11 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
             // ── Stats HUD ─────────────────────────────────────────────────
             if (isTracking)
-              Positioned(
+              const Positioned(
                 left: AppConstants.screenPaddingH,
                 right: 56, // clear the right rail
                 bottom: 110,
-              child: const _RunStatsSheetConsumer(),
+                child: _RunStatsSheetConsumer(),
               ),
 
             // ── Error banner ───────────────────────────────────────────────
@@ -352,7 +352,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
   }
 
   Future<void> _promptSignIn(BuildContext context) async {
-    final shouldSignIn = await showDialog<bool>(
+    final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
@@ -360,28 +360,35 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
           borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         ),
         title: const Text(
-          'Sign in required',
+          'Sign in recommended',
           style: TextStyle(color: AppColors.foreground),
         ),
         content: const Text(
-          'Territory capture is saved to your account. Sign in to track runs and claim territory.',
+          'Sign in to sync your captured territory to the cloud and compete on the global leaderboard, or continue offline to save on this device.',
           style: TextStyle(color: AppColors.mutedForeground),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(ctx).pop('cancel'),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => Navigator.of(ctx).pop('offline'),
+            child: const Text('Play Offline'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('signin'),
             child: const Text('Sign in'),
           ),
         ],
       ),
     );
-    if (shouldSignIn == true) {
-      if (!mounted) return;
+    if (!context.mounted) return;
+    if (result == 'signin') {
       context.push(AppRoutes.auth);
+    } else if (result == 'offline') {
+      ref.read(_followMeProvider.notifier).state = true;
+      ref.read(activeRunProvider.notifier).startRun();
     }
   }
 
@@ -518,7 +525,7 @@ class _TerritoryMapView extends ConsumerWidget {
           data: (territories) =>
               TerritoryPolygonLayer(territories: territories),
           loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
         ),
 
         // ── Active run trail: glow pass (wide soft) ──────────────────────

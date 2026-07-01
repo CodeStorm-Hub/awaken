@@ -85,7 +85,7 @@ class _TerritoryLeaderboardScreenState
                 loading: () => const Center(
                   child: CircularProgressIndicator(color: AppColors.primary),
                 ),
-                error: (_, __) => const Center(
+                error: (_, _) => const Center(
                   child: Text(
                     'Could not load leaderboard.\nCheck your connection.',
                     textAlign: TextAlign.center,

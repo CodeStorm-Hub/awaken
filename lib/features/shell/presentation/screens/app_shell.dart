@@ -50,7 +50,7 @@ class _AwakenBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.card,
         border: Border(
           top: BorderSide(color: AppColors.border),
