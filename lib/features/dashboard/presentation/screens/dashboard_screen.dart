@@ -91,6 +91,7 @@ class DashboardScreen extends ConsumerWidget {
               _TerritoryCard(
                 tt: tt,
                 onTap: () => context.go(AppRoutes.territory),
+                onViewDetails: () => context.push(AppRoutes.territoryOverview),
               ),
 
               const SizedBox(height: 16),
@@ -376,10 +377,15 @@ class _NoAlarmCard extends StatelessWidget {
 }
 
 class _TerritoryCard extends StatelessWidget {
-  const _TerritoryCard({required this.tt, required this.onTap});
+  const _TerritoryCard({
+    required this.tt,
+    required this.onTap,
+    required this.onViewDetails,
+  });
 
   final AwakenTypography tt;
   final VoidCallback onTap;
+  final VoidCallback onViewDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -403,6 +409,21 @@ class _TerritoryCard extends StatelessWidget {
                 style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.accent),
               ),
             ),
+            GestureDetector(
+              onTap: onViewDetails,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Text(
+                  'Details',
+                  style: tt.statLabel.copyWith(
+                    fontSize: 12,
+                    color: AppColors.mutedForeground,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
             const Icon(Icons.chevron_right_rounded, color: AppColors.accent, size: 18),
           ],
         ),

@@ -30,5 +30,16 @@ abstract class TerritoryRepository {
     double radiusMeters = 5000,
   });
 
+  /// "Momentum" leaderboard: total area *captured* within the last
+  /// [windowHours] hours, from capture history — distinct from
+  /// [getGlobalLeaderboard]/[getNearbyLeaderboard], which rank current total
+  /// ownership. [viewerLocation] optionally scopes it spatially, same as the
+  /// nearby/global split for the all-time leaderboard.
+  Future<List<LeaderboardEntryEntity>> getWindowedLeaderboard({
+    required int windowHours,
+    GeoPointEntity? viewerLocation,
+    double radiusMeters = 5000,
+  });
+
   Future<List<DecayWarningEntity>> getDecayWarnings();
 }

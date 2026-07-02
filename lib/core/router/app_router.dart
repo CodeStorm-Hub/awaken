@@ -6,6 +6,7 @@ import 'package:awaken/features/auth/presentation/screens/auth_screen.dart';
 import 'package:awaken/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:awaken/features/success/presentation/screens/success_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_leaderboard_screen.dart';
+import 'package:awaken/features/territory/presentation/screens/territory_overview_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_run_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,7 @@ abstract final class AppRoutes {
   static const String shell = '/';
   static const String dashboard = '/dashboard';
   static const String territory = '/territory';
+  static const String territoryOverview = '/territory/overview';
   static const String leaderboard = '/leaderboard';
   static const String auth = '/auth';
   static const String activeAlarm = '/alarm/active';
@@ -73,6 +75,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Overlay routes: rendered above the shell (no bottom nav) ─────────
+      GoRoute(
+        path: AppRoutes.territoryOverview,
+        builder: (context, state) => const TerritoryOverviewScreen(),
+      ),
       GoRoute(
         path: AppRoutes.auth,
         builder: (context, state) => AuthScreen(

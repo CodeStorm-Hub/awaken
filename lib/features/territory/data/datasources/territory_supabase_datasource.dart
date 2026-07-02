@@ -113,6 +113,25 @@ class TerritorySupabaseDatasource {
         .toList();
   }
 
+  Future<List<LeaderboardEntryModel>> getWindowedLeaderboard({
+    required int windowHours,
+    GeoPointEntity? viewerLocation,
+    double radiusMeters = 5000,
+  }) async {
+    final data = await _client.rpc<List<dynamic>>(
+      'leaderboard_windowed',
+      params: {
+        'window_hours': windowHours,
+        'viewer_lon': viewerLocation?.longitude,
+        'viewer_lat': viewerLocation?.latitude,
+        'radius_meters': viewerLocation == null ? null : radiusMeters,
+      },
+    );
+    return data
+        .map((json) => LeaderboardEntryModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<DecayWarningModel>> getDecayWarnings() async {
     final data = await _client.rpc<List<dynamic>>('decaying_territories');
     return data

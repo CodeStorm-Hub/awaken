@@ -6,6 +6,7 @@ import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart'
 import 'package:awaken/features/territory/domain/entities/run_track_entity.dart';
 import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 import 'package:awaken/features/territory/domain/services/gps_kalman_filter.dart';
+import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/domain/services/rdp_simplifier.dart';
 import 'package:awaken/features/territory/domain/services/run_validation_service.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
@@ -15,6 +16,18 @@ import 'package:geolocator/geolocator.dart';
 
 enum RunSessionStatus { idle, requestingPermission, tracking, finishing, finished, error }
 
+/// Coarse bucketing of `Position.accuracy` (meters) for the run HUD's GPS
+/// quality chip. Thresholds are typical of consumer GPS/GNSS fixes, not tied
+/// to any anti-cheat constant — this is a UX signal, not a validation rule.
+enum GpsQuality { unknown, good, fair, poor }
+
+GpsQuality gpsQualityFromAccuracy(double? accuracyMeters) {
+  if (accuracyMeters == null) return GpsQuality.unknown;
+  if (accuracyMeters <= 8) return GpsQuality.good;
+  if (accuracyMeters <= 20) return GpsQuality.fair;
+  return GpsQuality.poor;
+}
+
 class ActiveRunState {
   const ActiveRunState({
     this.status = RunSessionStatus.idle,
@@ -22,6 +35,7 @@ class ActiveRunState {
     this.distanceMeters = 0,
     this.elapsed = Duration.zero,
     this.isOverSpeed = false,
+    this.gpsAccuracyMeters,
     this.result,
     this.captureResult,
     this.errorMessage,
@@ -36,6 +50,10 @@ class ActiveRunState {
   /// over-speed — drives a live "vehicle detected" HUD warning.
   final bool isOverSpeed;
 
+  /// `Position.accuracy` (meters) of the most recent GPS fix — drives the
+  /// HUD's GPS quality chip. Null before the first fix arrives.
+  final double? gpsAccuracyMeters;
+
   final RunTrackEntity? result;
   final CaptureResultEntity? captureResult;
   final String? errorMessage;
@@ -46,6 +64,7 @@ class ActiveRunState {
     double? distanceMeters,
     Duration? elapsed,
     bool? isOverSpeed,
+    double? gpsAccuracyMeters,
     RunTrackEntity? result,
     CaptureResultEntity? captureResult,
     String? errorMessage,
@@ -56,6 +75,7 @@ class ActiveRunState {
       distanceMeters: distanceMeters ?? this.distanceMeters,
       elapsed: elapsed ?? this.elapsed,
       isOverSpeed: isOverSpeed ?? this.isOverSpeed,
+      gpsAccuracyMeters: gpsAccuracyMeters ?? this.gpsAccuracyMeters,
       result: result ?? this.result,
       captureResult: captureResult ?? this.captureResult,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -95,25 +115,13 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   Future<void> startRun() async {
     state = const ActiveRunState(status: RunSessionStatus.requestingPermission);
 
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      state = state.copyWith(
-        status: RunSessionStatus.error,
-        errorMessage: 'Location services are disabled.',
+    try {
+      await LocationPermissionHelper.ensureLocationAccess(
+        serviceDisabledMessage: 'Turn on location services to start a territory run.',
+        permissionDeniedMessage: 'Allow location access so we can track your run.',
       );
-      return;
-    }
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      state = state.copyWith(
-        status: RunSessionStatus.error,
-        errorMessage: 'Location permission denied.',
-      );
+    } on LocationAccessException catch (e) {
+      state = state.copyWith(status: RunSessionStatus.error, errorMessage: e.message);
       return;
     }
 
@@ -158,6 +166,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
       points: updatedPoints,
       distanceMeters: GeoUtils.pathDistanceMeters(updatedPoints),
       isOverSpeed: overSpeed,
+      gpsAccuracyMeters: position.accuracy,
     );
   }
 
@@ -246,3 +255,27 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
 final activeRunProvider = NotifierProvider<ActiveRunNotifier, ActiveRunState>(
   ActiveRunNotifier.new,
 );
+
+/// True when the runner's current position lies inside a rival's owned
+/// territory. Surfaces a "Crossing rival territory" HUD cue so a closed
+/// loop that steals land doesn't come as a surprise — pure UX signal, the
+/// actual steal/contest outcome is still decided server-side in
+/// `capture_territory`.
+final rivalConflictProvider = Provider<bool>((ref) {
+  final points = ref.watch(activeRunProvider.select((s) => s.points));
+  if (points.isEmpty) return false;
+  final current = points.last;
+
+  final territories = ref.watch(territoryListProvider).valueOrNull;
+  if (territories == null) return false;
+
+  for (final territory in territories) {
+    if (territory.isOwnedByCurrentUser) continue;
+    for (final ring in territory.polygons) {
+      if (ring.length >= 3 && GeoUtils.isPointInPolygon(current, ring)) {
+        return true;
+      }
+    }
+  }
+  return false;
+});

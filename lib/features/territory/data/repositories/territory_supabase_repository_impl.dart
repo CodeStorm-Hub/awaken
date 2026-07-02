@@ -56,6 +56,20 @@ class TerritorySupabaseRepositoryImpl implements TerritoryRepository {
   }
 
   @override
+  Future<List<LeaderboardEntryEntity>> getWindowedLeaderboard({
+    required int windowHours,
+    GeoPointEntity? viewerLocation,
+    double radiusMeters = 5000,
+  }) async {
+    final models = await _datasource.getWindowedLeaderboard(
+      windowHours: windowHours,
+      viewerLocation: viewerLocation,
+      radiusMeters: radiusMeters,
+    );
+    return models.map((m) => m.toEntity()).toList();
+  }
+
+  @override
   Future<List<DecayWarningEntity>> getDecayWarnings() async {
     final models = await _datasource.getDecayWarnings();
     return models.map((m) => m.toEntity()).toList();

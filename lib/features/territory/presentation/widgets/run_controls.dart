@@ -68,7 +68,7 @@ class _RunControlsState extends State<RunControls>
   Widget build(BuildContext context) {
     if (widget.isFinishing) {
       return _buildButton(
-        label: 'SAVING…',
+        label: 'Saving…',
         color: AppColors.secondary,
         child: const SizedBox(
           width: 22,
@@ -99,7 +99,7 @@ class _RunControlsState extends State<RunControls>
           child: child,
         ),
         child: _buildButton(
-          label: 'STOP',
+          label: 'Stop run',
           color: AppColors.destructive,
           onPressed: widget.onStop,
         ),
@@ -107,7 +107,7 @@ class _RunControlsState extends State<RunControls>
     }
 
     return _buildButton(
-      label: 'START RUN',
+      label: 'Start run',
       color: AppColors.primary,
       onPressed: widget.onStart,
     );
@@ -138,7 +138,7 @@ class _RunControlsState extends State<RunControls>
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 2,
+              letterSpacing: 0.2,
               ),
             ),
       ),

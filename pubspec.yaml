@@ -26,6 +26,18 @@ dependencies:
 
   # ── Territory capture: map + GPS ──────────────────────────────────
   flutter_map: ^7.0.2
+  # Vector tile rendering (OpenFreeMap dark style) — crisp at every zoom,
+  # themeable to match AppColors, no API key/commercial-use restriction
+  # (unlike the CartoDB raster tiles it replaces).
+  vector_map_tiles: ^8.0.0
+  # Resolves the OpenFreeMap tile source's TileJSON document for the bundled
+  # map style (see territory_map_style.dart) — a direct dependency since we
+  # call it ourselves rather than only through vector_map_tiles internals.
+  http: ^1.6.0
+  # Direct dependency of vector_map_tiles used for reading the map theme
+  # (see territory_map_style.dart) — a direct dependency to satisfy analyzer
+  # depend_on_referenced_packages.
+  vector_tile_renderer: ^5.2.1
   latlong2: ^0.9.1
   geolocator: ^13.0.1
   clock: ^1.1.2
@@ -54,6 +66,7 @@ dependencies:
   shared_preferences: ^2.3.2
 
   cupertino_icons: ^1.0.8
+  share_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:
@@ -70,3 +83,4 @@ flutter:
 
   assets:
     - assets/audio/
+    - assets/map_styles/

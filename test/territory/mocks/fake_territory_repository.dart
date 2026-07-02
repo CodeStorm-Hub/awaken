@@ -325,6 +325,19 @@ class FakeTerritoryRepository implements TerritoryRepository {
   }
 
   @override
+  Future<List<LeaderboardEntryEntity>> getWindowedLeaderboard({
+    required int windowHours,
+    GeoPointEntity? viewerLocation,
+    double radiusMeters = 5000,
+  }) {
+    // No capture-history log in this fake — fall back to current standings,
+    // same as TerritoryLocalRepositoryImpl's real fallback for offline mode.
+    return viewerLocation == null
+        ? getGlobalLeaderboard()
+        : getNearbyLeaderboard(viewerLocation, radiusMeters: radiusMeters);
+  }
+
+  @override
   Future<List<DecayWarningEntity>> getDecayWarnings() async {
     final now = DateTime.now();
     final warnings = <DecayWarningEntity>[];

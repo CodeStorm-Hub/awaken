@@ -1,0 +1,90 @@
+# -----------------------------------------------------------------------------
+# Dart / Flutter Build & Caches
+# -----------------------------------------------------------------------------
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+coverage/
+
+# -----------------------------------------------------------------------------
+# Generated Code (Riverpod, Freezed, etc. - saves massive tokens)
+# -----------------------------------------------------------------------------
+# We ignore generated code files since Claude can infer their shape from
+# the source annotated Dart classes.
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+*.template.dart
+
+# -----------------------------------------------------------------------------
+# Lock Files
+# -----------------------------------------------------------------------------
+# Lock files are large and verbose; pubspec.yaml is sufficient for dependencies
+pubspec.lock
+
+# -----------------------------------------------------------------------------
+# Assets & Binaries (Claude cannot process these, prevents token bloat)
+# -----------------------------------------------------------------------------
+
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.webp
+**/*.svg
+**/*.mp3
+**/*.wav
+**/*.mp4
+**/*.mov
+**/*.pdf
+**/*.ttf
+**/*.otf
+**/*.woff
+**/*.woff2
+
+# -----------------------------------------------------------------------------
+# Platform-Specific Builds & Caches
+# -----------------------------------------------------------------------------
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+*.keystore
+*.jks
+*.apk
+*.aab
+
+# iOS & macOS
+**/Pods/
+**/.symlinks/
+**/DerivedData/
+**/xcuserdata/
+ios/Flutter/ephemeral/
+macos/Flutter/ephemeral/
+
+# Desktop (Windows, Linux)
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+x64/
+x86/
+*.[Cc]ache
+
+# -----------------------------------------------------------------------------
+# IDE & System Files
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+

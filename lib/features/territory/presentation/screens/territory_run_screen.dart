@@ -5,13 +5,18 @@ import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
+import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
 import 'package:awaken/features/territory/domain/entities/run_track_entity.dart';
 import 'package:awaken/features/territory/domain/services/geo_utils.dart';
+import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:awaken/features/territory/presentation/widgets/capture_result_sheet.dart';
 import 'package:awaken/features/territory/presentation/widgets/run_controls.dart';
 import 'package:awaken/features/territory/presentation/widgets/run_stats_sheet.dart';
+import 'package:awaken/features/territory/presentation/widgets/territory_map_status_overlay.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_polygon_layer.dart';
+import 'package:awaken/features/territory/presentation/widgets/territory_vector_tile_layer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -31,7 +36,8 @@ final _followMeProvider = StateProvider<bool>((ref) => true);
 /// Full-screen territory map + run tracking.
 ///
 /// Design pillars:
-/// - CartoDB Dark Matter tiles, consistent with the app dark-only theme.
+/// - Branded OpenFreeMap vector tiles (see [TerritoryVectorTileLayer]),
+///   themed to match the app's dark-only palette.
 /// - Neon-glow territory polygons via [TerritoryPolygonLayer].
 /// - Real-time path drawn in two passes (glow + core), plus distinct start/
 ///   current markers.
@@ -69,7 +75,21 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
 
-    _centerOnCurrentLocation();
+    // A leaderboard "tap to locate" takes priority over auto-centering on
+    // the user's own GPS position — they explicitly asked to see somewhere
+    // else.
+    final focus = ref.read(territoryMapFocusProvider);
+    if (focus != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(_followMeProvider.notifier).state = false;
+        _animateTo(focus, zoom: 17);
+        ref.read(territoryMapFocusProvider.notifier).state = null;
+        setState(() => _isLocating = false);
+      });
+    } else {
+      _centerOnCurrentLocation();
+    }
   }
 
   @override
@@ -83,13 +103,21 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
   Future<void> _centerOnCurrentLocation() async {
     try {
+      // Must run before getCurrentPosition — see LocationPermissionHelper's
+      // doc comment for why skipping this means the OS prompt never shows.
+      await LocationPermissionHelper.ensureLocationAccess(
+        serviceDisabledMessage: 'Turn on location services to see your position on the map.',
+        permissionDeniedMessage: 'Allow location access to see your position on the map.',
+      );
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
       ).timeout(const Duration(seconds: 8));
       if (!mounted) return;
       _animateTo(LatLng(position.latitude, position.longitude), zoom: 16.5);
     } catch (_) {
-      // Location unavailable — stays at fallback center.
+      // Denied, timed out, or services off — stays at fallback center. The
+      // Start-run flow (ActiveRunNotifier.startRun) surfaces a proper error
+      // banner if the user tries to track without location access.
     } finally {
       if (mounted) setState(() => _isLocating = false);
     }
@@ -120,6 +148,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     final errorMessage = ref.watch(activeRunProvider.select((s) => s.errorMessage));
     final points = ref.watch(activeRunProvider.select((s) => s.points));
     final followMe = ref.watch(_followMeProvider);
+    final rivalConflict = ref.watch(rivalConflictProvider);
 
     // Distance from current position back to start — drives the proximity ring.
     final distToStart = points.length >= 2
@@ -187,49 +216,62 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                 ),
               ),
 
+            // ── Map style/tile load failure ────────────────────────────────
+            const Positioned.fill(child: TerritoryMapStatusOverlay()),
+
             // ── Top bar: back arrow + title ────────────────────────────────
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _CircleIconButton(
-                      icon: Icons.arrow_back_ios_new_rounded,
-                      onTap: () async {
-                        if (!isTracking) {
-                          context.pop();
-                          return;
-                        }
-                        final discard = await _confirmDiscardRun();
-                        if (discard) {
-                          ref.read(activeRunProvider.notifier).reset();
-                          if (!context.mounted) return;
-                          context.pop();
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.card.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Text(
-                        isTracking ? 'RUNNING' : 'TERRITORY',
-                        style: const TextStyle(
-                          color: AppColors.foreground,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.5,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _CircleIconButton(
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          onTap: () async {
+                            if (!isTracking) {
+                              context.pop();
+                              return;
+                            }
+                            final discard = await _confirmDiscardRun();
+                            if (discard) {
+                              ref.read(activeRunProvider.notifier).reset();
+                              if (!context.mounted) return;
+                              context.pop();
+                            }
+                          },
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _RunHeader(
+                            status: status,
+                            isTracking: isTracking,
+                            hasPoints: points.isNotEmpty,
+                          ),
+                        ),
+                        if (isTracking && isNearClose && points.length >= 2) ...[
+                          const SizedBox(width: 12),
+                          _PulseCloseIndicator(animation: _pulseAnim),
+                        ],
+                        if (!isTracking) ...[
+                          const SizedBox(width: 12),
+                          _CircleIconButton(
+                            icon: Icons.bar_chart_rounded,
+                            onTap: () => context.push(AppRoutes.territoryOverview),
+                          ),
+                        ],
+                      ],
                     ),
-                    const Spacer(),
-                    if (isTracking && isNearClose && points.length >= 2)
-                      _PulseCloseIndicator(animation: _pulseAnim),
+                    if (isTracking && rivalConflict) ...[
+                      const SizedBox(height: 8),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 48),
+                        child: _ConflictPill(),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -360,11 +402,11 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
           borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         ),
         title: const Text(
-          'Sign in recommended',
+          'Sign in to sync this run',
           style: TextStyle(color: AppColors.foreground),
         ),
         content: const Text(
-          'Sign in to sync your captured territory to the cloud and compete on the global leaderboard, or continue offline to save on this device.',
+          'Sign in to sync your territory to the cloud and show up on the global leaderboard. Continue offline to save this run only on this device.',
           style: TextStyle(color: AppColors.mutedForeground),
         ),
         actions: [
@@ -374,7 +416,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop('offline'),
-            child: const Text('Play Offline'),
+            child: const Text('Continue offline'),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop('signin'),
@@ -416,7 +458,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text(
-              'Discard',
+              'Discard run',
               style: TextStyle(color: AppColors.destructive),
             ),
           ),
@@ -436,20 +478,25 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       } else {
         HapticFeedback.mediumImpact();
       }
+
+      if (!mounted) return;
+      final runPoints = state.result?.points ?? const <GeoPointEntity>[];
+      ref.read(activeRunProvider.notifier).reset();
+      CaptureResultSheet.show(
+        context,
+        captureResult: capture,
+        runPoints: runPoints,
+      );
+      return;
     }
 
     final message = switch (outcome) {
-      RunOutcome.territoryClaimed when capture?.stoleFromRival == true =>
-        '⚔ Territory stolen! +${capture!.claimedAreaSqMeters.toStringAsFixed(0)} m²',
-      RunOutcome.territoryClaimed =>
-        '✓ Territory claimed! +${capture?.claimedAreaSqMeters.toStringAsFixed(0) ?? '0'} m²',
-      RunOutcome.loopNotClosed =>
-        'Loop didn\'t close — run saved as workout.',
+      RunOutcome.loopNotClosed => 'Loop didn\'t close — saved as a workout.',
       RunOutcome.invalidatedSpeedCap =>
-        '⚠ Run invalidated — too fast for a run.',
+        'Run too fast to count as territory.',
       RunOutcome.invalidatedTooSmall => 'Loop too small to claim territory.',
       RunOutcome.invalidatedTooShort => 'Run too short to count.',
-      null => 'Run saved.',
+      RunOutcome.territoryClaimed || null => 'Run saved.',
     };
 
     if (!mounted) return;
@@ -510,15 +557,8 @@ class _TerritoryMapView extends ConsumerWidget {
         },
       ),
       children: [
-        // ── Dark tile layer ──────────────────────────────────────────────
-        TileLayer(
-          urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-          subdomains: const ['a', 'b', 'c', 'd'],
-          userAgentPackageName: 'com.awaken.app',
-          retinaMode: RetinaMode.isHighDensity(context),
-          tileProvider: NetworkTileProvider(),
-        ),
+        // ── Vector basemap (OpenFreeMap, Awaken-branded dark style) ───────
+        const TerritoryVectorTileLayer(),
 
         // ── Territory polygons ───────────────────────────────────────────
         territoriesAsync.when(
@@ -579,6 +619,22 @@ class _TerritoryMapView extends ConsumerWidget {
               ),
             ],
           ),
+
+        // ── Attribution (OpenFreeMap / OpenStreetMap data license) ────────
+        const RichAttributionWidget(
+          alignment: AttributionAlignment.bottomLeft,
+          popupBackgroundColor: AppColors.card,
+          attributions: [
+            TextSourceAttribution(
+              'OpenStreetMap contributors',
+              textStyle: TextStyle(color: AppColors.mutedForeground),
+            ),
+            TextSourceAttribution(
+              'OpenFreeMap / OpenMapTiles',
+              textStyle: TextStyle(color: AppColors.mutedForeground),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -599,6 +655,8 @@ class _RunStatsSheetConsumer extends ConsumerWidget {
         ref.watch(activeRunProvider.select((s) => s.isOverSpeed));
     final points =
         ref.watch(activeRunProvider.select((s) => s.points));
+    final gpsAccuracyMeters =
+        ref.watch(activeRunProvider.select((s) => s.gpsAccuracyMeters));
 
     final distToStart = points.length >= 2
         ? GeoUtils.haversineMeters(points.first, points.last)
@@ -609,6 +667,7 @@ class _RunStatsSheetConsumer extends ConsumerWidget {
       elapsed: elapsed,
       isOverSpeed: isOverSpeed,
       distToStartMeters: distToStart.isFinite ? distToStart : null,
+      gpsAccuracyMeters: gpsAccuracyMeters,
     );
   }
 }
@@ -693,17 +752,111 @@ class _PulseCloseIndicator extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             const Text(
-              'CLOSE LOOP',
+              'Close loop',
               style: TextStyle(
                 color: AppColors.success,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 1,
+                letterSpacing: 0.8,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// "Crossing rival territory" cue shown while the runner's live position is
+/// inside a rival's owned polygon — see `rivalConflictProvider`. Purely
+/// informational: the actual steal/contest outcome is decided server-side
+/// on loop closure, not here.
+class _ConflictPill extends StatelessWidget {
+  const _ConflictPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.destructive.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.destructive.withValues(alpha: 0.4)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: AppColors.destructive, size: 12),
+          SizedBox(width: 6),
+          Text(
+            'Crossing rival territory',
+            style: TextStyle(
+              color: AppColors.destructive,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RunHeader extends StatelessWidget {
+  const _RunHeader({
+    required this.status,
+    required this.isTracking,
+    required this.hasPoints,
+  });
+
+  final RunSessionStatus status;
+  final bool isTracking;
+  final bool hasPoints;
+
+  @override
+  Widget build(BuildContext context) {
+    final (title, subtitle) = switch (status) {
+      RunSessionStatus.requestingPermission =>
+        ('Waiting for permission', 'Allow location to begin tracking.'),
+      RunSessionStatus.tracking when hasPoints =>
+        ('Tracking run', 'Close your loop to claim territory.'),
+      RunSessionStatus.tracking =>
+        ('Ready to move', 'Start walking or running to draw your path.'),
+      RunSessionStatus.finishing =>
+        ('Saving run', 'We are finishing your territory check now.'),
+      RunSessionStatus.finished =>
+        ('Run complete', 'Your result is being saved.'),
+      RunSessionStatus.error =>
+        ('Run blocked', 'Fix the permission or location issue to continue.'),
+      RunSessionStatus.idle when isTracking =>
+        ('Tracking run', 'Close your loop to claim territory.'),
+      RunSessionStatus.idle =>
+        ('Territory run', 'Start a loop, return to it, and claim the area.'),
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.foreground,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          subtitle,
+          style: const TextStyle(
+            color: AppColors.mutedForeground,
+            fontSize: 12,
+            height: 1.35,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -759,9 +912,22 @@ class _ErrorBanner extends StatelessWidget {
         color: AppColors.destructive.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
       ),
-      child: Text(
-        message,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      child: Row(
+        children: [
+          const Icon(Icons.location_off_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -823,6 +989,16 @@ class _LocatingIndicator extends StatelessWidget {
             style: TextStyle(
               color: AppColors.mutedForeground.withValues(alpha: 0.9),
               fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'We’ll center the map as soon as GPS is ready.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.mutedForeground.withValues(alpha: 0.8),
+              fontSize: 11,
+              height: 1.3,
             ),
           ),
         ],

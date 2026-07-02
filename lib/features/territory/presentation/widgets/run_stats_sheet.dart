@@ -3,11 +3,13 @@ import 'dart:ui';
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
+import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart'
+    show GpsQuality, gpsQualityFromAccuracy;
 import 'package:flutter/material.dart';
 
-/// Glassmorphic HUD card shown during an active run.
-/// Shows distance, elapsed time, optional speed warning, and how far the
-/// runner is from closing their loop back to the start.
+/// Compact HUD card shown during an active run.
+/// Shows distance, elapsed time, optional speed warning, GPS fix quality,
+/// and how far the runner is from closing their loop back to the start.
 class RunStatsSheet extends StatelessWidget {
   const RunStatsSheet({
     super.key,
@@ -15,6 +17,7 @@ class RunStatsSheet extends StatelessWidget {
     required this.elapsed,
     this.isOverSpeed = false,
     this.distToStartMeters,
+    this.gpsAccuracyMeters,
   });
 
   final double distanceMeters;
@@ -23,6 +26,10 @@ class RunStatsSheet extends StatelessWidget {
 
   /// Distance back to the start point in meters. Null when not yet tracking.
   final double? distToStartMeters;
+
+  /// `Position.accuracy` (meters) of the most recent GPS fix. Null before
+  /// the first fix arrives.
+  final double? gpsAccuracyMeters;
 
   @override
   Widget build(BuildContext context) {
@@ -36,70 +43,78 @@ class RunStatsSheet extends StatelessWidget {
     final distKm = (distanceMeters / 1000).toStringAsFixed(2);
     final closureLabel = _closureLabel(distToStartMeters);
 
+    final guidance = isOverSpeed
+        ? 'Vehicle speed detected — this run will not be claimed.'
+        : closureLabel != null
+            ? 'Return to your start point to claim territory.'
+            : 'Keep moving to close the loop.';
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppConstants.cardRadius),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.card.withValues(alpha: 0.55),
+            color: AppColors.card.withValues(alpha: 0.68),
             borderRadius: BorderRadius.circular(AppConstants.cardRadius),
             border: Border.all(color: AppColors.border),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Stat(
-                    label: 'DISTANCE',
-                    value: '$distKm km',
-                    hud: hud,
-                  ),
-                  _Stat(
-                    label: 'TIME',
-                    value: '$minutes:$seconds',
-                    hud: hud,
-                  ),
-                  if (isOverSpeed)
-                    _Stat(
-                      label: 'SPEED',
-                      value: 'TOO FAST',
-                      hud: hud,
-                      valueColor: AppColors.destructive,
-                    )
-                  else if (closureLabel != null)
-                    _Stat(
-                      label: 'TO START',
-                      value: closureLabel,
-                      hud: hud,
-                      valueColor: _closureColor(distToStartMeters),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 18,
+                      runSpacing: 8,
+                      children: [
+                        _Stat(
+                          label: 'Distance',
+                          value: '$distKm km',
+                          hud: hud,
+                        ),
+                        _Stat(
+                          label: 'Time',
+                          value: '$minutes:$seconds',
+                          hud: hud,
+                        ),
+                        if (isOverSpeed)
+                          _Stat(
+                            label: 'Speed',
+                            value: 'Too fast',
+                            hud: hud,
+                            valueColor: AppColors.destructive,
+                          )
+                        else if (closureLabel != null)
+                          _Stat(
+                            label: 'To start',
+                            value: closureLabel,
+                            hud: hud,
+                            valueColor: _closureColor(distToStartMeters),
+                          ),
+                      ],
                     ),
+                  ),
+                  _GpsQualityChip(
+                    quality: gpsQualityFromAccuracy(gpsAccuracyMeters),
+                  ),
                 ],
               ),
-              if (isOverSpeed) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.destructive.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: AppColors.destructive.withValues(alpha: 0.4)),
-                  ),
-                  child: Text(
-                    'Vehicle detected — territory will not be claimed',
-                    style: hud.statLabel.copyWith(
-                      color: AppColors.destructive,
-                      fontSize: 10,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+              const SizedBox(height: 8),
+              Text(
+                guidance,
+                style: hud.statLabel.copyWith(
+                  color: isOverSpeed
+                      ? AppColors.destructive
+                      : AppColors.mutedForeground,
+                  fontSize: 10,
+                  letterSpacing: 0.8,
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -123,6 +138,52 @@ class RunStatsSheet extends StatelessWidget {
   }
 }
 
+/// Colored-dot chip showing live GPS fix quality (good/fair/poor), derived
+/// from `Position.accuracy`. A quiet signal for why a run's path might look
+/// jagged or why loop closure is being finicky — never blocks anything on
+/// its own.
+class _GpsQualityChip extends StatelessWidget {
+  const _GpsQualityChip({required this.quality});
+
+  final GpsQuality quality;
+
+  @override
+  Widget build(BuildContext context) {
+    if (quality == GpsQuality.unknown) return const SizedBox.shrink();
+
+    final (label, color) = switch (quality) {
+      GpsQuality.good => ('GPS good', AppColors.success),
+      GpsQuality.fair => ('GPS fair', AppColors.primary),
+      GpsQuality.poor => ('GPS poor', AppColors.destructive),
+      GpsQuality.unknown => ('', AppColors.mutedForeground),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 10, top: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Stat extends StatelessWidget {
   const _Stat({
     required this.label,
@@ -141,7 +202,14 @@ class _Stat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: hud.statLabel),
+        Text(
+          label,
+          style: hud.statLabel.copyWith(
+            color: AppColors.mutedForeground,
+            fontSize: 10,
+            letterSpacing: 1.1,
+          ),
+        ),
         const SizedBox(height: 2),
         Text(
           value,

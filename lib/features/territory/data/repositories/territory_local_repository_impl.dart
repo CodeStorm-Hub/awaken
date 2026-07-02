@@ -391,6 +391,21 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
   }
 
   @override
+  Future<List<LeaderboardEntryEntity>> getWindowedLeaderboard({
+    required int windowHours,
+    GeoPointEntity? viewerLocation,
+    double radiusMeters = 5000,
+  }) {
+    // Offline/local mode keeps no capture-history log (only current
+    // territory state is persisted), so a time-windowed "momentum" board
+    // isn't representable — fall back to current standings, same as the
+    // all-time board. This only affects signed-out users.
+    return viewerLocation == null
+        ? getGlobalLeaderboard()
+        : getNearbyLeaderboard(viewerLocation, radiusMeters: radiusMeters);
+  }
+
+  @override
   Future<List<DecayWarningEntity>> getDecayWarnings() async {
     await _ensureLoaded();
     final now = DateTime.now();

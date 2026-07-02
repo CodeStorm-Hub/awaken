@@ -39,5 +39,25 @@ abstract final class GeoUtils {
     return total;
   }
 
+  /// Ray-casting point-in-polygon test (even-odd rule). `ring` is treated as
+  /// a closed loop — the first/last point need not be duplicated. Approximate
+  /// but sufficient for lat/lng at the scale of a single territory: no
+  /// projection is applied, matching how territory rings are stored and
+  /// rendered elsewhere in this feature.
+  static bool isPointInPolygon(GeoPointEntity point, List<GeoPointEntity> ring) {
+    var inside = false;
+    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      final xi = ring[i].longitude;
+      final yi = ring[i].latitude;
+      final xj = ring[j].longitude;
+      final yj = ring[j].latitude;
+
+      final crossesRay = (yi > point.latitude) != (yj > point.latitude) &&
+          point.longitude < (xj - xi) * (point.latitude - yi) / (yj - yi) + xi;
+      if (crossesRay) inside = !inside;
+    }
+    return inside;
+  }
+
   static double _toRadians(double degrees) => degrees * math.pi / 180.0;
 }
