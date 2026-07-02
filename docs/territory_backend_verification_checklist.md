@@ -80,3 +80,27 @@ Previously flagged as needing new backend work — now implemented and live on `
 - **`leaderboard_windowed(window_hours, viewer_lon, viewer_lat, radius_meters)`** — new RPC, `SUM(area_sqm)` from `territory_captures` within the window, optionally scoped with `ST_DWithin` when viewer coordinates are supplied (mirrors the nearby/global split of the existing RPCs). Callable by `authenticated` only (verified `anon` has no grant).
 - **Client**: `LeaderboardWindow` enum (`day` / `week` / `allTime`) + `leaderboardWindowProvider`; `leaderboardProvider` now branches to `getWindowedLeaderboard` for `day`/`week` and keeps the original current-ownership RPCs for `allTime` (default, so existing behavior is unchanged unless a user picks a window). Offline/local mode has no capture-history log, so `TerritoryLocalRepositoryImpl.getWindowedLeaderboard` falls back to current standings — documented in that method's doc comment. UI: a secondary `24H / 7D / ALL` pill row on `territory_leaderboard_screen.dart`, below the Nearby/Global toggle, with header/hint copy that distinguishes "momentum" (captured recently) from "current ownership".
 - `flutter analyze lib/` — no issues.
+
+## ✅ Repo migrations baseline (2026-07-02)
+
+The live remote project already had migrations applied via the Supabase dashboard
+(see `list_migrations` — versions `20260628…` through `20260701…`). This repo
+now also carries a **consolidated baseline** under `supabase/migrations/`
+(`20250702…` series) that mirrors the verified live schema for local dev and
+version control:
+
+| File | Contents |
+|---|---|
+| `20250702000001_enable_postgis.sql` | PostGIS extension |
+| `20250702000002_core_app_schema.sql` | `profiles`, `alarms`, `sessions`, `streaks`, RLS, `handle_new_user` trigger |
+| `20250702000003_territory_tables.sql` | `territories`, `runs`, `territory_captures`, RLS |
+| `20250702000004_territory_views.sql` | `territories_geojson`, `leaderboard_global` |
+| `20250702000005_territory_rpcs.sql` | All five territory RPCs |
+| `20250702000006_territory_grants.sql` | `authenticated`-only EXECUTE grants |
+| `20250702000007_realtime_publication.sql` | `supabase_realtime` on `territories` |
+
+**Do not re-apply** this baseline to the linked remote (`fsdfqcnjcjtdmdjshrvu`) —
+objects already exist. For a fresh local stack: `supabase start` then
+`supabase db reset`. After linking an empty project, use
+`supabase migration repair --status applied` on each version instead of running
+the SQL twice.
