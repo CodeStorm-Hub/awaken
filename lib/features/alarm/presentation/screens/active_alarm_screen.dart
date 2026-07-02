@@ -261,8 +261,8 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     if (next >= required) {
       Future.delayed(AppConstants.mediumAnim, () {
         if (!mounted) return;
-        _resetSession();
-        _router.go(AppRoutes.success);
+        // Let the SuccessScreen read the state before resetting it.
+        _router.go(AppRoutes.success, extra: widget.alarm);
       });
     }
   }
@@ -286,22 +286,13 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     if (next >= required) {
       Future.delayed(AppConstants.mediumAnim, () {
         if (!mounted) return;
-        _resetSession();
-        _router.go(AppRoutes.success);
+        // Let the SuccessScreen read the state before resetting it.
+        _router.go(AppRoutes.success, extra: widget.alarm);
       });
     }
   }
 
-  bool get _tapEnabled =>
-      _cameraController == null ||
-      !(_cameraController!.value.isInitialized) ||
-      _cameraPermissionDenied;
-
-  void _resetSession() {
-    _squatCounter.reset();
-    ref.read(repCountProvider.notifier).state = 0;
-    ref.read(repFeedbackProvider.notifier).state = RepFeedback.neutral;
-  }
+  bool get _tapEnabled => _cameraPermissionDenied;
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -323,9 +314,11 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
       RepFeedback.failure => AppColors.destructiveGlow,
     };
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: _onTap,
@@ -391,7 +384,7 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

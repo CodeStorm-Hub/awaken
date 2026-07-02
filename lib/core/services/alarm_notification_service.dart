@@ -81,6 +81,7 @@ abstract final class AlarmNotificationService {
 
   static Future<void> scheduleAlarm(AlarmEntity alarm) async {
     final scheduledTz = tz.TZDateTime.from(alarm.scheduledTime, tz.local);
+    final payload = '${alarm.id}|${alarm.requiredReps}';
 
     await _plugin.zonedSchedule(
       _notifId(alarm),
@@ -88,6 +89,7 @@ abstract final class AlarmNotificationService {
       'Complete ${alarm.requiredReps} squats to dismiss your alarm.',
       scheduledTz,
       _buildDetails(alarm.requiredReps),
+      payload: payload,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -112,9 +114,18 @@ abstract final class AlarmNotificationService {
   static Future<String> getInitialRoute() async {
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp ?? false) {
-      return '/alarm/active';
+      final payload = details?.notificationResponse?.payload;
+      return _buildActiveRoute(payload);
     }
     return '/';
+  }
+
+  static String _buildActiveRoute(String? payload) {
+    if (payload != null && payload.contains('|')) {
+      final parts = payload.split('|');
+      return '/alarm/active?id=${parts[0]}&reps=${parts[1]}';
+    }
+    return '/alarm/active';
   }
 
   // ── Internal helpers ──────────────────────────────────────────────
@@ -166,7 +177,7 @@ abstract final class AlarmNotificationService {
   static void _onForegroundTap(NotificationResponse response) {
     final ctx = navigatorKey.currentContext;
     if (ctx != null && ctx.mounted) {
-      GoRouter.of(ctx).go('/alarm/active');
+      GoRouter.of(ctx).go(_buildActiveRoute(response.payload));
     }
   }
 }

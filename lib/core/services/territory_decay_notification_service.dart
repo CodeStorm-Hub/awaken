@@ -40,8 +40,11 @@ abstract final class TerritoryDecayNotificationService {
   /// current user owns that's within the decay grace period. Re-showing on
   /// every app open with the same [_notificationId] simply replaces the
   /// prior notification rather than stacking duplicates.
+  static bool _hasNotifiedThisSession = false;
+
   static Future<void> notifyIfDecaying({required int territoryCount}) async {
-    if (territoryCount <= 0) return;
+    if (territoryCount <= 0 || _hasNotifiedThisSession) return;
+    _hasNotifiedThisSession = true;
 
     final body = territoryCount == 1
         ? 'One of your territories is decaying — run there soon to defend it.'

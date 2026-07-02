@@ -1,10 +1,12 @@
 import 'package:awaken/core/constants/app_constants.dart';
+import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key, this.onSkip});
@@ -43,7 +45,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     });
     try {
       await ref.read(authRepositoryProvider).signInWithGoogle();
-      // Router will react to authStateProvider change and navigate automatically
+      if (mounted) {
+        setState(() => _loading = false);
+        context.go(AppRoutes.dashboard);
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -87,6 +92,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           _emailController.text.trim(),
           _passwordController.text,
         );
+        if (mounted) {
+          setState(() => _loading = false);
+          context.go(AppRoutes.dashboard);
+        }
       }
     } catch (e) {
       if (mounted) {

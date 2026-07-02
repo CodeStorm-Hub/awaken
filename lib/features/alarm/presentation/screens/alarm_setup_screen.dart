@@ -116,35 +116,47 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
     if (_saving) return;
     setState(() => _saving = true);
 
-    // Request permissions on first save
-    await AlarmNotificationService.requestPermissions();
+    try {
+      // Request permissions on first save
+      await AlarmNotificationService.requestPermissions();
 
-    final now = DateTime.now();
-    // Next occurrence of the selected time (today or tomorrow if past)
-    var scheduled = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      _time.hour,
-      _time.minute,
-    );
-    if (scheduled.isBefore(now.add(const Duration(minutes: 1)))) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
+      final now = DateTime.now();
+      // Next occurrence of the selected time (today or tomorrow if past)
+      var scheduled = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        _time.hour,
+        _time.minute,
+      );
+      if (scheduled.isBefore(now.add(const Duration(minutes: 1)))) {
+        scheduled = scheduled.add(const Duration(days: 1));
+      }
 
-    final alarm = AlarmEntity(
-      id: scheduled.millisecondsSinceEpoch.toString(),
-      scheduledTime: scheduled,
-      requiredReps: _reps,
-      isActive: true,
-      label: _label.isEmpty ? null : _label.trim(),
-    );
+      final alarm = AlarmEntity(
+        id: scheduled.millisecondsSinceEpoch.toString(),
+        scheduledTime: scheduled,
+        requiredReps: _reps,
+        isActive: true,
+        label: _label.isEmpty ? null : _label.trim(),
+      );
 
-    await ref.read(alarmListProvider.notifier).addAlarm(alarm);
+      await ref.read(alarmListProvider.notifier).addAlarm(alarm);
 
-    if (mounted) {
-      setState(() => _saving = false);
-      context.pop();
+      if (mounted) {
+        setState(() => _saving = false);
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save alarm: $e'),
+            backgroundColor: AppColors.destructive,
+          ),
+        );
+      }
     }
   }
 }

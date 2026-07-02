@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:awaken/core/constants/supabase_config.dart';
 import 'package:awaken/features/auth/domain/entities/app_user.dart';
 import 'package:awaken/features/auth/domain/repositories/auth_repository.dart';
@@ -9,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseAuthRepository implements AuthRepository {
   SupabaseAuthRepository()
       : _googleSignIn = GoogleSignIn(
-          clientId: Platform.isIOS ? SupabaseConfig.googleIosClientId : null,
           serverClientId: SupabaseConfig.googleWebClientId,
           scopes: ['email', 'profile'],
         );

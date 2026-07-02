@@ -2,7 +2,9 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
+import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_providers.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
@@ -14,7 +16,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class SuccessScreen extends ConsumerStatefulWidget {
-  const SuccessScreen({super.key});
+  const SuccessScreen({super.key, this.alarm});
+  final AlarmEntity? alarm;
 
   @override
   ConsumerState<SuccessScreen> createState() => _SuccessScreenState();
@@ -25,6 +28,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   late final int _durationSeconds;
   late final int _caloriesBurned;
   bool _sessionRecorded = false;
+  bool _isSaving = true;
 
   @override
   void initState() {
@@ -44,9 +48,16 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
     _sessionRecorded = true;
 
     final user = ref.read(currentUserProvider);
-    if (user == null) return; // Not signed in — local mode, no recording
+    if (user == null) {
+      if (mounted) setState(() => _isSaving = false);
+      return; // Not signed in — local mode, no recording
+    }
 
     try {
+      if (widget.alarm != null) {
+        await ref.read(alarmListProvider.notifier).markCompleted(widget.alarm!);
+      }
+
       await ref.read(sessionRepositoryProvider).recordSession(
             SessionEntity(
               userId: user.id,
@@ -58,8 +69,11 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
           );
       // Invalidate dashboard stats so they refresh on next view
       ref.invalidate(dashboardStatsProvider);
+      await ref.read(dashboardStatsProvider.future);
     } catch (e) {
       debugPrint('[Session] Failed to record: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -74,11 +88,13 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final statsAsync = ref.watch(dashboardStatsProvider);
-    final currentStreak = statsAsync.whenOrNull(data: (s) => s.currentStreak) ?? 0;
+    final currentStreak = statsAsync.valueOrNull?.currentStreak ?? 0;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(
@@ -91,7 +107,10 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               const SizedBox(height: 24),
 
               // ── Streak badge ───────────────────────────────────────
-              StreakBadge(streak: currentStreak),
+              if (_isSaving)
+                const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))
+              else
+                StreakBadge(streak: currentStreak),
 
               const SizedBox(height: 48),
 
@@ -156,7 +175,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

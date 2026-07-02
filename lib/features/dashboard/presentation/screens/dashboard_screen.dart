@@ -12,6 +12,7 @@ import 'package:awaken/features/dashboard/presentation/widgets/digital_clock.dar
 import 'package:awaken/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/streak_ring.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,7 +63,29 @@ class DashboardScreen extends ConsumerWidget {
                 displayName: user?.displayName,
                 onAddAlarm: () => context.push(AppRoutes.alarmSetup),
                 onSignIn: () => context.push(AppRoutes.auth),
-                onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+                onSignOut: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: AppColors.card,
+                      title: const Text('Sign Out'),
+                      content: const Text('Are you sure you want to sign out? Your local data will be safe, but you won\'t be able to sync alarms.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel', style: TextStyle(color: AppColors.mutedForeground)),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Sign Out', style: TextStyle(color: AppColors.destructive)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    ref.read(authRepositoryProvider).signOut();
+                  }
+                },
               ),
               SizedBox(height: size.height * 0.05),
 
@@ -157,7 +180,7 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // ── Dev shortcut ──────────────────────────────────────────
-              _TestAlarmButton(nextAlarm: nextAlarm),
+              if (kDebugMode) _TestAlarmButton(nextAlarm: nextAlarm),
             ],
           ),
         ),

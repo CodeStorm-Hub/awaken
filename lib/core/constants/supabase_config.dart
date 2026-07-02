@@ -1,8 +1,16 @@
-/// Supabase + Google OAuth credentials.
+/// Supabase + Google OAuth credentials (via Firebase Configuration).
 ///
-/// Fill these in from:
-///   - Supabase Dashboard → Project Settings → API
-///   - Google Cloud Console → OAuth 2.0 Client IDs
+/// **Firebase Google Sign-In Setup Guide**:
+/// 1. Go to the Firebase Console (https://console.firebase.google.com/) and create a new project.
+/// 2. Add an Android app (providing your package name & SHA-1 fingerprint). Download `google-services.json` and place it in `android/app/`.
+/// 3. Add an iOS app (providing your bundle ID). Download `GoogleService-Info.plist` and place it in `ios/Runner/`.
+/// 4. Go to Firebase Authentication -> Sign-in method and enable Google.
+/// 5. In the Google provider settings, open the "Web SDK configuration" dropdown. Note down the **Web client ID** and **Web client secret**.
+/// 6. Go to Supabase Dashboard (https://supabase.com/dashboard) -> Authentication -> Providers -> Google.
+/// 7. Enable Google, and paste the Web Client ID and Web Client Secret from Firebase.
+/// 8. Place the Web Client ID into your `.env` file as `GOOGLE_WEB_CLIENT_ID`.
+/// 
+/// Note: The Android/iOS client IDs are automatically read from the downloaded config files.
 ///
 /// DO NOT commit real keys — put them in .env or flavour-specific config
 /// and swap the const values here via dart-define or environment injection.
@@ -25,15 +33,4 @@ abstract final class SupabaseConfig {
     defaultValue: 'your-web-client-id.apps.googleusercontent.com',
   );
 
-  // Android client ID (SHA-1 fingerprint registered in GCC)
-  static const String googleAndroidClientId = String.fromEnvironment(
-    'GOOGLE_ANDROID_CLIENT_ID',
-    defaultValue: 'your-android-client-id.apps.googleusercontent.com',
-  );
-
-  // iOS client ID (matches GIDClientID in Info.plist)
-  static const String googleIosClientId = String.fromEnvironment(
-    'GOOGLE_IOS_CLIENT_ID',
-    defaultValue: 'your-ios-client-id.apps.googleusercontent.com',
-  );
 }

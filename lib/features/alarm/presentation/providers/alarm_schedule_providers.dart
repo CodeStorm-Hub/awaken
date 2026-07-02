@@ -26,7 +26,17 @@ class AlarmListNotifier extends AsyncNotifier<List<AlarmEntity>> {
   Future<List<AlarmEntity>> build() async {
     // Rebuild if auth state flips (local ↔ cloud)
     ref.watch(isSignedInProvider);
-    return ref.read(alarmRepositoryProvider).getAlarms();
+    final alarms = await ref.read(alarmRepositoryProvider).getAlarms();
+    
+    // Sync local active alarms to OS scheduler upon app load
+    final now = DateTime.now();
+    for (final alarm in alarms) {
+      if (alarm.isActive && alarm.scheduledTime.isAfter(now)) {
+        await AlarmNotificationService.scheduleAlarm(alarm);
+      }
+    }
+    
+    return alarms;
   }
 
   Future<void> addAlarm(AlarmEntity alarm) async {
@@ -43,6 +53,17 @@ class AlarmListNotifier extends AsyncNotifier<List<AlarmEntity>> {
     await AlarmNotificationService.cancelAlarm(alarm);
     state = AsyncData(
       (state.valueOrNull ?? []).where((a) => a.id != alarm.id).toList(),
+    );
+  }
+
+  Future<void> markCompleted(AlarmEntity alarm) async {
+    final updated = alarm.copyWith(isActive: false);
+    final repo = ref.read(alarmRepositoryProvider);
+    await repo.saveAlarm(updated);
+    await AlarmNotificationService.cancelAlarm(updated);
+
+    state = AsyncData(
+      (state.valueOrNull ?? []).map((a) => a.id == alarm.id ? updated : a).toList(),
     );
   }
 

@@ -90,9 +90,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.activeAlarm,
-        builder: (context, state) => ActiveAlarmScreen(
-          alarm: state.extra as AlarmEntity?,
-        ),
+        builder: (context, state) {
+          AlarmEntity? alarm = state.extra as AlarmEntity?;
+          if (alarm == null && state.uri.queryParameters.containsKey('id')) {
+            alarm = AlarmEntity(
+              id: state.uri.queryParameters['id']!,
+              scheduledTime: DateTime.now(),
+              requiredReps: int.tryParse(state.uri.queryParameters['reps'] ?? '10') ?? 10,
+              isActive: true,
+            );
+          }
+          return ActiveAlarmScreen(alarm: alarm);
+        },
       ),
       GoRoute(
         path: AppRoutes.alarmSetup,
