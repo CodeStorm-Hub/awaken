@@ -30,7 +30,7 @@ pubspec.lock
 # Assets & Binaries (Claude cannot process these, prevents token bloat)
 # -----------------------------------------------------------------------------
 
-**/*.png
+
 **/*.jpg
 **/*.jpeg
 **/*.gif
