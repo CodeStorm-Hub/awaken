@@ -533,6 +533,7 @@ class _TerritoryMapView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
+      key: territoryFlutterMapKey,
       mapController: mapController,
       options: MapOptions(
         initialCenter: _fallbackCenter,
@@ -554,7 +555,7 @@ class _TerritoryMapView extends StatelessWidget {
         },
       ),
       children: const [
-        TerritoryVectorTileLayer(),
+        TerritoryVectorTileLayer(key: ValueKey('territory-vector-tile-layer-widget')),
         _TerritoryPolygonsLayer(),
         _RunTrailGlowLayer(),
         _RunTrailCoreLayer(),

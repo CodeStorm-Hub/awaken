@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/territory/data/datasources/territory_supabase_datasource.dart';
 import 'package:awaken/features/territory/data/repositories/territory_local_repository_impl.dart';
@@ -27,7 +29,15 @@ final territoryRepositoryProvider = Provider<TerritoryRepository>((ref) {
 
 /// Live view of the shared map — every player's territory, updated via
 /// Supabase Realtime whenever any capture/steal/decay touches the table.
+/// Deferred until [territoryMapReadyProvider] is true so startup and other
+/// shell tabs do not open the Realtime subscription.
 final territoryListProvider = StreamProvider<List<TerritoryEntity>>((ref) {
+  if (!ref.watch(territoryMapReadyProvider)) {
+    // Stay in [AsyncLoading] until the territory tab opens once.
+    return Completer<List<TerritoryEntity>>().future.asStream();
+  }
+
+  ref.keepAlive();
   return ref.watch(territoryRepositoryProvider).watchTerritories();
 });
 
@@ -64,7 +74,10 @@ final leaderboardProvider = FutureProvider<List<LeaderboardEntryEntity>>((ref) a
 
   // Re-run whenever the shared map changes via Realtime, so rankings shift
   // live as territory changes hands per the plan's leaderboard requirement.
-  ref.watch(territoryListProvider);
+  // Only subscribe once the territory tab has enabled the shared map stream.
+  if (ref.watch(territoryMapReadyProvider)) {
+    ref.watch(territoryListProvider);
+  }
 
   if (window == LeaderboardWindow.allTime) {
     return nearby ? repo.getNearbyLeaderboard(viewerLocation) : repo.getGlobalLeaderboard();
@@ -85,12 +98,21 @@ final decayWarningsProvider = FutureProvider<List<DecayWarningEntity>>((ref) asy
   return ref.watch(territoryRepositoryProvider).getDecayWarnings();
 });
 
+/// Set to `true` the first time [TerritoryRunScreen] mounts. Gates network
+/// style load and vector tile mounting until the user opens the territory tab.
+final territoryMapReadyProvider = StateProvider<bool>((ref) => false);
+
 /// Loads and caches Awaken's branded OpenFreeMap vector style once per app
-/// session. Not `autoDispose`: the style/tile-source resolution costs a
-/// network round-trip, and every map surface (run screen, future territory
-/// overview) should reuse the same resolved [Style] rather than re-fetching
-/// it per screen visit.
-final territoryMapStyleProvider = FutureProvider<Style>((ref) {
+/// session. Deferred until [territoryMapReadyProvider] is true so startup and
+/// other shell tabs do not hit OpenFreeMap. Uses [Ref.keepAlive] after the
+/// first successful load so tab switches reuse the resolved [Style].
+final territoryMapStyleProvider = FutureProvider<Style>((ref) async {
+  if (!ref.watch(territoryMapReadyProvider)) {
+    // Stay in [AsyncLoading] until the territory tab opens once.
+    await Completer<Style>().future;
+  }
+
+  ref.keepAlive();
   return TerritoryMapStyle.load();
 });
 
@@ -110,6 +132,10 @@ final territoryMapStyleProvider = FutureProvider<Style>((ref) {
 /// permission flow (via [LocationPermissionHelper]) is the one place that
 /// should ever prompt the user; this provider stays silent.
 final myLocationProvider = StreamProvider.autoDispose<Position?>((ref) async* {
+  if (!ref.watch(territoryMapReadyProvider)) {
+    return;
+  }
+
   try {
     await LocationPermissionHelper.ensureLocationAccess();
   } on LocationAccessException {

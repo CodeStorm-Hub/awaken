@@ -1,3 +1,4 @@
+import 'package:awaken/features/sessions/data/datasources/pending_session_queue.dart';
 import 'package:awaken/features/sessions/data/repositories/local_session_repository.dart';
 import 'package:awaken/features/sessions/data/repositories/supabase_session_repository.dart';
 import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
@@ -7,21 +8,23 @@ class CompositeSessionRepository implements SessionRepository {
   const CompositeSessionRepository({
     required this.remote,
     required this.local,
+    required this.queue,
   });
 
   final SupabaseSessionRepository remote;
   final LocalSessionRepository local;
+  final PendingSessionQueue queue;
 
   @override
   Future<void> recordSession(SessionEntity session) async {
     // Always save locally first so we never lose it
     await local.recordSession(session);
-    
+
     // Attempt remote save
     try {
       await remote.recordSession(session);
-    } catch (e) {
-      // Ignore network errors; it's saved locally and could be synced later
+    } catch (_) {
+      await queue.enqueue(session);
     }
   }
 

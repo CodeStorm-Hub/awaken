@@ -16,6 +16,10 @@ class TerritoryMapStatusOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(territoryMapReadyProvider)) {
+      return const SizedBox.shrink();
+    }
+
     final styleAsync = ref.watch(territoryMapStyleProvider);
     final territoriesAsync = ref.watch(territoryListProvider);
 

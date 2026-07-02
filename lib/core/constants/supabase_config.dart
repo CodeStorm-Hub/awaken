@@ -1,19 +1,25 @@
-/// Supabase + Google OAuth credentials (via Firebase Configuration).
+/// Supabase credentials + Firebase Google OAuth (Android-only).
 ///
-/// **Firebase Google Sign-In Setup Guide**:
-/// 1. Go to the Firebase Console (https://console.firebase.google.com/) and create a new project.
-/// 2. Add an Android app (providing your package name & SHA-1 fingerprint). Download `google-services.json` and place it in `android/app/`.
-/// 3. Add an iOS app (providing your bundle ID). Download `GoogleService-Info.plist` and place it in `ios/Runner/`.
-/// 4. Go to Firebase Authentication -> Sign-in method and enable Google.
-/// 5. In the Google provider settings, open the "Web SDK configuration" dropdown. Note down the **Web client ID** and **Web client secret**.
-/// 6. Go to Supabase Dashboard (https://supabase.com/dashboard) -> Authentication -> Providers -> Google.
-/// 7. Enable Google, and paste the Web Client ID and Web Client Secret from Firebase.
-/// 8. Place the Web Client ID into your `.env` file as `GOOGLE_WEB_CLIENT_ID`.
-/// 
-/// Note: The Android/iOS client IDs are automatically read from the downloaded config files.
+/// **Architecture**: Supabase owns the session. Google sign-in on Android runs
+/// through Firebase Auth, then `signInWithIdToken` — no Flutter web app needed.
 ///
-/// DO NOT commit real keys — put them in .env or flavour-specific config
-/// and swap the const values here via dart-define or environment injection.
+/// **Android app** (already configured):
+/// - Firebase project `awaken-27f39`, package `com.example.awaken`
+/// - `android/app/google-services.json` with Android + bundled OAuth clients
+/// - Debug SHA-1 registered in Firebase Console
+///
+/// **One-time Supabase Dashboard** (Authentication → Providers → Google):
+/// 1. Enable Google
+/// 2. **Client ID**: [googleOAuthClientIdForSupabase] — this is the `client_type: 3`
+///    entry inside `google-services.json`. Google/Firebase attach it to every
+///    Android app so ID tokens can be verified server-side; you are *not* shipping
+///    a web app.
+/// 3. **Skip nonce checks**: ON (required for Android `signInWithIdToken`)
+/// 4. **Client secret**: optional for Android-only ID-token sign-in. Leave blank
+///    if the dashboard allows it. If sign-in fails with an OAuth error, add the
+///    secret from [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials?project=awaken-27f39)
+///    → Web client (auto created by Google Service) → Reset secret.
+/// 5. **Authorized Client IDs** (if shown): add [googleAndroidClientId]
 abstract final class SupabaseConfig {
   // ── Supabase ──────────────────────────────────────────────────────────────
   static const String url = String.fromEnvironment(
@@ -25,12 +31,23 @@ abstract final class SupabaseConfig {
     defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzZGZxY25qY2p0ZG1kanNocnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzIwNTEsImV4cCI6MjA5ODI0ODA1MX0.zr4Sbwr3DyWoALowjWX2boCO9jChLrxfhBmnAGNUbSU',
   );
 
-  // ── Google OAuth ──────────────────────────────────────────────────────────
-  // The "Web application" client ID from Google Cloud Console.
-  // Used as serverClientId in google_sign_in so Supabase can verify the token.
-  static const String googleWebClientId = String.fromEnvironment(
-    'GOOGLE_WEB_CLIENT_ID',
-    defaultValue: 'your-web-client-id.apps.googleusercontent.com',
+  // ── Google OAuth (from android/app/google-services.json) ──────────────────
+
+  /// Android OAuth client (`client_type: 1`). Used for SHA-1 / package binding.
+  static const String googleAndroidClientId = String.fromEnvironment(
+    'GOOGLE_ANDROID_CLIENT_ID',
+    defaultValue:
+        '230513820686-ua1prkedtbtceb4d39e2kqg5m23q7te8.apps.googleusercontent.com',
   );
 
+  /// OAuth client for Supabase Google provider (`client_type: 3` in
+  /// google-services.json). Not a web app — bundled with the Android Firebase app.
+  static const String googleOAuthClientIdForSupabase = String.fromEnvironment(
+    'GOOGLE_OAUTH_CLIENT_ID',
+    defaultValue:
+        '230513820686-ku2co5m68332qjv7t0cgbe5vk8nlvrea.apps.googleusercontent.com',
+  );
+
+  /// @deprecated Use [googleOAuthClientIdForSupabase]. Kept for dart-define compat.
+  static const String googleWebClientId = googleOAuthClientIdForSupabase;
 }

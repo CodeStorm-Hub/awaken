@@ -1,5 +1,6 @@
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
+import 'package:awaken/core/services/exact_alarm_permission_service.dart';
 import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
@@ -24,6 +25,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final nextAlarm = ref.watch(nextAlarmProvider);
+    final exactAlarmGranted = ref.watch(exactAlarmPermissionProvider);
     final isSignedIn = ref.watch(isSignedInProvider);
     final user = ref.watch(currentUserProvider);
     final tt = Theme.of(context).extension<AwakenTypography>()!;
@@ -95,6 +97,19 @@ class DashboardScreen extends ConsumerWidget {
               Center(child: Text(dateStr, style: tt.eyebrow)),
 
               SizedBox(height: size.height * 0.05),
+
+              // ── Exact alarm permission warning (Android 12+) ───────────
+              if (exactAlarmGranted.valueOrNull == false)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _ExactAlarmWarningCard(
+                    tt: tt,
+                    onOpenSettings: () async {
+                      await ExactAlarmPermissionService.openSettings();
+                      ref.invalidate(exactAlarmPermissionProvider);
+                    },
+                  ),
+                ),
 
               // ── Alarm card ────────────────────────────────────────────
               if (nextAlarm != null)
@@ -305,6 +320,74 @@ class _Header extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _ExactAlarmWarningCard extends StatelessWidget {
+  const _ExactAlarmWarningCard({
+    required this.tt,
+    required this.onOpenSettings,
+  });
+
+  final AwakenTypography tt;
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.destructive.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        border: Border.all(
+          color: AppColors.destructive.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.destructive,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ALARMS MAY NOT FIRE',
+                      style: tt.eyebrow.copyWith(color: AppColors.destructive),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Allow "Alarms & reminders" so your wake-up alarm can ring on time.',
+                      style: tt.statLabel.copyWith(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: onOpenSettings,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.destructive,
+              ),
+              child: const Text('Open Settings'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

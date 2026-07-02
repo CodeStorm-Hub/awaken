@@ -32,6 +32,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
+import 'helpers/territory_widget_test_helpers.dart';
 import 'mocks/fake_territory_repository.dart';
 import 'mocks/mock_geolocator.dart';
 
@@ -799,6 +800,7 @@ void main() {
           overrides: [territoryRepositoryProvider.overrideWithValue(fakeTerritoryRepository)],
         );
         addTearDown(container.dispose);
+        enableTerritoryMapForTests(container);
 
         // Force initial read
         async.run((self) async {
@@ -825,6 +827,9 @@ void main() {
         ProviderScope(
           overrides: [
             authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            authStateProvider.overrideWith((ref) => signedOutAuthStateStream()),
+            isSignedInProvider.overrideWith((ref) => false),
+            currentUserProvider.overrideWith((ref) => null),
             alarmRepositoryProvider.overrideWithValue(FakeAlarmRepository()),
             sessionRepositoryProvider.overrideWithValue(FakeSessionRepository()),
             territoryRepositoryProvider.overrideWithValue(fakeRepo),
@@ -840,7 +845,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('START RUN'), findsOneWidget);
+      expect(find.text('Start run'), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.leaderboard_rounded));
       await tester.pump();
@@ -1329,6 +1334,7 @@ void main() {
           overrides: [territoryRepositoryProvider.overrideWithValue(fakeTerritoryRepository)],
         );
         addTearDown(container.dispose);
+        enableTerritoryMapForTests(container);
 
         // Watch map stream and leaderboard future
         var mapUpdatesCount = 0;
@@ -1668,6 +1674,7 @@ void main() {
           overrides: [territoryRepositoryProvider.overrideWithValue(fakeTerritoryRepository)],
         );
         addTearDown(container.dispose);
+        enableTerritoryMapForTests(container);
 
         final notifier = container.read(activeRunProvider.notifier);
         notifier.startRun();

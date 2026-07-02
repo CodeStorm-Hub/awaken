@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:awaken/core/constants/app_constants.dart';
@@ -51,6 +52,9 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
   // ── Squat logic ─────────────────────────────────────────────────────────
   final _squatCounter = SquatCounterService();
 
+  // ── Out-of-frame penalty ────────────────────────────────────────────────
+  Timer? _outOfFramePenaltyTimer;
+
   // ── Router (captured in initState to avoid BuildContext across async gaps) ─
   late final GoRouter _router;
 
@@ -70,24 +74,23 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
 
     _router = ref.read(appRouterProvider);
 
-    if (widget.alarm != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(requiredRepsProvider.notifier).state = widget.alarm!.requiredReps;
-      });
-    }
-
-    // Record when this session started so success screen can compute duration
+    _squatCounter.reset();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(sessionStartTimeProvider.notifier).state = DateTime.now();
+      resetAlarmSession(ref);
+      if (widget.alarm != null) {
+        ref.read(requiredRepsProvider.notifier).setRequired(widget.alarm!.requiredReps);
+      }
     });
 
     WakeLockService.enable();
     AlarmAudioService.start();
+    AlarmAudioService.resetVolume();
     _initCamera();
   }
 
   @override
   void dispose() {
+    _outOfFramePenaltyTimer?.cancel();
     _cameraController?.stopImageStream();
     _cameraController?.dispose();
     _poseDetector.close();
@@ -176,13 +179,41 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     });
 
     if (pose != null) {
-      ref.read(outOfFrameProvider.notifier).state = false;
-      if (_squatCounter.processPose(pose)) {
+      _setOutOfFrame(false);
+      final result = _squatCounter.processPose(pose);
+      if (result.repCompleted) {
         _onRepCompleted();
+      } else if (result.badForm) {
+        _onBadForm();
       }
     } else {
-      ref.read(outOfFrameProvider.notifier).state = true;
+      _setOutOfFrame(true);
     }
+  }
+
+  void _setOutOfFrame(bool outOfFrame) {
+    ref.read(outOfFrameProvider.notifier).setOutOfFrame(outOfFrame);
+    if (outOfFrame) {
+      _outOfFramePenaltyTimer ??= Timer.periodic(
+        const Duration(seconds: AppConstants.outOfFramePenaltySeconds),
+        (_) => AlarmAudioService.rampVolumeUp(),
+      );
+      return;
+    }
+
+    _outOfFramePenaltyTimer?.cancel();
+    _outOfFramePenaltyTimer = null;
+    AlarmAudioService.resetVolume();
+  }
+
+  void _onBadForm() {
+    ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.failure);
+
+    Future.delayed(AppConstants.shortAnim, () {
+      if (mounted) {
+        ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
+      }
+    });
   }
 
   InputImage? _buildInputImage(CameraImage image) {
@@ -251,11 +282,11 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     if (current >= required) return;
 
     final next = current + 1;
-    ref.read(repCountProvider.notifier).state = next;
-    ref.read(repFeedbackProvider.notifier).state = RepFeedback.success;
+    ref.read(repCountProvider.notifier).setCount(next);
+    ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.success);
 
     Future.delayed(AppConstants.shortAnim, () {
-      if (mounted) ref.read(repFeedbackProvider.notifier).state = RepFeedback.neutral;
+      if (mounted) ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
     });
 
     if (next >= required) {
@@ -278,10 +309,10 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
   void _onRepCountedManually(int current, int required) {
     if (current >= required) return;
     final next = current + 1;
-    ref.read(repCountProvider.notifier).state = next;
-    ref.read(repFeedbackProvider.notifier).state = RepFeedback.success;
+    ref.read(repCountProvider.notifier).setCount(next);
+    ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.success);
     Future.delayed(AppConstants.shortAnim, () {
-      if (mounted) ref.read(repFeedbackProvider.notifier).state = RepFeedback.neutral;
+      if (mounted) ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
     });
     if (next >= required) {
       Future.delayed(AppConstants.mediumAnim, () {

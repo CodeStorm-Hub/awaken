@@ -78,9 +78,9 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   }
 
   void _startMyDay() {
-    ref.read(repCountProvider.notifier).state = 0;
-    ref.read(repFeedbackProvider.notifier).state = RepFeedback.neutral;
-    ref.read(sessionStartTimeProvider.notifier).state = null;
+    ref.read(repCountProvider.notifier).setCount(0);
+    ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
+    ref.read(sessionStartTimeProvider.notifier).setStartTime(null);
     context.go(AppRoutes.dashboard);
   }
 

@@ -4,6 +4,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart';
 
+/// Stable key for the territory basemap [FlutterMap] — prevents recreation on
+/// sibling overlay rebuilds.
+const territoryFlutterMapKey = ValueKey<String>('territory-flutter-map');
+
+/// Stable key for the vector tile layer subtree.
+const territoryVectorTileLayerKey =
+    ValueKey<String>('territory-vector-tile-layer');
+
 /// Renders Awaken's basemap — branded OpenFreeMap vector tiles by default,
 /// or a plain OSM raster fallback when [mapEngineProvider] is flipped to
 /// [MapEngine.raster] (an emergency low-end-device degrade path; not
@@ -19,19 +27,38 @@ import 'package:vector_map_tiles/vector_map_tiles.dart';
 /// Renders nothing while the vector style/tile-source is loading or failed
 /// to resolve — see [TerritoryMapStatusOverlay], which is the sibling widget
 /// responsible for surfacing that loading/error state to the user.
-class TerritoryVectorTileLayer extends ConsumerWidget {
+class TerritoryVectorTileLayer extends ConsumerStatefulWidget {
   const TerritoryVectorTileLayer({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TerritoryVectorTileLayer> createState() =>
+      _TerritoryVectorTileLayerState();
+}
+
+class _TerritoryVectorTileLayerState extends ConsumerState<TerritoryVectorTileLayer>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
+    if (!ref.watch(territoryMapReadyProvider)) {
+      return const SizedBox.shrink();
+    }
+
     final engine = ref.watch(mapEngineProvider);
-    if (engine == MapEngine.raster) return const _RasterFallbackTileLayer();
+    if (engine == MapEngine.raster) {
+      return const _RasterFallbackTileLayer();
+    }
 
     final styleAsync = ref.watch(territoryMapStyleProvider);
 
     return styleAsync.when(
       data: (style) => RepaintBoundary(
         child: VectorTileLayer(
+          key: territoryVectorTileLayerKey,
           theme: style.theme,
           tileProviders: style.providers,
           sprites: style.sprites,
@@ -50,9 +77,12 @@ class TerritoryVectorTileLayer extends ConsumerWidget {
 class _RasterFallbackTileLayer extends StatelessWidget {
   const _RasterFallbackTileLayer();
 
+  static const _key = ValueKey<String>('territory-raster-tile-layer');
+
   @override
   Widget build(BuildContext context) {
     return TileLayer(
+      key: _key,
       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       userAgentPackageName: 'com.awaken.app',
       tileProvider: NetworkTileProvider(),

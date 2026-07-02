@@ -16,7 +16,6 @@ dependencies:
 
   # ── Backend ───────────────────────────────────────────────────────
   supabase_flutter: ^2.5.0
-  google_sign_in: ^6.2.1
 
   # ── Computer vision ───────────────────────────────────────────────
   google_mlkit_pose_detection: ^0.12.0
@@ -38,6 +37,8 @@ dependencies:
   # (see territory_map_style.dart) — a direct dependency to satisfy analyzer
   # depend_on_referenced_packages.
   vector_tile_renderer: ^5.2.1
+  # CancellationException type for expected async tile-render cancels
+  executor_lib: ^1.1.2
   latlong2: ^0.9.1
   geolocator: ^13.0.1
   clock: ^1.1.2
@@ -48,18 +49,18 @@ dependencies:
 
   # ── Phase 4b: Camera + ML Kit pose detection ─────────────────────
   # Live camera feed for squat verification
-  camera: ^0.11.0
+  camera: ^0.12.0
 
   # ── Phase 4a: Alarm engine ────────────────────────────────────────
   # Exact alarm scheduling + full-screen intent notifications
   flutter_local_notifications: ^17.2.1
   # Timezone-aware scheduling (required by flutter_local_notifications)
   timezone: ^0.9.4
-  flutter_timezone: ^3.0.0
+  flutter_timezone: ^5.1.0
   # In-app alarm audio
   just_audio: ^0.9.36
   # Keep screen on during active alarm
-  wakelock_plus: ^1.2.0
+  wakelock_plus: ^1.6.1
   # Runtime permission requests (exact alarm, notifications)
   permission_handler: ^11.3.1
   # Local alarm persistence (pre-Supabase)
@@ -67,6 +68,9 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   share_plus: ^13.2.0
+  polybool: ^0.2.0
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.4
 
 dev_dependencies:
   flutter_test:

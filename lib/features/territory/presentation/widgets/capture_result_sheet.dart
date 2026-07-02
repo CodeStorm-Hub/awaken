@@ -246,6 +246,7 @@ class _CaptureMinimap extends StatelessWidget {
 
     return IgnorePointer(
       child: FlutterMap(
+        key: territoryFlutterMapKey,
         options: MapOptions(
           initialCameraFit: CameraFit.bounds(
             bounds: bounds,

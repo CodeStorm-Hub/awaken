@@ -1,18 +1,19 @@
-import 'package:awaken/core/constants/supabase_config.dart';
+import 'package:awaken/core/services/firebase_google_auth_service.dart';
 import 'package:awaken/features/auth/domain/entities/app_user.dart';
 import 'package:awaken/features/auth/domain/repositories/auth_repository.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Supabase-backed auth repository.
+///
+/// Email/password flows talk to Supabase directly. Google sign-in uses
+/// **Firebase Auth only** as the OAuth broker: Firebase returns Google ID
+/// tokens, which are exchanged for a Supabase session via [signInWithIdToken].
+/// Firebase is signed out immediately afterward — Supabase owns the session.
 class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository()
-      : _googleSignIn = GoogleSignIn(
-          serverClientId: SupabaseConfig.googleWebClientId,
-          scopes: ['email', 'profile'],
-        );
+  SupabaseAuthRepository();
 
   final SupabaseClient _client = Supabase.instance.client;
-  final GoogleSignIn _googleSignIn;
 
   @override
   AppUser? get currentUser {
@@ -26,18 +27,25 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) throw Exception('Google sign-in cancelled');
-
-    final googleAuth = await googleUser.authentication;
-    final idToken = googleAuth.idToken;
-    if (idToken == null) throw Exception('No ID token from Google');
-
-    await _client.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-      accessToken: googleAuth.accessToken,
-    );
+    try {
+      final tokens = await FirebaseGoogleAuthService.signInAndGetGoogleTokens();
+      try {
+        await _client.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: tokens.idToken,
+          accessToken: tokens.accessToken,
+        );
+      } finally {
+        // Supabase session is authoritative — do not keep a Firebase session.
+        await FirebaseGoogleAuthService.signOut();
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'cancelled-popup-request' ||
+          e.code == 'web-context-cancelled') {
+        throw Exception('Google sign-in cancelled');
+      }
+      throw Exception(e.message ?? 'Google sign-in failed');
+    }
   }
 
   @override
@@ -63,7 +71,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    await FirebaseGoogleAuthService.signOut();
     await _client.auth.signOut();
   }
 

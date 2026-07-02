@@ -146,53 +146,42 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
           if (pointsOverlap) {
             rivalAffectedByThisTerritory = true;
 
-            // Calculate overlap and subtract
-            final overlapBbox =
-                _getBoundingBoxIntersection(newBbox, rivalBbox);
-            final overlapArea =
-                overlapBbox != null ? _getBboxArea(overlapBbox) : 0.0;
-            final actualOverlap =
-                math.min(overlapArea, _calculatePolygonArea(poly));
-            final newRivalPolyArea =
-                _calculatePolygonArea(poly) - actualOverlap;
-
-            if (newRivalPolyArea < 1.0) {
-              // Sliver cleanup: polygon completely stolen/deleted
-              continue;
+            // Vertex-based ST_Difference approximation (matches server sliver
+            // cleanup at ST_Area >= 1.0 m² per resulting polygon).
+            final isInside =
+                poly.map((p) => _isPointInPolygon(p, loopPoints)).toList();
+            if (!isInside.contains(true)) {
+              // Edge-only overlap: no vertex inside either polygon. Geometry
+              // is unchanged (PostGIS would cut along edges).
+              remainingRivalPolygons.add(poly);
+              rivalArea += _calculatePolygonArea(poly);
+            } else if (!isInside.contains(false)) {
+              continue; // completely inside — deleted
             } else {
-              // Partial reduction of coordinates falling inside User's loop
-              final isInside =
-                  poly.map((p) => _isPointInPolygon(p, loopPoints)).toList();
-              if (!isInside.contains(true)) {
-                remainingRivalPolygons.add(poly);
-                rivalArea += _calculatePolygonArea(poly);
-              } else if (!isInside.contains(false)) {
-                continue; // completely inside
-              } else {
-                // Find first index that is inside to start our traversal
-                final startIndex = isInside.indexOf(true);
-                final runs = <List<GeoPointEntity>>[];
-                List<GeoPointEntity> currentRun = [];
-                for (var i = 0; i < poly.length; i++) {
-                  final idx = (startIndex + i) % poly.length;
-                  if (!isInside[idx]) {
-                    currentRun.add(poly[idx]);
-                  } else {
-                    if (currentRun.length >= 3) {
-                      runs.add(currentRun);
-                    }
-                    currentRun = [];
+              // Find first index that is inside to start our traversal
+              final startIndex = isInside.indexOf(true);
+              final runs = <List<GeoPointEntity>>[];
+              List<GeoPointEntity> currentRun = [];
+              for (var i = 0; i < poly.length; i++) {
+                final idx = (startIndex + i) % poly.length;
+                if (!isInside[idx]) {
+                  currentRun.add(poly[idx]);
+                } else {
+                  if (currentRun.length >= 3) {
+                    runs.add(currentRun);
                   }
+                  currentRun = [];
                 }
-                if (currentRun.length >= 3) {
-                  runs.add(currentRun);
-                }
+              }
+              if (currentRun.length >= 3) {
+                runs.add(currentRun);
+              }
 
-                if (runs.isNotEmpty) {
-                  for (final run in runs) {
-                    remainingRivalPolygons.add(run);
-                    rivalArea += _calculatePolygonArea(run);
-                  }
+              for (final run in runs) {
+                final runArea = _calculatePolygonArea(run);
+                if (runArea >= 1.0) {
+                  remainingRivalPolygons.add(run);
+                  rivalArea += runArea;
                 }
               }
             }
@@ -478,30 +467,6 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
         a.maxLat >= b.minLat &&
         a.minLon <= b.maxLon &&
         a.maxLon >= b.minLon;
-  }
-
-  ({double minLat, double maxLat, double minLon, double maxLon})?
-      _getBoundingBoxIntersection(
-    ({double minLat, double maxLat, double minLon, double maxLon}) a,
-    ({double minLat, double maxLat, double minLon, double maxLon}) b,
-  ) {
-    if (!_boundingBoxesIntersect(a, b)) return null;
-    return (
-      minLat: math.max(a.minLat, b.minLat),
-      maxLat: math.min(a.maxLat, b.maxLat),
-      minLon: math.max(a.minLon, b.minLon),
-      maxLon: math.min(a.maxLon, b.maxLon),
-    );
-  }
-
-  double _getBboxArea(
-      ({double minLat, double maxLat, double minLon, double maxLon}) bbox) {
-    final latRad = bbox.minLat * math.pi / 180.0;
-    const metersPerDegreeLat = 111320.0;
-    final metersPerDegreeLon = 111320.0 * math.cos(latRad);
-    final width = (bbox.maxLon - bbox.minLon).abs() * metersPerDegreeLon;
-    final height = (bbox.maxLat - bbox.minLat).abs() * metersPerDegreeLat;
-    return width * height;
   }
 
   bool _isPointInPolygon(GeoPointEntity p, List<GeoPointEntity> polygon) {

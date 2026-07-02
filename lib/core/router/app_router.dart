@@ -2,12 +2,14 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/navigator_key.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/alarm/presentation/screens/active_alarm_screen.dart';
 import 'package:awaken/features/alarm/presentation/screens/alarm_setup_screen.dart';
 import 'package:awaken/features/auth/presentation/screens/auth_screen.dart';
 import 'package:awaken/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:awaken/features/success/presentation/screens/success_screen.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
+import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_leaderboard_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_overview_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_run_screen.dart';
@@ -90,18 +92,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.activeAlarm,
-        builder: (context, state) {
-          AlarmEntity? alarm = state.extra as AlarmEntity?;
-          if (alarm == null && state.uri.queryParameters.containsKey('id')) {
-            alarm = AlarmEntity(
-              id: state.uri.queryParameters['id']!,
-              scheduledTime: DateTime.now(),
-              requiredReps: int.tryParse(state.uri.queryParameters['reps'] ?? '10') ?? 10,
-              isActive: true,
-            );
-          }
-          return ActiveAlarmScreen(alarm: alarm);
-        },
+        builder: (context, state) => _ActiveAlarmRoute(state: state),
       ),
       GoRoute(
         path: AppRoutes.alarmSetup,
@@ -121,14 +112,78 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
+// ── Active alarm: resolve entity from navigation extra, alarm list, or query ─
+
+class _ActiveAlarmRoute extends ConsumerWidget {
+  const _ActiveAlarmRoute({required this.state});
+
+  final GoRouterState state;
+
+  AlarmEntity? _alarmFromList(List<AlarmEntity> alarms, String id) {
+    for (final alarm in alarms) {
+      if (alarm.id == id) return alarm;
+    }
+    return null;
+  }
+
+  AlarmEntity _alarmFromQueryParams(Map<String, String> params) {
+    final id = params['id']!;
+    final reps = int.tryParse(params['reps'] ?? '10') ?? 10;
+    final scheduledRaw = params['scheduled'];
+    final scheduledTime = scheduledRaw != null && scheduledRaw.isNotEmpty
+        ? DateTime.parse(Uri.decodeComponent(scheduledRaw))
+        : DateTime.now();
+
+    return AlarmEntity(
+      id: id,
+      scheduledTime: scheduledTime,
+      requiredReps: reps,
+      isActive: true,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    AlarmEntity? alarm = state.extra as AlarmEntity?;
+
+    if (alarm == null && state.uri.queryParameters.containsKey('id')) {
+      final id = state.uri.queryParameters['id']!;
+      final alarms = ref.watch(alarmListProvider).valueOrNull;
+      alarm = alarms != null ? _alarmFromList(alarms, id) : null;
+      alarm ??= _alarmFromQueryParams(state.uri.queryParameters);
+    }
+
+    return ActiveAlarmScreen(alarm: alarm);
+  }
+}
+
 // ── Shell scaffold — inlines the bottom nav so GoRouter manages branch state ─
 
-class _ShellScaffold extends ConsumerWidget {
+class _ShellScaffold extends ConsumerStatefulWidget {
   const _ShellScaffold({required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  Future<bool> _confirmDiscardRun(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<_ShellScaffold> createState() => _ShellScaffoldState();
+}
+
+class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markTerritoryMapReadyIfNeeded(widget.navigationShell.currentIndex);
+    });
+  }
+
+  void _markTerritoryMapReadyIfNeeded(int index) {
+    if (index == 1 && !ref.read(territoryMapReadyProvider)) {
+      ref.read(territoryMapReadyProvider.notifier).state = true;
+    }
+  }
+
+  Future<bool> _confirmDiscardRun(BuildContext context) async {
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -165,13 +220,9 @@ class _ShellScaffold extends ConsumerWidget {
     return discard ?? false;
   }
 
-  Future<void> _onTabSelected(
-    BuildContext context,
-    WidgetRef ref,
-    int index,
-  ) async {
-    if (index == navigationShell.currentIndex) {
-      navigationShell.goBranch(index, initialLocation: true);
+  Future<void> _onTabSelected(int index) async {
+    if (index == widget.navigationShell.currentIndex) {
+      widget.navigationShell.goBranch(index, initialLocation: true);
       return;
     }
 
@@ -179,21 +230,31 @@ class _ShellScaffold extends ConsumerWidget {
     final isTracking =
         status == RunSessionStatus.tracking || status == RunSessionStatus.finishing;
     if (isTracking) {
-      final discard = await _confirmDiscardRun(context, ref);
+      final discard = await _confirmDiscardRun(context);
       if (!discard || !context.mounted) return;
     }
 
-    navigationShell.goBranch(index);
+    if (index == 1) {
+      _markTerritoryMapReadyIfNeeded(index);
+    }
+
+    widget.navigationShell.goBranch(index);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    // Covers bottom-nav taps and deep links (e.g. dashboard territory card).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _markTerritoryMapReadyIfNeeded(widget.navigationShell.currentIndex);
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
-      body: navigationShell,
+      body: widget.navigationShell,
       bottomNavigationBar: _AwakenBottomNav(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) => _onTabSelected(context, ref, index),
+        currentIndex: widget.navigationShell.currentIndex,
+        onTap: _onTabSelected,
       ),
     );
   }

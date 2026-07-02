@@ -6,6 +6,20 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+/// Fields parsed from an alarm notification payload (`id|reps|scheduledTime`).
+@immutable
+class AlarmNotificationPayload {
+  const AlarmNotificationPayload({
+    required this.id,
+    required this.reps,
+    required this.scheduledTime,
+  });
+
+  final String id;
+  final int reps;
+  final DateTime scheduledTime;
+}
+
 /// Manages alarm scheduling via flutter_local_notifications.
 ///
 /// Must call [initialize] in main() before runApp().
@@ -81,7 +95,7 @@ abstract final class AlarmNotificationService {
 
   static Future<void> scheduleAlarm(AlarmEntity alarm) async {
     final scheduledTz = tz.TZDateTime.from(alarm.scheduledTime, tz.local);
-    final payload = '${alarm.id}|${alarm.requiredReps}';
+    final payload = buildPayload(alarm);
 
     await _plugin.zonedSchedule(
       _notifId(alarm),
@@ -120,19 +134,48 @@ abstract final class AlarmNotificationService {
     return '/';
   }
 
-  static String _buildActiveRoute(String? payload) {
-    if (payload != null && payload.contains('|')) {
-      final parts = payload.split('|');
-      return '/alarm/active?id=${parts[0]}&reps=${parts[1]}';
-    }
-    return '/alarm/active';
+  static String buildActiveRouteFromPayload(String? payload) {
+    final parsed = parsePayload(payload);
+    if (parsed == null) return '/alarm/active';
+
+    final scheduled =
+        Uri.encodeComponent(parsed.scheduledTime.toIso8601String());
+    return '/alarm/active?id=${parsed.id}&reps=${parsed.reps}&scheduled=$scheduled';
   }
+
+  /// Builds the notification payload: `id|reps|scheduledTime` (ISO8601).
+  static String buildPayload(AlarmEntity alarm) =>
+      '${alarm.id}|${alarm.requiredReps}|${alarm.scheduledTime.toIso8601String()}';
+
+  /// Parses a notification payload. Returns null for missing or malformed input.
+  static AlarmNotificationPayload? parsePayload(String? payload) {
+    if (payload == null || !payload.contains('|')) return null;
+
+    final parts = payload.split('|');
+    if (parts.length < 2 || parts[0].isEmpty) return null;
+
+    final reps = int.tryParse(parts[1]) ?? 10;
+    final scheduledTime = parts.length >= 3 && parts[2].isNotEmpty
+        ? DateTime.parse(parts[2])
+        : DateTime.now();
+
+    return AlarmNotificationPayload(
+      id: parts[0],
+      reps: reps,
+      scheduledTime: scheduledTime,
+    );
+  }
+
+  /// Stable notification ID derived from [AlarmEntity.id] (fits int32).
+  @visibleForTesting
+  static int notificationIdFor(AlarmEntity alarm) => _notifId(alarm);
 
   // ── Internal helpers ──────────────────────────────────────────────
 
-  /// Notification ID derived from the alarm's epoch second (fits int32).
-  static int _notifId(AlarmEntity alarm) =>
-      alarm.scheduledTime.millisecondsSinceEpoch ~/ 1000 & 0x7FFFFFFF;
+  static int _notifId(AlarmEntity alarm) => alarm.id.hashCode & 0x7FFFFFFF;
+
+  static String _buildActiveRoute(String? payload) =>
+      buildActiveRouteFromPayload(payload);
 
   static NotificationDetails _buildDetails(int reps) {
     return NotificationDetails(

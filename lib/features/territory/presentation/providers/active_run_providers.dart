@@ -88,6 +88,9 @@ class ActiveRunState {
 /// stream, Kalman smoothing, rolling speed-cap anti-cheat, and — on
 /// stop — classification + territory capture.
 ///
+/// Not reset by [resetAlarmSession] when an alarm overlay opens — only
+/// explicit `reset()` (run discard) or `finishRun()` completion clears state.
+///
 /// Deliberately NOT `autoDispose`: an in-flight `finishRun()` awaits a
 /// Supabase round-trip, and autoDispose can tear the notifier down mid-await
 /// if watcher count transiently hits zero during a rebuild, silently

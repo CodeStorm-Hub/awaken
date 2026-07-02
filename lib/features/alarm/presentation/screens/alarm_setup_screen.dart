@@ -1,9 +1,11 @@
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
+import 'package:awaken/core/services/exact_alarm_permission_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
+import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -117,8 +119,37 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
     setState(() => _saving = true);
 
     try {
-      // Request permissions on first save
       await AlarmNotificationService.requestPermissions();
+
+      if (ExactAlarmPermissionService.isAndroid &&
+          !await ExactAlarmPermissionService.isGranted()) {
+        if (!mounted) return;
+        final action = await _showExactAlarmPermissionDialog();
+        if (action == _ExactAlarmDialogAction.cancel) {
+          setState(() => _saving = false);
+          return;
+        }
+        if (action == _ExactAlarmDialogAction.openSettings) {
+          await ExactAlarmPermissionService.openSettings();
+          ref.invalidate(exactAlarmPermissionProvider);
+          if (!mounted) return;
+          final granted = await ExactAlarmPermissionService.isGranted();
+          if (!mounted) return;
+          if (!granted) {
+            final messenger = ScaffoldMessenger.of(context);
+            setState(() => _saving = false);
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Exact alarm permission still denied — your alarm may not fire on time.',
+                ),
+                backgroundColor: AppColors.destructive,
+              ),
+            );
+            return;
+          }
+        }
+      }
 
       final now = DateTime.now();
       // Next occurrence of the selected time (today or tomorrow if past)
@@ -159,9 +190,56 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
       }
     }
   }
+
+  Future<_ExactAlarmDialogAction> _showExactAlarmPermissionDialog() {
+    return showDialog<_ExactAlarmDialogAction>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Allow exact alarms'),
+        content: const Text(
+          'Awaken needs "Alarms & reminders" permission so your wake-up alarm '
+          'fires at the exact time you set — even when the phone is locked.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, _ExactAlarmDialogAction.cancel),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.mutedForeground),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(
+              context,
+              _ExactAlarmDialogAction.saveWithoutPermission,
+            ),
+            child: const Text('Save Anyway'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(
+              context,
+              _ExactAlarmDialogAction.openSettings,
+            ),
+            child: const Text(
+              'Open Settings',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    ).then((value) => value ?? _ExactAlarmDialogAction.cancel);
+  }
 }
 
 // ── Sub-widgets ────────────────────────────────────────────────────────────
+
+enum _ExactAlarmDialogAction {
+  cancel,
+  openSettings,
+  saveWithoutPermission,
+}
 
 class _TimeTile extends StatelessWidget {
   const _TimeTile({
