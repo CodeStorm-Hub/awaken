@@ -57,4 +57,16 @@ abstract final class AppConstants {
   /// RDP simplification epsilon (meters) applied to the run path before
   /// it's sent to Supabase as the capture polygon.
   static const double rdpSimplificationEpsilonMeters = 3.0;
+
+  // ── Territory map ─────────────────────────────────────────────────
+  static const double territoryMapMinZoom = 2.0;
+  static const double territoryMapMaxZoom = 20.0;
+  static const double territoryMapInitialZoom = 14.0;
+  static const double territoryMapUserZoom = 16.5;
+
+  /// Natural Earth shaded relief tiles — visible at low zoom where vector
+  /// style layers are sparse.
+  static const String territoryLowZoomTileUrl =
+      'https://tiles.openfreemap.org/natural_earth/ne2sr/{z}/{x}/{y}.png';
+  static const int territoryLowZoomTileMaxNativeZoom = 6;
 }

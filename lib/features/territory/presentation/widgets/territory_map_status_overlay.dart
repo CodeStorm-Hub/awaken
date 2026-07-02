@@ -28,7 +28,18 @@ class TerritoryMapStatusOverlay extends ConsumerWidget {
     final error = styleError ?? territoriesError;
 
     if (error == null) {
-      return const SizedBox.shrink();
+      final styleLoading = styleAsync.isLoading && !styleAsync.hasValue;
+      if (!styleLoading) {
+        return const SizedBox.shrink();
+      }
+
+      return const Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 120),
+          child: _MapLoadingChip(),
+        ),
+      );
     }
 
     final isTerritoryLoadFailure = styleError == null && territoriesError != null;
@@ -102,6 +113,44 @@ class TerritoryMapStatusOverlay extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MapLoadingChip extends StatelessWidget {
+  const _MapLoadingChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.card.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              color: AppColors.accent,
+              strokeWidth: 2,
+            ),
+          ),
+          SizedBox(width: 10),
+          Text(
+            'Loading map…',
+            style: TextStyle(
+              color: AppColors.mutedForeground,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

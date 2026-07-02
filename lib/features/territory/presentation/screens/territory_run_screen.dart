@@ -57,6 +57,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
   final MapController _mapController = MapController();
 
   bool _isLocating = true;
+  bool _didRequestInitialCenter = false;
   String? _resultMessage;
   Timer? _resultMessageTimer;
 
@@ -89,8 +90,18 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
         setState(() => _isLocating = false);
       });
     } else {
-      _centerOnCurrentLocation();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _ensureInitialLocationCenter();
+      });
     }
+  }
+
+  void _ensureInitialLocationCenter() {
+    if (_didRequestInitialCenter) return;
+    if (!ref.read(territoryMapReadyProvider)) return;
+    if (ref.read(territoryMapFocusProvider) != null) return;
+    _didRequestInitialCenter = true;
+    _centerOnCurrentLocation();
   }
 
   @override
@@ -115,7 +126,11 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
       ).timeout(const Duration(seconds: 8));
       if (!mounted) return;
-      _animateTo(LatLng(position.latitude, position.longitude), zoom: 16.5);
+      ref.read(mapLastKnownPositionProvider.notifier).state = position;
+      _animateTo(
+        LatLng(position.latitude, position.longitude),
+        zoom: AppConstants.territoryMapUserZoom,
+      );
     } catch (_) {
       // Denied, timed out, or services off — stays at fallback center. The
       // Start-run flow (ActiveRunNotifier.startRun) surfaces a proper error
@@ -134,18 +149,30 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
   void _zoomIn() => _mapController.move(
         _mapController.camera.center,
-        (_mapController.camera.zoom + 1).clamp(2.0, 20.0),
+        (_mapController.camera.zoom + 1).clamp(
+          AppConstants.territoryMapMinZoom,
+          AppConstants.territoryMapMaxZoom,
+        ),
       );
 
   void _zoomOut() => _mapController.move(
         _mapController.camera.center,
-        (_mapController.camera.zoom - 1).clamp(2.0, 20.0),
+        (_mapController.camera.zoom - 1).clamp(
+          AppConstants.territoryMapMinZoom,
+          AppConstants.territoryMapMaxZoom,
+        ),
       );
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(territoryMapReadyProvider, (previous, ready) {
+      if (ready) {
+        _ensureInitialLocationCenter();
+      }
+    });
+
     final status = ref.watch(activeRunProvider.select((s) => s.status));
     final errorMessage = ref.watch(activeRunProvider.select((s) => s.errorMessage));
     final points = ref.watch(activeRunProvider.select((s) => s.points));
@@ -519,6 +546,26 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 // on position ticks, which prevents vector_map_tiles from cancelling in-flight
 // tile renders on every GPS update.
 
+/// Natural Earth shaded relief — paints immediately at low zoom while the
+/// vector style resolves and fills gaps where vector layers have high minzoom.
+class _TerritoryLowZoomRasterLayer extends StatelessWidget {
+  const _TerritoryLowZoomRasterLayer();
+
+  static const _key = ValueKey<String>('territory-low-zoom-raster-layer');
+
+  @override
+  Widget build(BuildContext context) {
+    return TileLayer(
+      key: _key,
+      urlTemplate: AppConstants.territoryLowZoomTileUrl,
+      userAgentPackageName: 'com.example.awaken',
+      maxNativeZoom: AppConstants.territoryLowZoomTileMaxNativeZoom,
+      maxZoom: AppConstants.territoryMapMaxZoom,
+      tileProvider: NetworkTileProvider(),
+    );
+  }
+}
+
 class _TerritoryMapView extends StatelessWidget {
   const _TerritoryMapView({
     required this.mapController,
@@ -537,9 +584,9 @@ class _TerritoryMapView extends StatelessWidget {
       mapController: mapController,
       options: MapOptions(
         initialCenter: _fallbackCenter,
-        initialZoom: 14,
-        minZoom: 3,
-        maxZoom: 20,
+        initialZoom: AppConstants.territoryMapInitialZoom,
+        minZoom: AppConstants.territoryMapMinZoom,
+        maxZoom: AppConstants.territoryMapMaxZoom,
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.all,
           enableMultiFingerGestureRace: true,
@@ -555,6 +602,7 @@ class _TerritoryMapView extends StatelessWidget {
         },
       ),
       children: const [
+        _TerritoryLowZoomRasterLayer(),
         TerritoryVectorTileLayer(key: ValueKey('territory-vector-tile-layer-widget')),
         _TerritoryPolygonsLayer(),
         _RunTrailGlowLayer(),
@@ -680,7 +728,8 @@ class _MyLocationMarkerLayer extends ConsumerWidget {
         point = LatLng(last.latitude, last.longitude);
       }
     } else {
-      final myLocation = ref.watch(myLocationProvider).valueOrNull;
+      final myLocation = ref.watch(myLocationProvider).valueOrNull ??
+          ref.watch(mapLastKnownPositionProvider);
       if (myLocation != null) {
         point = LatLng(myLocation.latitude, myLocation.longitude);
         heading = myLocation.heading;

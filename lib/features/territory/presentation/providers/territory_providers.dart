@@ -102,6 +102,10 @@ final decayWarningsProvider = FutureProvider<List<DecayWarningEntity>>((ref) asy
 /// style load and vector tile mounting until the user opens the territory tab.
 final territoryMapReadyProvider = StateProvider<bool>((ref) => false);
 
+/// Last known GPS fix for the idle map marker — seeded immediately on tab
+/// open so the blue dot appears before the continuous stream's first tick.
+final mapLastKnownPositionProvider = StateProvider<Position?>((ref) => null);
+
 /// Loads and caches Awaken's branded OpenFreeMap vector style once per app
 /// session. Deferred until [territoryMapReadyProvider] is true so startup and
 /// other shell tabs do not hit OpenFreeMap. Uses [Ref.keepAlive] after the
@@ -143,12 +147,40 @@ final myLocationProvider = StreamProvider.autoDispose<Position?>((ref) async* {
     return;
   }
 
+  // Emit cached / one-shot fixes immediately so the marker does not wait
+  // for the position stream's first tick (which can lag several seconds).
+  final cached = ref.read(mapLastKnownPositionProvider);
+  if (cached != null) {
+    yield cached;
+  } else {
+    final lastKnown = await Geolocator.getLastKnownPosition();
+    if (lastKnown != null) {
+      ref.read(mapLastKnownPositionProvider.notifier).state = lastKnown;
+      yield lastKnown;
+    }
+  }
+
+  try {
+    final current = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+      ),
+    ).timeout(const Duration(seconds: 8));
+    ref.read(mapLastKnownPositionProvider.notifier).state = current;
+    yield current;
+  } catch (_) {
+    // Keep any cached/last-known fix already emitted above.
+  }
+
   yield* Geolocator.getPositionStream(
     locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 3,
     ),
-  );
+  ).map((position) {
+    ref.read(mapLastKnownPositionProvider.notifier).state = position;
+    return position;
+  });
 });
 
 /// Which basemap renderer [TerritoryVectorTileLayer] should use.
