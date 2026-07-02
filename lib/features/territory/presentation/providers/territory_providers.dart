@@ -7,8 +7,10 @@ import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart'
 import 'package:awaken/features/territory/domain/entities/leaderboard_entry_entity.dart';
 import 'package:awaken/features/territory/domain/entities/territory_entity.dart';
 import 'package:awaken/features/territory/domain/repositories/territory_repository.dart';
+import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_style.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart' show Style;
 
@@ -90,6 +92,33 @@ final decayWarningsProvider = FutureProvider<List<DecayWarningEntity>>((ref) asy
 /// it per screen visit.
 final territoryMapStyleProvider = FutureProvider<Style>((ref) {
   return TerritoryMapStyle.load();
+});
+
+/// Continuous "blue dot" GPS feed for the map's live-position marker —
+/// independent of [ActiveRunNotifier]'s tracking stream, so the user's
+/// current position shows on the map at all times, not only mid-run.
+/// `autoDispose` (unlike run tracking): no result needs to survive the
+/// screen closing, so the stream/subscription should tear down with it.
+///
+/// Emits `null` (rather than throwing) when location isn't available yet
+/// (permission not granted, services off) so the UI can simply omit the
+/// marker instead of surfacing an error — [TerritoryRunScreen]'s explicit
+/// permission flow (via [LocationPermissionHelper]) is the one place that
+/// should ever prompt the user; this provider stays silent.
+final myLocationProvider = StreamProvider.autoDispose<Position?>((ref) async* {
+  try {
+    await LocationPermissionHelper.ensureLocationAccess();
+  } on LocationAccessException {
+    yield null;
+    return;
+  }
+
+  yield* Geolocator.getPositionStream(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 3,
+    ),
+  );
 });
 
 /// Which basemap renderer [TerritoryVectorTileLayer] should use.

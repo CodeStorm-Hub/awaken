@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
@@ -530,6 +531,7 @@ class _TerritoryMapView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final territoriesAsync = ref.watch(territoryListProvider);
     final points = ref.watch(activeRunProvider.select((s) => s.points));
+    final myLocation = ref.watch(myLocationProvider).valueOrNull;
 
     final latLngPoints =
         points.map((p) => LatLng(p.latitude, p.longitude)).toList();
@@ -607,15 +609,17 @@ class _TerritoryMapView extends ConsumerWidget {
             ],
           ),
 
-        // ── Current position marker ───────────────────────────────────────
-        if (latLngPoints.length > 1)
+        // ── User's live location ("blue dot") ─────────────────────────────
+        // Shown at all times — idle or mid-run — from the continuous GPS
+        // feed, mirroring the OS-level blue dot the user expects to see.
+        if (myLocation != null)
           MarkerLayer(
             markers: [
               Marker(
-                point: latLngPoints.last,
-                width: 20,
-                height: 20,
-                child: _CurrentPositionMarker(),
+                point: LatLng(myLocation.latitude, myLocation.longitude),
+                width: 44,
+                height: 44,
+                child: _MyLocationMarker(heading: myLocation.heading),
               ),
             ],
           ),
@@ -695,24 +699,114 @@ class _StartMarker extends StatelessWidget {
   }
 }
 
-class _CurrentPositionMarker extends StatelessWidget {
+/// Google Maps-style "blue dot": a heading wedge (when moving) plus a
+/// pulsing accuracy halo behind a solid center dot. Self-contained
+/// animation so it can be dropped into the map's [MarkerLayer] without the
+/// parent screen owning another `AnimationController`.
+class _MyLocationMarker extends StatefulWidget {
+  const _MyLocationMarker({this.heading});
+
+  /// Degrees clockwise from true north; `0` (or GPS-unavailable) hides the
+  /// heading wedge rather than pointing it arbitrarily north.
+  final double? heading;
+
+  @override
+  State<_MyLocationMarker> createState() => _MyLocationMarkerState();
+}
+
+class _MyLocationMarkerState extends State<_MyLocationMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  static const _blue = Color(0xFF4285F4);
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.accent,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2.5),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accent.withValues(alpha: 0.6),
-            blurRadius: 10,
-            spreadRadius: 3,
+    return AnimatedBuilder(
+      animation: _pulseCtrl,
+      builder: (context, _) {
+        final t = _pulseCtrl.value;
+        return SizedBox(
+          width: 44,
+          height: 44,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Expanding, fading accuracy halo.
+              Opacity(
+                opacity: (1 - t).clamp(0.0, 1.0) * 0.35,
+                child: Container(
+                  width: 16 + (28 * t),
+                  height: 16 + (28 * t),
+                  decoration: const BoxDecoration(
+                    color: _blue,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              // Heading wedge — only when a real heading is available.
+              if (widget.heading != null && widget.heading! >= 0)
+                Transform.rotate(
+                  angle: widget.heading! * (3.14159265 / 180),
+                  child: Transform.translate(
+                    offset: const Offset(0, -13),
+                    child: const CustomPaint(
+                      size: Size(18, 18),
+                      painter: _HeadingWedgePainter(color: _blue),
+                    ),
+                  ),
+                ),
+              // Solid center dot.
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: _blue,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 4),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+}
+
+class _HeadingWedgePainter extends CustomPainter {
+  const _HeadingWedgePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.9)
+      ..style = PaintingStyle.fill;
+    final path = ui.Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_HeadingWedgePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 // ── Pulse close indicator ─────────────────────────────────────────────────────
