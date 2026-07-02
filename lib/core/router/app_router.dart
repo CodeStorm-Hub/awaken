@@ -1,10 +1,13 @@
+import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/navigator_key.dart';
+import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/presentation/screens/active_alarm_screen.dart';
 import 'package:awaken/features/alarm/presentation/screens/alarm_setup_screen.dart';
 import 'package:awaken/features/auth/presentation/screens/auth_screen.dart';
 import 'package:awaken/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:awaken/features/success/presentation/screens/success_screen.dart';
+import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_leaderboard_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_overview_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_run_screen.dart';
@@ -111,23 +114,77 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
 // ── Shell scaffold — inlines the bottom nav so GoRouter manages branch state ─
 
-class _ShellScaffold extends StatelessWidget {
+class _ShellScaffold extends ConsumerWidget {
   const _ShellScaffold({required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
+  Future<bool> _confirmDiscardRun(BuildContext context, WidgetRef ref) async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        ),
+        title: const Text(
+          'Discard this run?',
+          style: TextStyle(color: AppColors.foreground),
+        ),
+        content: const Text(
+          'Leaving now stops GPS tracking and this run will not be saved.',
+          style: TextStyle(color: AppColors.mutedForeground),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep running'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Discard run',
+              style: TextStyle(color: AppColors.destructive),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (discard == true) {
+      ref.read(activeRunProvider.notifier).reset();
+    }
+    return discard ?? false;
+  }
+
+  Future<void> _onTabSelected(
+    BuildContext context,
+    WidgetRef ref,
+    int index,
+  ) async {
+    if (index == navigationShell.currentIndex) {
+      navigationShell.goBranch(index, initialLocation: true);
+      return;
+    }
+
+    final status = ref.read(activeRunProvider).status;
+    final isTracking =
+        status == RunSessionStatus.tracking || status == RunSessionStatus.finishing;
+    if (isTracking) {
+      final discard = await _confirmDiscardRun(context, ref);
+      if (!discard || !context.mounted) return;
+    }
+
+    navigationShell.goBranch(index);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
       body: navigationShell,
       bottomNavigationBar: _AwakenBottomNav(
         currentIndex: navigationShell.currentIndex,
-        onTap: (index) => navigationShell.goBranch(
-          index,
-          // Return to the branch root when re-tapping the current tab
-          initialLocation: index == navigationShell.currentIndex,
-        ),
+        onTap: (index) => _onTabSelected(context, ref, index),
       ),
     );
   }

@@ -100,6 +100,10 @@ final territoryMapStyleProvider = FutureProvider<Style>((ref) {
 /// `autoDispose` (unlike run tracking): no result needs to survive the
 /// screen closing, so the stream/subscription should tear down with it.
 ///
+/// While a run is actively tracking, [_MyLocationMarkerLayer] stops watching
+/// this provider and reads run points instead — `autoDispose` then cancels
+/// this stream so only one Geolocator subscription is active at a time.
+///
 /// Emits `null` (rather than throwing) when location isn't available yet
 /// (permission not granted, services off) so the UI can simply omit the
 /// marker instead of surfacing an error — [TerritoryRunScreen]'s explicit

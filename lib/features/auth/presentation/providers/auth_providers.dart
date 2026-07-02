@@ -14,11 +14,18 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 });
 
 /// True when a valid Supabase session exists.
+///
+/// While [authStateProvider] is still loading its first event, fall back to
+/// the synchronously-restored session from [Supabase.initialize] so repo
+/// switching (alarms, territory) doesn't briefly route signed-in users to
+/// the offline/local implementation on cold start.
 final isSignedInProvider = Provider<bool>((ref) {
-  return ref
-      .watch(authStateProvider)
-      .whenData((s) => s.session != null)
-      .valueOrNull ?? false;
+  final authAsync = ref.watch(authStateProvider);
+  return authAsync.when(
+    data: (state) => state.session != null,
+    loading: () => Supabase.instance.client.auth.currentSession != null,
+    error: (_, _) => Supabase.instance.client.auth.currentSession != null,
+  );
 });
 
 /// The currently signed-in user, or null when not authenticated.

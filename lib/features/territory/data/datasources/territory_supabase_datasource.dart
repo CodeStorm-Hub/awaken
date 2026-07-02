@@ -27,8 +27,9 @@ class TerritorySupabaseDatasource {
   /// postgres_changes payloads against client-side geometry state.
   Stream<List<TerritoryModel>> watchTerritories() {
     final controller = StreamController<List<TerritoryModel>>();
+    Timer? debounceTimer;
 
-    Future<void> refresh() async {
+    Future<void> refreshNow() async {
       if (controller.isClosed) return;
       try {
         controller.add(await getAllTerritories());
@@ -37,19 +38,25 @@ class TerritorySupabaseDatasource {
       }
     }
 
+    void scheduleRefresh() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(const Duration(milliseconds: 300), refreshNow);
+    }
+
     final channel = _client
         .channel('territories-changes')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'territories',
-          callback: (_) => refresh(),
+          callback: (_) => scheduleRefresh(),
         )
         .subscribe();
 
-    unawaited(refresh());
+    unawaited(refreshNow());
 
     controller.onCancel = () async {
+      debounceTimer?.cancel();
       await _client.removeChannel(channel);
     };
 
@@ -79,6 +86,9 @@ class TerritorySupabaseDatasource {
       'capture_territory',
       params: {'new_geom': TerritoryGeoCodec.pointsToPolygonEwkt(loopPoints)},
     );
+    if (result.isEmpty) {
+      throw StateError('capture_territory returned no rows.');
+    }
     return CaptureResultModel.fromJson(result.first as Map<String, dynamic>);
   }
 

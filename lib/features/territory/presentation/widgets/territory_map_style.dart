@@ -54,7 +54,9 @@ abstract final class TerritoryMapStyle {
     Map<String, dynamic> resolvedSource;
     final sourceUrl = sourceValue['url'] as String?;
     if (sourceUrl != null) {
-      final response = await http.get(Uri.parse(sourceUrl));
+      final response = await http
+          .get(Uri.parse(sourceUrl))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         throw StateError(
           'Failed to resolve tile source "$sourceUrl": HTTP ${response.statusCode}',

@@ -97,6 +97,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
   void dispose() {
     _resultMessageTimer?.cancel();
     _pulseCtrl.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -513,10 +514,12 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 }
 
 // ── Map layer ─────────────────────────────────────────────────────────────────
-// Isolated as its own ConsumerWidget so the per-second timer tick does not
-// rebuild the full map — only the stats sheet absorbs those rebuilds.
+// The shell widget intentionally avoids watching GPS/run state so the vector
+// basemap subtree stays stable — only the overlay layer widgets below rebuild
+// on position ticks, which prevents vector_map_tiles from cancelling in-flight
+// tile renders on every GPS update.
 
-class _TerritoryMapView extends ConsumerWidget {
+class _TerritoryMapView extends StatelessWidget {
   const _TerritoryMapView({
     required this.mapController,
     required this.onMapMoved,
@@ -528,14 +531,7 @@ class _TerritoryMapView extends ConsumerWidget {
   static const LatLng _fallbackCenter = LatLng(43.65, -79.38); // Toronto
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final territoriesAsync = ref.watch(territoryListProvider);
-    final points = ref.watch(activeRunProvider.select((s) => s.points));
-    final myLocation = ref.watch(myLocationProvider).valueOrNull;
-
-    final latLngPoints =
-        points.map((p) => LatLng(p.latitude, p.longitude)).toList();
-
+  Widget build(BuildContext context) {
     return FlutterMap(
       mapController: mapController,
       options: MapOptions(
@@ -548,7 +544,6 @@ class _TerritoryMapView extends ConsumerWidget {
           enableMultiFingerGestureRace: true,
         ),
         onMapEvent: (event) {
-          // Detect user-initiated drag → disable follow-me
           if (event is MapEventMoveStart &&
               event.source == MapEventSource.dragStart) {
             onMapMoved();
@@ -558,74 +553,14 @@ class _TerritoryMapView extends ConsumerWidget {
           }
         },
       ),
-      children: [
-        // ── Vector basemap (OpenFreeMap, Awaken-branded dark style) ───────
-        const TerritoryVectorTileLayer(),
-
-        // ── Territory polygons ───────────────────────────────────────────
-        territoriesAsync.when(
-          data: (territories) =>
-              TerritoryPolygonLayer(territories: territories),
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
-
-        // ── Active run trail: glow pass (wide soft) ──────────────────────
-        if (latLngPoints.length > 1)
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: latLngPoints,
-                color: AppColors.accent.withValues(alpha: 0.35),
-                strokeWidth: 14,
-                borderStrokeWidth: 0,
-              ),
-            ],
-          ),
-
-        // ── Active run trail: core pass (thin bright) ────────────────────
-        if (latLngPoints.length > 1)
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: latLngPoints,
-                color: AppColors.accent,
-                strokeWidth: 3.5,
-                borderStrokeWidth: 0,
-              ),
-            ],
-          ),
-
-        // ── Start marker ─────────────────────────────────────────────────
-        if (latLngPoints.isNotEmpty)
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: latLngPoints.first,
-                width: 22,
-                height: 22,
-                child: _StartMarker(),
-              ),
-            ],
-          ),
-
-        // ── User's live location ("blue dot") ─────────────────────────────
-        // Shown at all times — idle or mid-run — from the continuous GPS
-        // feed, mirroring the OS-level blue dot the user expects to see.
-        if (myLocation != null)
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: LatLng(myLocation.latitude, myLocation.longitude),
-                width: 44,
-                height: 44,
-                child: _MyLocationMarker(heading: myLocation.heading),
-              ),
-            ],
-          ),
-
-        // ── Attribution (OpenFreeMap / OpenStreetMap data license) ────────
-        const RichAttributionWidget(
+      children: const [
+        TerritoryVectorTileLayer(),
+        _TerritoryPolygonsLayer(),
+        _RunTrailGlowLayer(),
+        _RunTrailCoreLayer(),
+        _RunStartMarkerLayer(),
+        _MyLocationMarkerLayer(),
+        RichAttributionWidget(
           alignment: AttributionAlignment.bottomLeft,
           popupBackgroundColor: AppColors.card,
           attributions: [
@@ -638,6 +573,130 @@ class _TerritoryMapView extends ConsumerWidget {
               textStyle: TextStyle(color: AppColors.mutedForeground),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TerritoryPolygonsLayer extends ConsumerWidget {
+  const _TerritoryPolygonsLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final territoriesAsync = ref.watch(territoryListProvider);
+    return territoriesAsync.when(
+      data: (territories) => TerritoryPolygonLayer(territories: territories),
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _RunTrailGlowLayer extends ConsumerWidget {
+  const _RunTrailGlowLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final points = ref.watch(activeRunProvider.select((s) => s.points));
+    if (points.length < 2) return const SizedBox.shrink();
+
+    final latLngPoints =
+        points.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    return PolylineLayer(
+      polylines: [
+        Polyline(
+          points: latLngPoints,
+          color: AppColors.accent.withValues(alpha: 0.35),
+          strokeWidth: 14,
+          borderStrokeWidth: 0,
+        ),
+      ],
+    );
+  }
+}
+
+class _RunTrailCoreLayer extends ConsumerWidget {
+  const _RunTrailCoreLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final points = ref.watch(activeRunProvider.select((s) => s.points));
+    if (points.length < 2) return const SizedBox.shrink();
+
+    final latLngPoints =
+        points.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    return PolylineLayer(
+      polylines: [
+        Polyline(
+          points: latLngPoints,
+          color: AppColors.accent,
+          strokeWidth: 3.5,
+          borderStrokeWidth: 0,
+        ),
+      ],
+    );
+  }
+}
+
+class _RunStartMarkerLayer extends ConsumerWidget {
+  const _RunStartMarkerLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final points = ref.watch(activeRunProvider.select((s) => s.points));
+    if (points.isEmpty) return const SizedBox.shrink();
+
+    return MarkerLayer(
+      markers: [
+        Marker(
+          point: LatLng(points.first.latitude, points.first.longitude),
+          width: 22,
+          height: 22,
+          child: _StartMarker(),
+        ),
+      ],
+    );
+  }
+}
+
+class _MyLocationMarkerLayer extends ConsumerWidget {
+  const _MyLocationMarkerLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(activeRunProvider.select((s) => s.status));
+    final isTracking =
+        status == RunSessionStatus.tracking || status == RunSessionStatus.finishing;
+
+    LatLng? point;
+    double? heading;
+
+    if (isTracking) {
+      final points = ref.watch(activeRunProvider.select((s) => s.points));
+      if (points.isNotEmpty) {
+        final last = points.last;
+        point = LatLng(last.latitude, last.longitude);
+      }
+    } else {
+      final myLocation = ref.watch(myLocationProvider).valueOrNull;
+      if (myLocation != null) {
+        point = LatLng(myLocation.latitude, myLocation.longitude);
+        heading = myLocation.heading;
+      }
+    }
+
+    if (point == null) {
+      return const SizedBox.shrink();
+    }
+
+    return MarkerLayer(
+      markers: [
+        Marker(
+          point: point,
+          width: 44,
+          height: 44,
+          child: _MyLocationMarker(heading: heading),
         ),
       ],
     );

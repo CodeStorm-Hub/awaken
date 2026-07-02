@@ -13,6 +13,7 @@ import 'package:awaken/features/territory/presentation/providers/territory_provi
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum RunSessionStatus { idle, requestingPermission, tracking, finishing, finished, error }
 
@@ -201,8 +202,12 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
       if (outcome == RunOutcome.territoryClaimed) {
         try {
           captureResult = await repo.captureTerritory(simplifiedPoints);
-        } on Object catch (_) {
-          outcome = RunOutcome.invalidatedTooSmall;
+        } on PostgrestException catch (error) {
+          if (_isLoopTooSmallRejection(error)) {
+            outcome = RunOutcome.invalidatedTooSmall;
+          } else {
+            rethrow;
+          }
         }
       }
 
@@ -249,6 +254,15 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
     state = const ActiveRunState();
+  }
+
+  /// Server-side rejections for polygons that fail the minimum-area check.
+  static bool _isLoopTooSmallRejection(PostgrestException error) {
+    final haystack = '${error.message} ${error.details ?? ''} ${error.hint ?? ''}'
+        .toLowerCase();
+    return haystack.contains('loop_too_small') ||
+        haystack.contains('too_small') ||
+        haystack.contains('minimum area');
   }
 }
 

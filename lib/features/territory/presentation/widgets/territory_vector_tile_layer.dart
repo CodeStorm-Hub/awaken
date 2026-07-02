@@ -30,10 +30,12 @@ class TerritoryVectorTileLayer extends ConsumerWidget {
     final styleAsync = ref.watch(territoryMapStyleProvider);
 
     return styleAsync.when(
-      data: (style) => VectorTileLayer(
-        theme: style.theme,
-        tileProviders: style.providers,
-        sprites: style.sprites,
+      data: (style) => RepaintBoundary(
+        child: VectorTileLayer(
+          theme: style.theme,
+          tileProviders: style.providers,
+          sprites: style.sprites,
+        ),
       ),
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
