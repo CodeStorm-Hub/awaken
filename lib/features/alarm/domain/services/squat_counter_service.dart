@@ -37,13 +37,38 @@ class SquatCounterService {
   double _deepestDepthRatio = 0.0;
   double? _deepestSquatAngle;
 
+  bool _isCalibrated = false;
+  int _calibrationFrames = 0;
+  static const int requiredCalibrationFrames = 8;
+
   bool get isInSquat => _phase == _SquatPhase.squatting;
+  bool get isCalibrated => _isCalibrated;
 
   /// Processes a detected pose and returns squat state for this frame.
   SquatProcessResult processPose(Pose pose) {
     final angle = _combinedKneeAngle(pose);
     if (angle == null) {
       return const SquatProcessResult(hasPose: false);
+    }
+
+    // ── Calibration Phase ────────────────────────────────────────────
+    if (!_isCalibrated) {
+      if (angle >= 160.0) {
+        final gap = _hipKneeGap(pose);
+        if (gap != null && gap > 0) {
+          _calibrationFrames++;
+          if (_calibrationFrames >= requiredCalibrationFrames) {
+            _standingHipKneeGap = gap;
+            _isCalibrated = true;
+          }
+        }
+      } else {
+        _calibrationFrames = 0;
+      }
+      return const SquatProcessResult(
+        hasPose: true,
+        depthRatio: 0.0,
+      );
     }
 
     final depthRatio = _currentDepthRatio(pose);
@@ -96,8 +121,24 @@ class SquatCounterService {
 
   void reset() {
     _phase = _SquatPhase.standing;
+    _isCalibrated = false;
+    _calibrationFrames = 0;
     _resetSquatTracking();
   }
+
+  double? getLeftKneeAngle(Pose pose) => _kneeAngle(
+        pose,
+        PoseLandmarkType.leftHip,
+        PoseLandmarkType.leftKnee,
+        PoseLandmarkType.leftAnkle,
+      );
+
+  double? getRightKneeAngle(Pose pose) => _kneeAngle(
+        pose,
+        PoseLandmarkType.rightHip,
+        PoseLandmarkType.rightKnee,
+        PoseLandmarkType.rightAnkle,
+      );
 
   // ── Internals ──────────────────────────────────────────────────────
 

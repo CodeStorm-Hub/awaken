@@ -6,7 +6,7 @@ part of 'alarm_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$repCountHash() => r'206b1e6fdc0a5f6ef127b6433ca4e42d75686d4c';
+String _$repCountHash() => r'59c323f61012ff71aa0b202e0f5f131c377d5255';
 
 /// Current rep count during an active alarm session.
 ///
@@ -24,10 +24,13 @@ final repCountProvider = AutoDisposeNotifierProvider<RepCount, int>.internal(
 
 typedef _$RepCount = AutoDisposeNotifier<int>;
 String _$repFeedbackNotifierHash() =>
-    r'996fa8cff1f16acc2c1de51da0f358edb919f4cf';
+    r'91d16e1f8f1f21d1133b4e825c775089e1ed7d05';
 
 /// Visual feedback state — drives the border glow colour on the camera HUD.
 /// Resets to neutral after a short delay (handled in the screen widget).
+///
+/// Class is [RepFeedbackNotifier] because enum [RepFeedback] blocks the usual
+/// `repFeedbackProvider` codegen name; alias below preserves the public API.
 ///
 /// Copied from [RepFeedbackNotifier].
 @ProviderFor(RepFeedbackNotifier)
@@ -43,7 +46,7 @@ final repFeedbackNotifierProvider =
     );
 
 typedef _$RepFeedbackNotifier = AutoDisposeNotifier<RepFeedback>;
-String _$requiredRepsHash() => r'47158413c3b52bc738857db896b8ff8167fe4bee';
+String _$requiredRepsHash() => r'0e28a7abc40d84dbe4a4d8151f58e01c9a3de5e0';
 
 /// Total reps required for the current alarm (injected at alarm trigger time).
 /// Kept alive across the alarm → success flow (not session-local like rep count).
@@ -61,7 +64,7 @@ final requiredRepsProvider = NotifierProvider<RequiredReps, int>.internal(
 );
 
 typedef _$RequiredReps = Notifier<int>;
-String _$outOfFrameHash() => r'06e7a6707289192eaf30c76c4635a4d5fefeb060';
+String _$outOfFrameHash() => r'2b1c7263fa50d0e105d3bd4d3007ac4a42574c1d';
 
 /// Whether the out-of-frame penalty is currently active.
 ///
@@ -79,7 +82,7 @@ final outOfFrameProvider =
     );
 
 typedef _$OutOfFrame = AutoDisposeNotifier<bool>;
-String _$sessionStartTimeHash() => r'9e819b5b272dea7eb151b80e69d2b449fb6ed288';
+String _$sessionStartTimeHash() => r'a629a6c6e6a2633bc13306ecb1ab88b60dbdb8df';
 
 /// When the current alarm session started — set in ActiveAlarmScreen.initState.
 /// Used to compute duration_seconds when recording the session to Supabase.

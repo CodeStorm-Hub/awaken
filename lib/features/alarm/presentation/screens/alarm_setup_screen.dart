@@ -7,6 +7,7 @@ import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -68,8 +69,14 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
               const SizedBox(height: 16),
               _RepSelector(
                 value: _reps,
-                onDecrement: () => setState(() => _reps = (_reps - 5).clamp(5, 50)),
-                onIncrement: () => setState(() => _reps = (_reps + 5).clamp(5, 50)),
+                onDecrement: () {
+                  HapticFeedback.lightImpact();
+                  setState(() => _reps = (_reps - 5).clamp(5, 50));
+                },
+                onIncrement: () {
+                  HapticFeedback.lightImpact();
+                  setState(() => _reps = (_reps + 5).clamp(5, 50));
+                },
               ).animate().fadeIn(delay: 140.ms, duration: 300.ms),
 
               const SizedBox(height: 32),
@@ -309,45 +316,116 @@ class _RepSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
 
+    const totalTicks = 10;
+    final currentTickIndex = (value - 5) ~/ 5; // 0 to 9
+
+    final (tierLabel, tierColor) = _getTaxTier(value);
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          // Decrement
-          _RepButton(
-            icon: Icons.remove_rounded,
-            onTap: onDecrement,
-          ),
-
-          // Count + label
-          Column(
+          // Selector Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              AnimatedSwitcher(
-                duration: AppConstants.shortAnim,
-                child: Text(
-                  '$value',
-                  key: ValueKey(value),
-                  style: tt.statValue.copyWith(fontSize: 48),
-                ),
+              // Decrement
+              _RepButton(
+                icon: Icons.remove_rounded,
+                onTap: onDecrement,
               ),
-              Text('squats', style: tt.statLabel),
+
+              // Count + label
+              Column(
+                children: [
+                  AnimatedSwitcher(
+                    duration: AppConstants.shortAnim,
+                    child: Text(
+                      '$value',
+                      key: ValueKey(value),
+                      style: tt.statValue.copyWith(fontSize: 48),
+                    ),
+                  ),
+                  Text('squats', style: tt.statLabel),
+                ],
+              ),
+
+              // Increment
+              _RepButton(
+                icon: Icons.add_rounded,
+                onTap: onIncrement,
+              ),
             ],
           ),
+          const SizedBox(height: 20),
 
-          // Increment
-          _RepButton(
-            icon: Icons.add_rounded,
-            onTap: onIncrement,
+          // Segmented Ticks Visualizer
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(totalTicks, (index) {
+              final isActive = index <= currentTickIndex;
+              final isTarget = index == currentTickIndex;
+              final dotColor = isTarget
+                  ? tierColor
+                  : (isActive ? tierColor.withValues(alpha: 0.5) : AppColors.secondary);
+              return Expanded(
+                child: Container(
+                  height: 6,
+                  margin: EdgeInsets.symmetric(
+                    horizontal: index == 0 || index == totalTicks - 1 ? 0 : 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: isTarget
+                        ? [
+                            BoxShadow(
+                              color: tierColor.withValues(alpha: 0.4),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            )
+                          ]
+                        : null,
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 20),
+
+          // Colored Tax Tier Chip
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: tierColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+              border: Border.all(color: tierColor.withValues(alpha: 0.3), width: 1),
+            ),
+            child: Text(
+              tierLabel,
+              style: TextStyle(
+                color: tierColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  (String, Color) _getTaxTier(int reps) {
+    if (reps <= 15) return ('CHILL TAX', AppColors.success);
+    if (reps <= 35) return ('ENFORCED WAKEUP', AppColors.primary);
+    return ('GRAVEYARD PROTOCOL', AppColors.destructive);
   }
 }
 

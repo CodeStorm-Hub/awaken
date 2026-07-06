@@ -6,28 +6,32 @@ import 'package:awaken/features/alarm/data/repositories/alarm_supabase_repositor
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/repositories/alarm_repository.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'alarm_schedule_providers.g.dart';
 
 /// Picks the correct repository based on auth state:
 ///   - Signed in  → Supabase (cloud-synced)
 ///   - Signed out → SharedPreferences (local-only)
-final alarmRepositoryProvider = Provider<AlarmRepository>((ref) {
+@Riverpod(keepAlive: true)
+AlarmRepository alarmRepository(AlarmRepositoryRef ref) {
   final signedIn = ref.watch(isSignedInProvider);
   if (signedIn) {
     return const AlarmSupabaseRepositoryImpl(AlarmSupabaseDatasource());
   }
   return const AlarmRepositoryImpl(AlarmLocalDatasource());
-});
+}
 
 // ── Alarm list notifier ───────────────────────────────────────────────────────
 
-class AlarmListNotifier extends AsyncNotifier<List<AlarmEntity>> {
+@Riverpod(keepAlive: true)
+class AlarmList extends _$AlarmList {
   @override
   Future<List<AlarmEntity>> build() async {
     // Rebuild if auth state flips (local ↔ cloud)
     ref.watch(isSignedInProvider);
     final alarms = await ref.read(alarmRepositoryProvider).getAlarms();
-    
+
     // Sync local active alarms to OS scheduler upon app load
     final now = DateTime.now();
     for (final alarm in alarms) {
@@ -35,7 +39,7 @@ class AlarmListNotifier extends AsyncNotifier<List<AlarmEntity>> {
         await AlarmNotificationService.scheduleAlarm(alarm);
       }
     }
-    
+
     return alarms;
   }
 
@@ -84,14 +88,10 @@ class AlarmListNotifier extends AsyncNotifier<List<AlarmEntity>> {
   }
 }
 
-final alarmListProvider =
-    AsyncNotifierProvider<AlarmListNotifier, List<AlarmEntity>>(
-  AlarmListNotifier.new,
-);
-
 // ── Derived: next upcoming active alarm ──────────────────────────────────────
 
-final nextAlarmProvider = Provider<AlarmEntity?>((ref) {
+@Riverpod(keepAlive: true)
+AlarmEntity? nextAlarm(NextAlarmRef ref) {
   final alarms = ref.watch(alarmListProvider).valueOrNull ?? [];
   final now = DateTime.now();
   final upcoming = alarms
@@ -99,4 +99,4 @@ final nextAlarmProvider = Provider<AlarmEntity?>((ref) {
       .toList()
     ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
   return upcoming.isEmpty ? null : upcoming.first;
-});
+}

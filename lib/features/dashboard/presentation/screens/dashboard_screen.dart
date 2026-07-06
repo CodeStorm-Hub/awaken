@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/exact_alarm_permission_service.dart';
@@ -451,31 +453,38 @@ class _NoAlarmCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-          border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.3),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.4),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.add_alarm_rounded, color: AppColors.primary),
+                const SizedBox(width: 12),
+                Text(
+                  'Tap to set your alarm',
+                  style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.primary),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.add_alarm_rounded, color: AppColors.primary),
-            const SizedBox(width: 12),
-            Text(
-              'Tap to set your alarm',
-              style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.primary),
-            ),
-            const Spacer(),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.primary,
-              size: 18,
-            ),
-          ],
         ),
       ),
     );
@@ -497,41 +506,50 @@ class _TerritoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-          border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.map_rounded, color: AppColors.accent),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Run a loop, claim territory',
-                style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.accent),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+              border: Border.all(
+                color: AppColors.accent.withValues(alpha: 0.4),
+                width: 0.8,
               ),
             ),
-            GestureDetector(
-              onTap: onViewDetails,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: Text(
-                  'Details',
-                  style: tt.statLabel.copyWith(
-                    fontSize: 12,
-                    color: AppColors.mutedForeground,
+            child: Row(
+              children: [
+                const Icon(Icons.map_rounded, color: AppColors.accent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Run a loop, claim territory',
+                    style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.accent),
                   ),
                 ),
-              ),
+                GestureDetector(
+                  onTap: onViewDetails,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: Text(
+                      'Details',
+                      style: tt.statLabel.copyWith(
+                        fontSize: 12,
+                        color: AppColors.mutedForeground,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.accent, size: 18),
+              ],
             ),
-            const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.accent, size: 18),
-          ],
+          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,6 +63,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _submit() async {
     if (_loading) return;
     if (!_formKey.currentState!.validate()) return;
+
+    HapticFeedback.mediumImpact();
     
     setState(() {
       _loading = true;
@@ -117,29 +120,29 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return InputDecoration(
       labelText: labelText,
       labelStyle: const TextStyle(color: AppColors.mutedForeground),
-      prefixIcon: Icon(prefixIcon, color: AppColors.mutedForeground, size: 20),
+      prefixIcon: Icon(prefixIcon, color: AppColors.mutedForeground, size: 18),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: AppColors.card,
+      fillColor: Colors.black.withValues(alpha: 0.4),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.chipRadius),
-        borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.border, width: 0.8),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.chipRadius),
-        borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.border, width: 0.8),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.chipRadius),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.chipRadius),
-        borderSide: const BorderSide(color: AppColors.destructive, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.destructive, width: 0.8),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppConstants.chipRadius),
-        borderSide: const BorderSide(color: AppColors.destructive, width: 2),
+        borderSide: const BorderSide(color: AppColors.destructive, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
@@ -434,12 +437,19 @@ class _GoogleSignInButton extends StatelessWidget {
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
-        onPressed: loading ? null : onPressed,
+        onPressed: loading
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                onPressed();
+              },
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.border, width: 1.5),
+          side: const BorderSide(color: AppColors.border, width: 0.8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConstants.chipRadius),
           ),
+          backgroundColor: Colors.black.withValues(alpha: 0.2),
+          foregroundColor: AppColors.foreground,
         ),
         child: loading
             ? const SizedBox(

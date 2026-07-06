@@ -55,9 +55,14 @@ class PoseOverlayPainter extends CustomPainter {
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
-    final dotPaint = Paint()
+    final innerDotPaint = Paint()
       ..color = lineColor
       ..style = PaintingStyle.fill;
+
+    final outerRingPaint = Paint()
+      ..color = lineColor.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
 
     // Draw connections
     for (final (startType, endType) in _connections) {
@@ -77,7 +82,9 @@ class PoseOverlayPainter extends CustomPainter {
     // Draw joint dots
     for (final landmark in pose.landmarks.values) {
       if (landmark.likelihood < _minConfidence) continue;
-      canvas.drawCircle(_toScreen(landmark, size), 4, dotPaint);
+      final screenOffset = _toScreen(landmark, size);
+      canvas.drawCircle(screenOffset, 2, innerDotPaint);
+      canvas.drawCircle(screenOffset, 6, outerRingPaint);
     }
   }
 

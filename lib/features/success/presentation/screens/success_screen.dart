@@ -12,6 +12,7 @@ import 'package:awaken/features/sessions/presentation/providers/session_provider
 import 'package:awaken/features/success/presentation/widgets/stat_reveal_item.dart';
 import 'package:awaken/features/success/presentation/widgets/streak_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -128,7 +129,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               StatRevealItem(
                 icon: Icons.fitness_center_rounded,
                 label: 'Squats completed',
-                value: '$_repsCompleted',
+                targetValue: _repsCompleted,
                 unit: 'reps',
                 delay: AppConstants.floatUpDelay0,
               ),
@@ -137,7 +138,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               StatRevealItem(
                 icon: Icons.local_fire_department_rounded,
                 label: 'Calories burned',
-                value: '$_caloriesBurned',
+                targetValue: _caloriesBurned,
                 unit: 'kcal',
                 delay: AppConstants.floatUpDelay1,
                 accentColor: AppColors.accent,
@@ -147,7 +148,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               StatRevealItem(
                 icon: Icons.timer_outlined,
                 label: 'Wake-up time',
-                value: '$_durationSeconds',
+                targetValue: _durationSeconds,
                 unit: 'sec',
                 delay: AppConstants.floatUpDelay2,
                 accentColor: AppColors.success,
@@ -181,10 +182,21 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
 
 // ── Sub-widgets ────────────────────────────────────────────────────────────
 
-class _MotivationalQuote extends StatelessWidget {
+class _MotivationalQuote extends StatefulWidget {
   const _MotivationalQuote({required this.delay});
 
   final Duration delay;
+
+  @override
+  State<_MotivationalQuote> createState() => _MotivationalQuoteState();
+}
+
+class _MotivationalQuoteState extends State<_MotivationalQuote>
+    with SingleTickerProviderStateMixin {
+  late final String _quote;
+  late final AnimationController _charCtrl;
+  late final Animation<int> _charCountAnim;
+  int _lastCharCount = 0;
 
   static const _quotes = [
     'The morning is the foundation of the day.',
@@ -194,9 +206,46 @@ class _MotivationalQuote extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
     final idx = DateTime.now().day % _quotes.length;
+    _quote = '"${_quotes[idx]}"';
 
+    final duration = Duration(milliseconds: _quote.length * 30);
+    _charCtrl = AnimationController(
+      vsync: this,
+      duration: duration,
+    );
+
+    _charCountAnim = IntTween(begin: 0, end: _quote.length).animate(
+      CurvedAnimation(parent: _charCtrl, curve: Curves.linear),
+    );
+
+    _charCountAnim.addListener(() {
+      final current = _charCountAnim.value;
+      if (current != _lastCharCount) {
+        _lastCharCount = current;
+        if (current % 2 == 0) {
+          HapticFeedback.lightImpact();
+        }
+      }
+    });
+
+    Future.delayed(widget.delay, () {
+      if (mounted) {
+        _charCtrl.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _charCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -205,14 +254,20 @@ class _MotivationalQuote extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         border: Border.all(color: AppColors.border),
       ),
-      child: Text(
-        '"${_quotes[idx]}"',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontStyle: FontStyle.italic,
-              color: AppColors.mutedForeground,
-              height: 1.6,
-            ),
-        textAlign: TextAlign.center,
+      child: AnimatedBuilder(
+        animation: _charCountAnim,
+        builder: (context, child) {
+          final visibleText = _quote.substring(0, _charCountAnim.value);
+          return Text(
+            visibleText,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.mutedForeground,
+                  height: 1.6,
+                ),
+            textAlign: TextAlign.center,
+          );
+        },
       ),
     );
   }

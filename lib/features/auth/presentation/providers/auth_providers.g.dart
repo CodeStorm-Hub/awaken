@@ -42,16 +42,9 @@ final authStateProvider = StreamProvider<AuthState>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthStateRef = StreamProviderRef<AuthState>;
-String _$isSignedInHash() => r'2963f6f9c7630105da45e7d465f7920ccde4e3c3';
+String _$isSignedInHash() => r'8873747d0a2eac2819c4368dcd7efbbe3eda8f98';
 
-/// True when a valid Supabase session exists.
-///
-/// While [authStateProvider] is still loading its first event, fall back to
-/// the synchronously-restored session from [Supabase.initialize] so repo
-/// switching (alarms, territory) doesn't briefly route signed-in users to
-/// the offline/local implementation on cold start.
-///
-/// Copied from [isSignedIn].
+/// See also [isSignedIn].
 @ProviderFor(isSignedIn)
 final isSignedInProvider = Provider<bool>.internal(
   isSignedIn,

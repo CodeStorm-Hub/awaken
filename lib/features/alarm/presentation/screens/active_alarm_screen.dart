@@ -180,7 +180,13 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
 
     if (pose != null) {
       _setOutOfFrame(false);
+      final wasCalibratedBefore = _squatCounter.isCalibrated;
       final result = _squatCounter.processPose(pose);
+
+      if (!wasCalibratedBefore && _squatCounter.isCalibrated) {
+        HapticFeedback.mediumImpact();
+      }
+
       if (result.repCompleted) {
         _onRepCompleted();
       } else if (result.badForm) {
@@ -285,6 +291,12 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     ref.read(repCountProvider.notifier).setCount(next);
     ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.success);
 
+    if (next >= required) {
+      HapticFeedback.heavyImpact();
+    } else {
+      HapticFeedback.mediumImpact();
+    }
+
     Future.delayed(AppConstants.shortAnim, () {
       if (mounted) ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
     });
@@ -311,6 +323,13 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     final next = current + 1;
     ref.read(repCountProvider.notifier).setCount(next);
     ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.success);
+
+    if (next >= required) {
+      HapticFeedback.heavyImpact();
+    } else {
+      HapticFeedback.mediumImpact();
+    }
+
     Future.delayed(AppConstants.shortAnim, () {
       if (mounted) ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
     });
@@ -333,6 +352,7 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     final repCount = ref.watch(repCountProvider);
     final requiredReps = ref.watch(requiredRepsProvider);
     final isSquatting = _squatCounter.isInSquat;
+    final isCalibrated = _squatCounter.isCalibrated;
 
     final borderColor = switch (feedback) {
       RepFeedback.neutral => AppColors.border,
@@ -377,6 +397,28 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
                   isSquatting: isSquatting,
                 ),
 
+                // Floating knee angles telemetry
+                if (_currentPose != null) ...[
+                  Positioned(
+                    left: 24,
+                    top: MediaQuery.sizeOf(context).height * 0.45,
+                    child: _TelemetryLabel(
+                      label: 'L_KNEE',
+                      angle: _squatCounter.getLeftKneeAngle(_currentPose!),
+                      isSquatting: isSquatting,
+                    ),
+                  ),
+                  Positioned(
+                    right: 24,
+                    top: MediaQuery.sizeOf(context).height * 0.45,
+                    child: _TelemetryLabel(
+                      label: 'R_KNEE',
+                      angle: _squatCounter.getRightKneeAngle(_currentPose!),
+                      isSquatting: isSquatting,
+                    ),
+                  ),
+                ],
+
                 // Layer 2: Rep counter
                 Center(
                   child: RepCounterDisplay(
@@ -394,6 +436,7 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
                     feedback: feedback,
                     hasPose: _currentPose != null,
                     isSquatting: isSquatting,
+                    isCalibrated: isCalibrated,
                     cameraPermissionDenied: _cameraPermissionDenied,
                     cameraLoading: _cameraController == null ||
                         !(_cameraController!.value.isInitialized),
@@ -426,6 +469,7 @@ class _InstructionBar extends StatelessWidget {
     required this.feedback,
     required this.hasPose,
     required this.isSquatting,
+    required this.isCalibrated,
     required this.cameraPermissionDenied,
     required this.cameraLoading,
   });
@@ -433,6 +477,7 @@ class _InstructionBar extends StatelessWidget {
   final RepFeedback feedback;
   final bool hasPose;
   final bool isSquatting;
+  final bool isCalibrated;
   final bool cameraPermissionDenied;
   final bool cameraLoading;
 
@@ -469,6 +514,7 @@ class _InstructionBar extends StatelessWidget {
     if (cameraPermissionDenied) return ('CAMERA DENIED — TAP TO SIMULATE', AppColors.destructive);
     if (cameraLoading) return ('CAMERA STARTING...', AppColors.mutedForeground);
     if (!hasPose) return ('GET IN FRAME', AppColors.mutedForeground);
+    if (!isCalibrated) return ('STAND UPRIGHT TO CALIBRATE', AppColors.primary);
     if (isSquatting) return ('HOLD... COME BACK UP', AppColors.success);
     return ('DO A SQUAT', AppColors.primary);
   }
@@ -503,6 +549,59 @@ class _WakeUpTaxLabel extends StatelessWidget {
           fontWeight: FontWeight.w600,
           letterSpacing: 2,
         ),
+      ),
+    );
+  }
+}
+
+class _TelemetryLabel extends StatelessWidget {
+  const _TelemetryLabel({
+    required this.label,
+    required this.angle,
+    required this.isSquatting,
+  });
+
+  final String label;
+  final double? angle;
+  final bool isSquatting;
+
+  @override
+  Widget build(BuildContext context) {
+    final valueStr = angle != null ? '${angle!.round()}°' : '---';
+    final activeColor = isSquatting ? AppColors.success : AppColors.primary;
+    final displayColor = angle != null ? activeColor : AppColors.mutedForeground;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: displayColor.withValues(alpha: 0.3), width: 0.8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+              color: AppColors.mutedForeground,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            valueStr,
+            style: TextStyle(
+              fontFamily: 'SpaceMono',
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: displayColor,
+            ),
+          ),
+        ],
       ),
     );
   }

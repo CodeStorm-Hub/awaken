@@ -1455,8 +1455,8 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             territoryRepositoryProvider.overrideWithValue(fakeTerritoryRepository),
-            viewerLocationProvider.overrideWith((ref) => GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: DateTime.now())),
-            leaderboardModeProvider.overrideWith((ref) => LeaderboardMode.nearby),
+            viewerLocationProvider.overrideWith(FakeViewerLocationNotifier.new),
+            leaderboardModeProvider.overrideWith(FakeLeaderboardModeNotifier.new),
           ],
         );
         addTearDown(container.dispose);
@@ -1975,4 +1975,14 @@ class MockHttpClientResponse extends Stream<List<int>> implements HttpClientResp
     if (invocation.memberName == #headers) return MockHttpHeaders();
     return null;
   }
+}
+
+class FakeViewerLocationNotifier extends ViewerLocationNotifier {
+  @override
+  GeoPointEntity? build() => GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: DateTime.now());
+}
+
+class FakeLeaderboardModeNotifier extends LeaderboardModeNotifier {
+  @override
+  LeaderboardMode build() => LeaderboardMode.nearby;
 }

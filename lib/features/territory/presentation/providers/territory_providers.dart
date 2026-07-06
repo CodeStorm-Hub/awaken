@@ -11,27 +11,31 @@ import 'package:awaken/features/territory/domain/entities/territory_entity.dart'
 import 'package:awaken/features/territory/domain/repositories/territory_repository.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_style.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart' show Style;
+
+part 'territory_providers.g.dart';
 
 /// Picks the correct repository based on auth state:
 ///   - Signed in  → Supabase (cloud-synced)
 ///   - Signed out → SharedPreferences (local-only)
-final territoryRepositoryProvider = Provider<TerritoryRepository>((ref) {
+@Riverpod(keepAlive: true)
+TerritoryRepository territoryRepository(TerritoryRepositoryRef ref) {
   final signedIn = ref.watch(isSignedInProvider);
   if (signedIn) {
     return const TerritorySupabaseRepositoryImpl(TerritorySupabaseDatasource());
   }
   return TerritoryLocalRepositoryImpl();
-});
+}
 
 /// Live view of the shared map — every player's territory, updated via
 /// Supabase Realtime whenever any capture/steal/decay touches the table.
 /// Deferred until [territoryMapReadyProvider] is true so startup and other
 /// shell tabs do not open the Realtime subscription.
-final territoryListProvider = StreamProvider<List<TerritoryEntity>>((ref) {
+@Riverpod(keepAlive: true)
+Stream<List<TerritoryEntity>> territoryList(TerritoryListRef ref) {
   if (!ref.watch(territoryMapReadyProvider)) {
     // Stay in [AsyncLoading] until the territory tab opens once.
     return Completer<List<TerritoryEntity>>().future.asStream();
@@ -39,42 +43,58 @@ final territoryListProvider = StreamProvider<List<TerritoryEntity>>((ref) {
 
   ref.keepAlive();
   return ref.watch(territoryRepositoryProvider).watchTerritories();
-});
+}
 
 enum LeaderboardMode { nearby, global }
 
 /// Which time window the leaderboard ranks over.
-///
-/// [day]/[week] rank by area *captured* within that window (a "momentum"
-/// board, backed by the `territory_captures` history log written once per
-/// `capture_territory` call) — a runner who stole a lot of land in the last
-/// 24 hours can outrank someone who owns more land overall but hasn't run
-/// recently. [allTime] ranks by *current* total ownership, same as before
-/// this enum existed (`leaderboard_global`/`leaderboard_nearby`).
 enum LeaderboardWindow { day, week, allTime }
 
-/// Defaults to "Nearby" per the product decision — more motivating for a
-/// new player than seeing they're #4,812 globally.
-final leaderboardModeProvider = StateProvider<LeaderboardMode>((ref) => LeaderboardMode.nearby);
+/// Defaults to "Nearby" per the product decision.
+@riverpod
+class LeaderboardModeNotifier extends _$LeaderboardModeNotifier {
+  @override
+  LeaderboardMode build() => LeaderboardMode.nearby;
 
-/// Defaults to all-time (current ownership) — the original, unfiltered
-/// leaderboard behavior, so this is purely additive for existing users.
-final leaderboardWindowProvider = StateProvider<LeaderboardWindow>((ref) => LeaderboardWindow.allTime);
+  @override
+  set state(LeaderboardMode value) => super.state = value;
+}
+
+final leaderboardModeProvider = leaderboardModeNotifierProvider;
+
+/// Defaults to all-time (current ownership).
+@riverpod
+class LeaderboardWindowNotifier extends _$LeaderboardWindowNotifier {
+  @override
+  LeaderboardWindow build() => LeaderboardWindow.allTime;
+
+  @override
+  set state(LeaderboardWindow value) => super.state = value;
+}
+
+final leaderboardWindowProvider = leaderboardWindowNotifierProvider;
 
 /// The viewer's current position, used only to scope the "Nearby" leaderboard.
-/// Set by the leaderboard screen on open; null falls back to the global view.
-final viewerLocationProvider = StateProvider<GeoPointEntity?>((ref) => null);
+@riverpod
+class ViewerLocationNotifier extends _$ViewerLocationNotifier {
+  @override
+  GeoPointEntity? build() => null;
 
-final leaderboardProvider = FutureProvider<List<LeaderboardEntryEntity>>((ref) async {
+  @override
+  set state(GeoPointEntity? value) => super.state = value;
+}
+
+final viewerLocationProvider = viewerLocationNotifierProvider;
+
+@riverpod
+Future<List<LeaderboardEntryEntity>> leaderboard(LeaderboardRef ref) async {
   final repo = ref.watch(territoryRepositoryProvider);
   final mode = ref.watch(leaderboardModeProvider);
   final window = ref.watch(leaderboardWindowProvider);
   final viewerLocation = ref.watch(viewerLocationProvider);
   final nearby = mode == LeaderboardMode.nearby && viewerLocation != null;
 
-  // Re-run whenever the shared map changes via Realtime, so rankings shift
-  // live as territory changes hands per the plan's leaderboard requirement.
-  // Only subscribe once the territory tab has enabled the shared map stream.
+  // Re-run whenever the shared map changes via Realtime
   if (ref.watch(territoryMapReadyProvider)) {
     ref.watch(territoryListProvider);
   }
@@ -92,25 +112,40 @@ final leaderboardProvider = FutureProvider<List<LeaderboardEntryEntity>>((ref) a
     windowHours: windowHours,
     viewerLocation: nearby ? viewerLocation : null,
   );
-});
+}
 
-final decayWarningsProvider = FutureProvider<List<DecayWarningEntity>>((ref) async {
+@riverpod
+Future<List<DecayWarningEntity>> decayWarnings(DecayWarningsRef ref) async {
   return ref.watch(territoryRepositoryProvider).getDecayWarnings();
-});
+}
 
-/// Set to `true` the first time [TerritoryRunScreen] mounts. Gates network
-/// style load and vector tile mounting until the user opens the territory tab.
-final territoryMapReadyProvider = StateProvider<bool>((ref) => false);
+/// Set to `true` the first time [TerritoryRunScreen] mounts.
+@riverpod
+class TerritoryMapReadyNotifier extends _$TerritoryMapReadyNotifier {
+  @override
+  bool build() => false;
 
-/// Last known GPS fix for the idle map marker — seeded immediately on tab
-/// open so the blue dot appears before the continuous stream's first tick.
-final mapLastKnownPositionProvider = StateProvider<Position?>((ref) => null);
+  @override
+  set state(bool value) => super.state = value;
+}
 
-/// Loads and caches Awaken's branded OpenFreeMap vector style once per app
-/// session. Deferred until [territoryMapReadyProvider] is true so startup and
-/// other shell tabs do not hit OpenFreeMap. Uses [Ref.keepAlive] after the
-/// first successful load so tab switches reuse the resolved [Style].
-final territoryMapStyleProvider = FutureProvider<Style>((ref) async {
+final territoryMapReadyProvider = territoryMapReadyNotifierProvider;
+
+/// Last known GPS fix for the idle map marker.
+@riverpod
+class MapLastKnownPositionNotifier extends _$MapLastKnownPositionNotifier {
+  @override
+  Position? build() => null;
+
+  @override
+  set state(Position? value) => super.state = value;
+}
+
+final mapLastKnownPositionProvider = mapLastKnownPositionNotifierProvider;
+
+/// Loads and caches Awaken's branded OpenFreeMap vector style once per app session.
+@Riverpod(keepAlive: true)
+Future<Style> territoryMapStyle(TerritoryMapStyleRef ref) async {
   if (!ref.watch(territoryMapReadyProvider)) {
     // Stay in [AsyncLoading] until the territory tab opens once.
     await Completer<Style>().future;
@@ -118,24 +153,11 @@ final territoryMapStyleProvider = FutureProvider<Style>((ref) async {
 
   ref.keepAlive();
   return TerritoryMapStyle.load();
-});
+}
 
-/// Continuous "blue dot" GPS feed for the map's live-position marker —
-/// independent of [ActiveRunNotifier]'s tracking stream, so the user's
-/// current position shows on the map at all times, not only mid-run.
-/// `autoDispose` (unlike run tracking): no result needs to survive the
-/// screen closing, so the stream/subscription should tear down with it.
-///
-/// While a run is actively tracking, [_MyLocationMarkerLayer] stops watching
-/// this provider and reads run points instead — `autoDispose` then cancels
-/// this stream so only one Geolocator subscription is active at a time.
-///
-/// Emits `null` (rather than throwing) when location isn't available yet
-/// (permission not granted, services off) so the UI can simply omit the
-/// marker instead of surfacing an error — [TerritoryRunScreen]'s explicit
-/// permission flow (via [LocationPermissionHelper]) is the one place that
-/// should ever prompt the user; this provider stays silent.
-final myLocationProvider = StreamProvider.autoDispose<Position?>((ref) async* {
+/// Continuous "blue dot" GPS feed for the map's live-position marker.
+@riverpod
+Stream<Position?> myLocation(MyLocationRef ref) async* {
   if (!ref.watch(territoryMapReadyProvider)) {
     return;
   }
@@ -147,8 +169,7 @@ final myLocationProvider = StreamProvider.autoDispose<Position?>((ref) async* {
     return;
   }
 
-  // Emit cached / one-shot fixes immediately so the marker does not wait
-  // for the position stream's first tick (which can lag several seconds).
+  // Emit cached / one-shot fixes immediately
   final cached = ref.read(mapLastKnownPositionProvider);
   if (cached != null) {
     yield cached;
@@ -181,38 +202,34 @@ final myLocationProvider = StreamProvider.autoDispose<Position?>((ref) async* {
     ref.read(mapLastKnownPositionProvider.notifier).state = position;
     return position;
   });
-});
-
-/// Which basemap renderer [TerritoryVectorTileLayer] should use.
-enum MapEngine {
-  /// Branded OpenFreeMap vector tiles (default) — themed to match
-  /// `AppColors`, rendered via `VectorTileLayerMode.raster` for good frame
-  /// rate on most devices.
-  vector,
-
-  /// Plain OSM XYZ raster tiles, unthemed. An emergency degrade path for
-  /// devices where even raster-mode vector rendering janks — not the
-  /// default; flip only after profiling confirms it's needed, per the
-  /// map-perfection plan's own caution about vector-tile CPU cost on very
-  /// low-end Android.
-  raster,
 }
 
-/// Defaults to [MapEngine.vector]. Not surfaced as a user-facing setting —
-/// a developer/support escape hatch, not a feature.
-final mapEngineProvider = StateProvider<MapEngine>((ref) => MapEngine.vector);
+enum MapEngine { vector, raster }
 
-/// Set by the leaderboard's "tap to locate" action just before navigating to
-/// the run screen; consumed once by [TerritoryRunScreen] to re-center the
-/// camera, then cleared. Computed client-side from [territoryListProvider]'s
-/// live polygon geometry (a simple ring-vertex average, not a true polygon
-/// centroid) — no backend change needed since that geometry is already
-/// broadcast over Realtime for every player, unlike leaderboard entries
-/// themselves, which carry no location.
-final territoryMapFocusProvider = StateProvider<LatLng?>((ref) => null);
+@riverpod
+class MapEngineNotifier extends _$MapEngineNotifier {
+  @override
+  MapEngine build() => MapEngine.vector;
 
-/// Ring-vertex average of a territory's first polygon — "near enough" for
-/// jumping the map camera there, not meant as a precise geometric centroid.
+  @override
+  set state(MapEngine value) => super.state = value;
+}
+
+final mapEngineProvider = mapEngineNotifierProvider;
+
+/// Set by the leaderboard's "tap to locate" action.
+@riverpod
+class TerritoryMapFocusNotifier extends _$TerritoryMapFocusNotifier {
+  @override
+  LatLng? build() => null;
+
+  @override
+  set state(LatLng? value) => super.state = value;
+}
+
+final territoryMapFocusProvider = territoryMapFocusNotifierProvider;
+
+/// Ring-vertex average of a territory's first polygon.
 LatLng? territoryApproxCentroid(TerritoryEntity territory) {
   if (territory.polygons.isEmpty) return null;
   final ring = territory.polygons.first;

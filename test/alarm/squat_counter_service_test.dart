@@ -8,6 +8,11 @@ void main() {
 
     setUp(() {
       service = SquatCounterService();
+      _calibrate(service, _pose(
+        hip: (200, 80),
+        knee: (200, 200),
+        ankle: (200, 320),
+      ));
     });
 
     test('full depth rep counts', () {
@@ -226,12 +231,20 @@ void main() {
       service.reset();
       expect(service.isInSquat, isFalse);
 
+      _calibrate(service, standing);
+
       final afterReset = service.processPose(standing);
       expect(afterReset.repCompleted, isFalse);
       expect(afterReset.badForm, isFalse);
       expect(service.isInSquat, isFalse);
     });
   });
+}
+
+void _calibrate(SquatCounterService service, Pose pose) {
+  for (var i = 0; i < 8; i++) {
+    service.processPose(pose);
+  }
 }
 
 Pose _pose({
