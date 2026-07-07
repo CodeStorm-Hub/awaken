@@ -173,8 +173,13 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _markTerritoryMapReadyIfNeeded(widget.navigationShell.currentIndex);
+      _syncShellTabIndex(widget.navigationShell.currentIndex);
     });
+  }
+
+  void _syncShellTabIndex(int index) {
+    ref.read(territoryShellTabIndexProvider.notifier).state = index;
+    _markTerritoryMapReadyIfNeeded(index);
   }
 
   void _markTerritoryMapReadyIfNeeded(int index) {
@@ -234,10 +239,7 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
       if (!discard || !context.mounted) return;
     }
 
-    if (index == 1) {
-      _markTerritoryMapReadyIfNeeded(index);
-    }
-
+    _syncShellTabIndex(index);
     widget.navigationShell.goBranch(index);
   }
 
@@ -246,7 +248,7 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
     // Covers bottom-nav taps and deep links (e.g. dashboard territory card).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _markTerritoryMapReadyIfNeeded(widget.navigationShell.currentIndex);
+      _syncShellTabIndex(widget.navigationShell.currentIndex);
     });
 
     return Scaffold(

@@ -25,6 +25,8 @@ dependencies:
 
   # ── Territory capture: map + GPS ──────────────────────────────────
   flutter_map: ^7.0.2
+  # Aborts stale tile HTTP during pan/zoom (BSD-3, fleaflet).
+  flutter_map_cancellable_tile_provider: ^3.0.2
   # Vector tile rendering (OpenFreeMap dark style) — crisp at every zoom,
   # themeable to match AppColors, no API key/commercial-use restriction
   # (unlike the CartoDB raster tiles it replaces).

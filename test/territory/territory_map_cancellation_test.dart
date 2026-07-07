@@ -19,10 +19,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import 'helpers/territory_widget_test_helpers.dart';
 import 'mocks/fake_territory_repository.dart';
+import 'mocks/mock_geolocator.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -159,6 +161,55 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
 
         expect(tileCancellations, isEmpty);
+
+        fakeRepo.close();
+      },
+    );
+
+    testWidgets(
+      'opening territory tab clears locating spinner after GPS fix',
+      (WidgetTester tester) async {
+        final mockGeolocator = MockGeolocatorPlatform();
+        mockGeolocator.feedPosition(
+          Position(
+            latitude: 35.6812,
+            longitude: 139.7671,
+            timestamp: DateTime.utc(2026, 1, 1),
+            accuracy: 5,
+            altitude: 0,
+            altitudeAccuracy: 0,
+            heading: 0,
+            headingAccuracy: 0,
+            speed: 0,
+            speedAccuracy: 0,
+          ),
+        );
+        GeolocatorPlatform.instance = mockGeolocator;
+
+        final fakeRepo = FakeTerritoryRepository();
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+              authStateProvider.overrideWith((ref) => signedOutAuthStateStream()),
+              isSignedInProvider.overrideWith((ref) => false),
+              currentUserProvider.overrideWith((ref) => null),
+              alarmRepositoryProvider.overrideWithValue(FakeAlarmRepository()),
+              sessionRepositoryProvider.overrideWithValue(FakeSessionRepository()),
+              territoryRepositoryProvider.overrideWithValue(fakeRepo),
+              clockDisplayProvider.overrideWith((ref) => Stream.value('08:00')),
+            ],
+            child: const AwakenApp(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Run a loop, claim territory'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pump(); // flush territory list Timer.run
+
+        expect(find.text('Finding your location…'), findsNothing);
 
         fakeRepo.close();
       },

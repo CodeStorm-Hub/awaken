@@ -246,18 +246,21 @@ class _CaptureMinimap extends StatelessWidget {
 
     return IgnorePointer(
       child: FlutterMap(
-        key: territoryFlutterMapKey,
+        key: territoryCaptureMinimapKey,
         options: MapOptions(
+          backgroundColor: AppColors.background,
           initialCameraFit: CameraFit.bounds(
             bounds: bounds,
             padding: const EdgeInsets.all(24),
           ),
+          minZoom: AppConstants.territoryMapMinZoom,
+          maxZoom: AppConstants.territoryMapMaxZoom,
           interactionOptions: const InteractionOptions(
             flags: InteractiveFlag.none,
           ),
         ),
         children: [
-          const TerritoryVectorTileLayer(),
+          const TerritoryVectorTileLayer(forceRender: true),
           PolygonLayer(
             polygons: [
               Polygon(

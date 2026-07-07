@@ -32,6 +32,11 @@ class MockGeolocatorPlatform extends GeolocatorPlatform {
   }
 
   @override
+  Future<Position?> getLastKnownPosition({bool forceLocationManager = false}) async {
+    return _currentPosition;
+  }
+
+  @override
   Future<Position> getCurrentPosition({
     LocationSettings? locationSettings,
   }) async {

@@ -782,16 +782,15 @@ void main() {
     });
 
     test('33. F7: Realtime stream notifies listeners when territory map updates.', () async {
-      final controller = StreamController<List<TerritoryEntity>>();
-      fakeTerritoryRepository.watchTerritories().listen(controller.add);
+      final updates = <List<TerritoryEntity>>[];
+      final subscription = fakeTerritoryRepository.watchTerritories().listen(updates.add);
 
-      // Emit change
       final loop = createRectangleLoop(startLat: 40.7128, startLng: -74.0060, widthMeters: 60, heightMeters: 60, startTime: _epoch);
       await fakeTerritoryRepository.captureTerritory(loop);
+      await Future<void>.delayed(Duration.zero);
 
-      final nextList = await controller.stream.first;
-      expect(nextList, isNotEmpty);
-      controller.close();
+      expect(updates.any((list) => list.isNotEmpty), isTrue);
+      await subscription.cancel();
     });
 
     test('34. F7: Leaderboard provider automatically invalidates and refetches when map updates.', () {
@@ -801,6 +800,7 @@ void main() {
         );
         addTearDown(container.dispose);
         enableTerritoryMapForTests(container);
+        enableTerritoryTabForTests(container);
 
         // Force initial read
         async.run((self) async {
@@ -1335,6 +1335,7 @@ void main() {
         );
         addTearDown(container.dispose);
         enableTerritoryMapForTests(container);
+        enableTerritoryTabForTests(container);
 
         // Watch map stream and leaderboard future
         var mapUpdatesCount = 0;
@@ -1342,11 +1343,11 @@ void main() {
 
         container.listen(territoryListProvider, (prev, next) {
           mapUpdatesCount++;
-        });
+        }, fireImmediately: true);
 
         container.listen(leaderboardProvider, (prev, next) {
           leaderboardUpdatesCount++;
-        });
+        }, fireImmediately: true);
 
         async.flushMicrotasks();
 
@@ -1675,6 +1676,7 @@ void main() {
         );
         addTearDown(container.dispose);
         enableTerritoryMapForTests(container);
+        enableTerritoryTabForTests(container);
 
         final notifier = container.read(activeRunProvider.notifier);
         notifier.startRun();

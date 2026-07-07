@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:awaken/core/constants/app_constants.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:vector_map_tiles/vector_map_tiles.dart';
@@ -48,6 +49,10 @@ abstract final class TerritoryMapStyle {
   static Future<VectorTileProvider?> _resolveProvider(
     Map<String, dynamic> sourceValue,
   ) async {
+    // Vector basemap only — skip raster underlays (e.g. Natural Earth relief)
+    // that are not used by Awaken's themed layers.
+    if ((sourceValue['type'] as String?) != 'vector') return null;
+
     final type = _tileProviderType(sourceValue['type'] as String?);
     if (type == null) return null;
 
@@ -73,7 +78,7 @@ abstract final class TerritoryMapStyle {
     return NetworkVectorTileProvider(
       type: type,
       urlTemplate: tiles.first as String,
-      maximumZoom: (resolvedSource['maxzoom'] as num?)?.toInt() ?? 14,
+      maximumZoom: AppConstants.territoryVectorTileMaxZoom,
       minimumZoom: (resolvedSource['minzoom'] as num?)?.toInt() ?? 1,
     );
   }

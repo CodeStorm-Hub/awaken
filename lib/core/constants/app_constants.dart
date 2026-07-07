@@ -60,13 +60,19 @@ abstract final class AppConstants {
 
   // ── Territory map ─────────────────────────────────────────────────
   static const double territoryMapMinZoom = 2.0;
-  static const double territoryMapMaxZoom = 20.0;
+
+  /// Client overzoom cap — OpenMapTiles vector data is native to z14; z18 is
+  /// the comfortable overzoom limit per OpenMapTiles guidance.
+  static const double territoryMapMaxZoom = 18.0;
   static const double territoryMapInitialZoom = 14.0;
   static const double territoryMapUserZoom = 16.5;
 
-  /// Natural Earth shaded relief tiles — visible at low zoom where vector
-  /// style layers are sparse.
-  static const String territoryLowZoomTileUrl =
-      'https://tiles.openfreemap.org/natural_earth/ne2sr/{z}/{x}/{y}.png';
-  static const int territoryLowZoomTileMaxNativeZoom = 6;
+  /// Native max zoom of the OpenFreeMap / OpenMapTiles vector source.
+  static const int territoryVectorTileMaxZoom = 14;
+
+  /// Max GPS points drawn on the run trail overlay (full path kept for capture).
+  static const int territoryTrailDisplayMaxPoints = 500;
+
+  /// Below this zoom, territory polygon glow rings are skipped (core only).
+  static const double territoryPolygonGlowMinZoom = 12.0;
 }

@@ -11,6 +11,7 @@ import 'package:awaken/features/territory/domain/services/rdp_simplifier.dart';
 import 'package:awaken/features/territory/domain/services/run_validation_service.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
 import 'package:clock/clock.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -132,6 +133,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     _kalmanFilter.reset();
     _sawSustainedOverSpeed = false;
     _startTime = clock.now();
+    ref.read(territoryRunGpsKeepAliveProvider.notifier).state = true;
     state = const ActiveRunState(status: RunSessionStatus.tracking);
 
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -140,11 +142,34 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     });
 
     _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+      locationSettings: _runLocationSettings(),
+    ).listen(_onPosition);
+  }
+
+  LocationSettings _runLocationSettings() {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidSettings(
         accuracy: LocationAccuracy.best,
         distanceFilter: 5,
-      ),
-    ).listen(_onPosition);
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: 'Awaken territory run',
+          notificationText: 'Tracking your GPS path for territory capture',
+          enableWakeLock: true,
+        ),
+      );
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.best,
+        activityType: ActivityType.fitness,
+        distanceFilter: 5,
+        pauseLocationUpdatesAutomatically: true,
+      );
+    }
+    return const LocationSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 5,
+    );
   }
 
   void _onPosition(Position position) {
@@ -256,6 +281,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   void reset() {
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
+    ref.read(territoryRunGpsKeepAliveProvider.notifier).state = false;
     state = const ActiveRunState();
   }
 

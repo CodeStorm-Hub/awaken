@@ -10,6 +10,7 @@ import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart'
 import 'package:awaken/features/territory/domain/entities/run_track_entity.dart';
 import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
+import 'package:awaken/features/territory/domain/services/trail_display_utils.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
 import 'package:awaken/features/territory/presentation/widgets/capture_result_sheet.dart';
@@ -31,6 +32,8 @@ import 'package:latlong2/latlong.dart';
 /// True while the map camera should auto-follow the user position.
 /// Disabled by the user manually panning the map.
 final _followMeProvider = StateProvider<bool>((ref) => true);
+
+enum _LocatingPhase { hidden, requestingPermission, acquiringFix, failed }
 
 // ── Screen ───────────────────────────────────────────────────────────────────
 
@@ -56,8 +59,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
 
-  bool _isLocating = true;
   bool _didRequestInitialCenter = false;
+  bool _didAutoCenterFromStream = false;
+  _LocatingPhase _locatingPhase = _LocatingPhase.acquiringFix;
+  String? _locationErrorMessage;
   String? _resultMessage;
   Timer? _resultMessageTimer;
 
@@ -77,6 +82,29 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
 
+    ref.listenManual<bool>(territoryMapReadyProvider, (previous, ready) {
+      if (ready) _ensureInitialLocationCenter();
+    }, fireImmediately: true);
+
+    ref.listenManual<int>(territoryShellTabIndexProvider, (previous, index) {
+      if (index == 1) _ensureInitialLocationCenter();
+    }, fireImmediately: true);
+
+    ref.listenManual<AsyncValue<Position?>>(myLocationProvider, (previous, next) {
+      next.whenData((position) {
+        if (position == null || !mounted) return;
+        ref.read(mapLastKnownPositionProvider.notifier).state = position;
+        if (!_didAutoCenterFromStream && ref.read(_followMeProvider)) {
+          _didAutoCenterFromStream = true;
+          _animateTo(
+            LatLng(position.latitude, position.longitude),
+            zoom: AppConstants.territoryMapUserZoom,
+          );
+          setState(() => _locatingPhase = _LocatingPhase.hidden);
+        }
+      });
+    });
+
     // A leaderboard "tap to locate" takes priority over auto-centering on
     // the user's own GPS position — they explicitly asked to see somewhere
     // else.
@@ -87,7 +115,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
         ref.read(_followMeProvider.notifier).state = false;
         _animateTo(focus, zoom: 17);
         ref.read(territoryMapFocusProvider.notifier).state = null;
-        setState(() => _isLocating = false);
+        setState(() => _locatingPhase = _LocatingPhase.hidden);
       });
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -99,9 +127,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
   void _ensureInitialLocationCenter() {
     if (_didRequestInitialCenter) return;
     if (!ref.read(territoryMapReadyProvider)) return;
+    if (ref.read(territoryShellTabIndexProvider) != 1) return;
     if (ref.read(territoryMapFocusProvider) != null) return;
     _didRequestInitialCenter = true;
-    _centerOnCurrentLocation();
+    unawaited(_centerOnCurrentLocation());
   }
 
   @override
@@ -114,14 +143,44 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
   // ── Location helpers ───────────────────────────────────────────────────────
 
-  Future<void> _centerOnCurrentLocation() async {
+  Future<void> _centerOnCurrentLocation({bool userInitiated = false}) async {
+    if (mounted) {
+      setState(() {
+        _locatingPhase = _LocatingPhase.requestingPermission;
+        _locationErrorMessage = null;
+      });
+    }
+
     try {
-      // Must run before getCurrentPosition — see LocationPermissionHelper's
-      // doc comment for why skipping this means the OS prompt never shows.
       await LocationPermissionHelper.ensureLocationAccess(
         serviceDisabledMessage: 'Turn on location services to see your position on the map.',
         permissionDeniedMessage: 'Allow location access to see your position on the map.',
       );
+    } on LocationAccessException catch (e) {
+      if (mounted) {
+        setState(() {
+          _locatingPhase = _LocatingPhase.failed;
+          _locationErrorMessage = e.message;
+        });
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _locatingPhase = _LocatingPhase.acquiringFix);
+
+    try {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null && mounted) {
+        ref.read(mapLastKnownPositionProvider.notifier).state = lastKnown;
+        _animateTo(
+          LatLng(lastKnown.latitude, lastKnown.longitude),
+          zoom: AppConstants.territoryMapUserZoom,
+        );
+        _didAutoCenterFromStream = true;
+        setState(() => _locatingPhase = _LocatingPhase.hidden);
+      }
+
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
       ).timeout(const Duration(seconds: 8));
@@ -131,12 +190,21 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
         LatLng(position.latitude, position.longitude),
         zoom: AppConstants.territoryMapUserZoom,
       );
+      _didAutoCenterFromStream = true;
+      setState(() => _locatingPhase = _LocatingPhase.hidden);
     } catch (_) {
-      // Denied, timed out, or services off — stays at fallback center. The
-      // Start-run flow (ActiveRunNotifier.startRun) surfaces a proper error
-      // banner if the user tries to track without location access.
+      if (!mounted) return;
+      if (_locatingPhase != _LocatingPhase.hidden) {
+        setState(() {
+          _locatingPhase = _LocatingPhase.failed;
+          _locationErrorMessage =
+              'Could not get a GPS fix. Try again outdoors with a clear sky view.';
+        });
+      }
     } finally {
-      if (mounted) setState(() => _isLocating = false);
+      if (userInitiated && mounted && _locatingPhase == _LocatingPhase.acquiringFix) {
+        setState(() => _locatingPhase = _LocatingPhase.hidden);
+      }
     }
   }
 
@@ -147,37 +215,39 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     _mapController.move(center, targetZoom);
   }
 
-  void _zoomIn() => _mapController.move(
-        _mapController.camera.center,
-        (_mapController.camera.zoom + 1).clamp(
-          AppConstants.territoryMapMinZoom,
-          AppConstants.territoryMapMaxZoom,
-        ),
-      );
+  void _zoomIn() {
+    final next = (_mapController.camera.zoom + 1).clamp(
+      AppConstants.territoryMapMinZoom,
+      AppConstants.territoryMapMaxZoom,
+    );
+    if (next <= _mapController.camera.zoom) return;
+    _mapController.move(_mapController.camera.center, next);
+    ref.read(territoryMapZoomProvider.notifier).state = next;
+  }
 
-  void _zoomOut() => _mapController.move(
-        _mapController.camera.center,
-        (_mapController.camera.zoom - 1).clamp(
-          AppConstants.territoryMapMinZoom,
-          AppConstants.territoryMapMaxZoom,
-        ),
-      );
+  void _zoomOut() {
+    final next = (_mapController.camera.zoom - 1).clamp(
+      AppConstants.territoryMapMinZoom,
+      AppConstants.territoryMapMaxZoom,
+    );
+    _mapController.move(_mapController.camera.center, next);
+    ref.read(territoryMapZoomProvider.notifier).state = next;
+  }
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<bool>(territoryMapReadyProvider, (previous, ready) {
-      if (ready) {
-        _ensureInitialLocationCenter();
-      }
-    });
-
     final status = ref.watch(activeRunProvider.select((s) => s.status));
     final errorMessage = ref.watch(activeRunProvider.select((s) => s.errorMessage));
     final points = ref.watch(activeRunProvider.select((s) => s.points));
     final followMe = ref.watch(_followMeProvider);
     final rivalConflict = ref.watch(rivalConflictProvider);
+    final mapZoom = ref.watch(territoryMapZoomProvider);
+    final atMaxZoom = mapZoom >= AppConstants.territoryMapMaxZoom - 0.01;
+    final atMinZoom = mapZoom <= AppConstants.territoryMapMinZoom + 0.01;
+    final mapVisible = ref.watch(territoryShellTabIndexProvider) == 1 ||
+        ref.watch(territoryRunGpsKeepAliveProvider);
 
     // Distance from current position back to start — drives the proximity ring.
     final distToStart = points.length >= 2
@@ -227,21 +297,36 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
         body: Stack(
           children: [
             // ── Map ────────────────────────────────────────────────────────
-            _TerritoryMapView(
-              mapController: _mapController,
-              onMapMoved: () {
-                // User panned manually → disable follow-me
-                if (ref.read(_followMeProvider)) {
-                  ref.read(_followMeProvider.notifier).state = false;
-                }
-              },
+            Visibility(
+              visible: mapVisible,
+              maintainState: true,
+              maintainAnimation: true,
+              child: _TerritoryMapView(
+                mapController: _mapController,
+                onMapMoved: () {
+                  if (ref.read(_followMeProvider)) {
+                    ref.read(_followMeProvider.notifier).state = false;
+                  }
+                },
+                onZoomChanged: (zoom) {
+                  ref.read(territoryMapZoomProvider.notifier).state = zoom;
+                },
+              ),
             ),
 
-            // ── Locating spinner ───────────────────────────────────────────
-            if (_isLocating && status == RunSessionStatus.idle)
-              const Positioned.fill(
+            // ── Locating overlay (GPS only — map loading is separate) ─────
+            if (_locatingPhase != _LocatingPhase.hidden &&
+                status == RunSessionStatus.idle)
+              Positioned.fill(
                 child: IgnorePointer(
-                  child: Center(child: _LocatingIndicator()),
+                  ignoring: _locatingPhase != _LocatingPhase.failed,
+                  child: Center(
+                    child: _LocatingIndicator(
+                      phase: _locatingPhase,
+                      errorMessage: _locationErrorMessage,
+                      onRetry: () => _centerOnCurrentLocation(userInitiated: true),
+                    ),
+                  ),
                 ),
               ),
 
@@ -315,7 +400,6 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Follow-me toggle
                     _CircleIconButton(
                       icon: followMe
                           ? Icons.my_location_rounded
@@ -323,37 +407,40 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                       onTap: () {
                         final next = !ref.read(_followMeProvider);
                         ref.read(_followMeProvider.notifier).state = next;
-                        if (next && points.isNotEmpty) {
+                        if (!next) return;
+                        if (points.isNotEmpty && isTracking) {
                           _animateTo(
                             LatLng(
                               points.last.latitude,
                               points.last.longitude,
                             ),
                           );
+                        } else {
+                          unawaited(_centerOnCurrentLocation(userInitiated: true));
                         }
                       },
                       tint: followMe ? AppColors.primary : null,
                     ),
                     const SizedBox(height: 8),
-                    // Zoom in
                     _CircleIconButton(
                       icon: Icons.add_rounded,
-                      onTap: _zoomIn,
+                      onTap: atMaxZoom ? null : _zoomIn,
+                      enabled: !atMaxZoom,
                     ),
                     const SizedBox(height: 6),
-                    // Zoom out
                     _CircleIconButton(
                       icon: Icons.remove_rounded,
-                      onTap: _zoomOut,
+                      onTap: atMinZoom ? null : _zoomOut,
+                      enabled: !atMinZoom,
                     ),
-                    const SizedBox(height: 8),
-                    // Re-centre on current location
-                    _CircleIconButton(
-                      icon: Icons.gps_fixed_rounded,
-                      onTap: () {
-                        ref.read(_followMeProvider.notifier).state = true;
-                        _centerOnCurrentLocation();
-                      },
+                    const SizedBox(height: 6),
+                    Text(
+                      'z${mapZoom.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                        color: AppColors.mutedForeground,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -546,34 +633,16 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 // on position ticks, which prevents vector_map_tiles from cancelling in-flight
 // tile renders on every GPS update.
 
-/// Natural Earth shaded relief — paints immediately at low zoom while the
-/// vector style resolves and fills gaps where vector layers have high minzoom.
-class _TerritoryLowZoomRasterLayer extends StatelessWidget {
-  const _TerritoryLowZoomRasterLayer();
-
-  static const _key = ValueKey<String>('territory-low-zoom-raster-layer');
-
-  @override
-  Widget build(BuildContext context) {
-    return TileLayer(
-      key: _key,
-      urlTemplate: AppConstants.territoryLowZoomTileUrl,
-      userAgentPackageName: 'com.example.awaken',
-      maxNativeZoom: AppConstants.territoryLowZoomTileMaxNativeZoom,
-      maxZoom: AppConstants.territoryMapMaxZoom,
-      tileProvider: NetworkTileProvider(),
-    );
-  }
-}
-
 class _TerritoryMapView extends StatelessWidget {
   const _TerritoryMapView({
     required this.mapController,
     required this.onMapMoved,
+    required this.onZoomChanged,
   });
 
   final MapController mapController;
   final VoidCallback onMapMoved;
+  final ValueChanged<double> onZoomChanged;
 
   static const LatLng _fallbackCenter = LatLng(43.65, -79.38); // Toronto
 
@@ -583,6 +652,7 @@ class _TerritoryMapView extends StatelessWidget {
       key: territoryFlutterMapKey,
       mapController: mapController,
       options: MapOptions(
+        backgroundColor: AppColors.background,
         initialCenter: _fallbackCenter,
         initialZoom: AppConstants.territoryMapInitialZoom,
         minZoom: AppConstants.territoryMapMinZoom,
@@ -599,10 +669,12 @@ class _TerritoryMapView extends StatelessWidget {
           if (event is MapEventScrollWheelZoom) {
             onMapMoved();
           }
+          if (event is MapEventMove || event is MapEventRotate) {
+            onZoomChanged(mapController.camera.zoom);
+          }
         },
       ),
       children: const [
-        _TerritoryLowZoomRasterLayer(),
         TerritoryVectorTileLayer(key: ValueKey('territory-vector-tile-layer-widget')),
         _TerritoryPolygonsLayer(),
         _RunTrailGlowLayer(),
@@ -610,16 +682,12 @@ class _TerritoryMapView extends StatelessWidget {
         _RunStartMarkerLayer(),
         _MyLocationMarkerLayer(),
         RichAttributionWidget(
-          alignment: AttributionAlignment.bottomLeft,
+          alignment: AttributionAlignment.bottomRight,
           popupBackgroundColor: AppColors.card,
           attributions: [
             TextSourceAttribution(
-              'OpenStreetMap contributors',
-              textStyle: TextStyle(color: AppColors.mutedForeground),
-            ),
-            TextSourceAttribution(
-              'OpenFreeMap / OpenMapTiles',
-              textStyle: TextStyle(color: AppColors.mutedForeground),
+              '© OpenStreetMap · OpenFreeMap',
+              textStyle: TextStyle(color: AppColors.mutedForeground, fontSize: 10),
             ),
           ],
         ),
@@ -634,8 +702,12 @@ class _TerritoryPolygonsLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final territoriesAsync = ref.watch(territoryListProvider);
+    final mapZoom = ref.watch(territoryMapZoomProvider);
     return territoriesAsync.when(
-      data: (territories) => TerritoryPolygonLayer(territories: territories),
+      data: (territories) => TerritoryPolygonLayer(
+        territories: territories,
+        mapZoom: mapZoom,
+      ),
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
     );
@@ -650,17 +722,20 @@ class _RunTrailGlowLayer extends ConsumerWidget {
     final points = ref.watch(activeRunProvider.select((s) => s.points));
     if (points.length < 2) return const SizedBox.shrink();
 
+    final displayPoints = decimateTrailForDisplay(points);
     final latLngPoints =
-        points.map((p) => LatLng(p.latitude, p.longitude)).toList();
-    return PolylineLayer(
-      polylines: [
-        Polyline(
-          points: latLngPoints,
-          color: AppColors.accent.withValues(alpha: 0.35),
-          strokeWidth: 14,
-          borderStrokeWidth: 0,
-        ),
-      ],
+        displayPoints.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    return RepaintBoundary(
+      child: PolylineLayer(
+        polylines: [
+          Polyline(
+            points: latLngPoints,
+            color: AppColors.accent.withValues(alpha: 0.35),
+            strokeWidth: 14,
+            borderStrokeWidth: 0,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -673,17 +748,20 @@ class _RunTrailCoreLayer extends ConsumerWidget {
     final points = ref.watch(activeRunProvider.select((s) => s.points));
     if (points.length < 2) return const SizedBox.shrink();
 
+    final displayPoints = decimateTrailForDisplay(points);
     final latLngPoints =
-        points.map((p) => LatLng(p.latitude, p.longitude)).toList();
-    return PolylineLayer(
-      polylines: [
-        Polyline(
-          points: latLngPoints,
-          color: AppColors.accent,
-          strokeWidth: 3.5,
-          borderStrokeWidth: 0,
-        ),
-      ],
+        displayPoints.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    return RepaintBoundary(
+      child: PolylineLayer(
+        polylines: [
+          Polyline(
+            points: latLngPoints,
+            color: AppColors.accent,
+            strokeWidth: 3.5,
+            borderStrokeWidth: 0,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -727,7 +805,10 @@ class _MyLocationMarkerLayer extends ConsumerWidget {
         final last = points.last;
         point = LatLng(last.latitude, last.longitude);
       }
-    } else {
+    }
+
+    // Idle map, or run just started before the first GPS path point arrives.
+    if (point == null) {
       final myLocation = ref.watch(myLocationProvider).valueOrNull ??
           ref.watch(mapLastKnownPositionProvider);
       if (myLocation != null) {
@@ -740,15 +821,17 @@ class _MyLocationMarkerLayer extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    return MarkerLayer(
-      markers: [
-        Marker(
-          point: point,
-          width: 44,
-          height: 44,
-          child: _MyLocationMarker(heading: heading),
-        ),
-      ],
+    return RepaintBoundary(
+      child: MarkerLayer(
+        markers: [
+          Marker(
+            point: point,
+            width: 44,
+            height: 44,
+            child: _MyLocationMarker(heading: heading),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1071,28 +1154,31 @@ class _CircleIconButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.tint,
+    this.enabled = true,
   });
 
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color? tint;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     final isAccented = tint != null;
+    final effectiveTint = enabled ? tint : AppColors.mutedForeground;
     return Material(
       color: isAccented
-          ? tint!.withValues(alpha: 0.15)
-          : AppColors.card.withValues(alpha: 0.82),
+          ? (tint ?? AppColors.primary).withValues(alpha: enabled ? 0.15 : 0.08)
+          : AppColors.card.withValues(alpha: enabled ? 0.82 : 0.5),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Icon(
             icon,
-            color: tint ?? AppColors.foreground,
+            color: effectiveTint ?? AppColors.foreground,
             size: 20,
           ),
         ),
@@ -1164,46 +1250,93 @@ class _ResultBanner extends StatelessWidget {
 }
 
 class _LocatingIndicator extends StatelessWidget {
-  const _LocatingIndicator();
+  const _LocatingIndicator({
+    required this.phase,
+    this.errorMessage,
+    this.onRetry,
+  });
+
+  final _LocatingPhase phase;
+  final String? errorMessage;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
+    final (title, subtitle, showSpinner) = switch (phase) {
+      _LocatingPhase.requestingPermission => (
+          'Allow location access',
+          'We need your permission to center the map on you.',
+          true,
+        ),
+      _LocatingPhase.acquiringFix => (
+          'Finding your location…',
+          'We’ll center the map as soon as GPS is ready.',
+          true,
+        ),
+      _LocatingPhase.failed => (
+          'Couldn’t get your location',
+          errorMessage ?? 'Check that location services are on and try again.',
+          false,
+        ),
+      _LocatingPhase.hidden => ('', '', false),
+    };
+
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 32),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
-        color: AppColors.card.withValues(alpha: 0.85),
+        color: AppColors.card.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(
-            width: 32,
-            height: 32,
-            child: CircularProgressIndicator(
-              color: AppColors.accent,
-              strokeWidth: 2.5,
+          if (showSpinner) ...[
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                color: AppColors.accent,
+                strokeWidth: 2.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ] else ...[
+            const Icon(
+              Icons.location_off_outlined,
+              color: AppColors.mutedForeground,
+              size: 28,
+            ),
+            const SizedBox(height: 12),
+          ],
           Text(
-            'Finding your location…',
+            title,
             style: TextStyle(
-              color: AppColors.mutedForeground.withValues(alpha: 0.9),
+              color: AppColors.mutedForeground.withValues(alpha: 0.95),
               fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'We’ll center the map as soon as GPS is ready.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.mutedForeground.withValues(alpha: 0.8),
-              fontSize: 11,
-              height: 1.3,
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.mutedForeground.withValues(alpha: 0.8),
+                fontSize: 11,
+                height: 1.3,
+              ),
             ),
-          ),
+          ],
+          if (phase == _LocatingPhase.failed && onRetry != null) ...[
+            const SizedBox(height: 14),
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
         ],
       ),
     );

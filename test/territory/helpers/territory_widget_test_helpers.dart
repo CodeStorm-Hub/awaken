@@ -10,6 +10,11 @@ void enableTerritoryMapForTests(ProviderContainer container) {
   container.read(territoryMapReadyProvider.notifier).state = true;
 }
 
+/// Activates territory shell tab gating (map + GPS providers).
+void enableTerritoryTabForTests(ProviderContainer container) {
+  container.read(territoryShellTabIndexProvider.notifier).state = 1;
+}
+
 /// Returns a transparent 1x1 PNG for any HTTP request in widget tests.
 class MockHttpOverrides extends HttpOverrides {
   @override

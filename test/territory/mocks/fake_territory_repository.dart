@@ -25,13 +25,10 @@ class FakeTerritoryRepository implements TerritoryRepository {
 
   @override
   Stream<List<TerritoryEntity>> watchTerritories() {
-    // Emit initial state immediately on new subscription
-    Timer.run(() {
-      if (!_controller.isClosed) {
-        _controller.add(List.unmodifiable(territories));
-      }
-    });
-    return _controller.stream;
+    return _ForwardWithInitialStream(
+      initial: List.unmodifiable(territories),
+      source: _controller.stream,
+    );
   }
 
   @override
@@ -449,5 +446,29 @@ class FakeTerritoryRepository implements TerritoryRepository {
       }
     }
     return intersectCount % 2 != 0;
+  }
+}
+
+/// Emits a snapshot synchronously on subscribe, then forwards [source] events.
+class _ForwardWithInitialStream extends Stream<List<TerritoryEntity>> {
+  _ForwardWithInitialStream({required this.initial, required this.source});
+
+  final List<TerritoryEntity> initial;
+  final Stream<List<TerritoryEntity>> source;
+
+  @override
+  StreamSubscription<List<TerritoryEntity>> listen(
+    void Function(List<TerritoryEntity> event)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
+    scheduleMicrotask(() => onData?.call(initial));
+    return source.listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
   }
 }

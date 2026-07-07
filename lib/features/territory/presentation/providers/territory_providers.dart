@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/territory/data/datasources/territory_supabase_datasource.dart';
 import 'package:awaken/features/territory/data/repositories/territory_local_repository_impl.dart';
@@ -11,12 +12,34 @@ import 'package:awaken/features/territory/domain/entities/territory_entity.dart'
 import 'package:awaken/features/territory/domain/repositories/territory_repository.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_style.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart' show Style;
 
 part 'territory_providers.g.dart';
+
+/// Current shell tab index (0 = dashboard, 1 = territory, 2 = leaderboard).
+/// Updated by [_ShellScaffold] in app_router.dart.
+final territoryShellTabIndexProvider = StateProvider<int>((ref) => 0);
+
+/// Set true while a run is actively tracking so GPS/map layers stay warm if the
+/// user briefly backgrounds the app (not shell tab switches during a run).
+final territoryRunGpsKeepAliveProvider = StateProvider<bool>((ref) => false);
+
+/// Live map camera zoom — updated by [TerritoryRunScreen] on pan/zoom.
+final territoryMapZoomProvider = StateProvider<double>(
+  (ref) => AppConstants.territoryMapInitialZoom,
+);
+
+bool _territoryMapServicesActive(int shellTabIndex) =>
+    shellTabIndex == 1 || shellTabIndex == 2;
+
+bool _territoryGpsActive(Ref ref) {
+  if (ref.watch(territoryShellTabIndexProvider) == 1) return true;
+  return ref.watch(territoryRunGpsKeepAliveProvider);
+}
 
 /// Picks the correct repository based on auth state:
 ///   - Signed in  → Supabase (cloud-synced)
@@ -37,7 +60,11 @@ TerritoryRepository territoryRepository(TerritoryRepositoryRef ref) {
 @Riverpod(keepAlive: true)
 Stream<List<TerritoryEntity>> territoryList(TerritoryListRef ref) {
   if (!ref.watch(territoryMapReadyProvider)) {
-    // Stay in [AsyncLoading] until the territory tab opens once.
+    return Completer<List<TerritoryEntity>>().future.asStream();
+  }
+
+  final tabIndex = ref.watch(territoryShellTabIndexProvider);
+  if (!_territoryMapServicesActive(tabIndex)) {
     return Completer<List<TerritoryEntity>>().future.asStream();
   }
 
@@ -159,6 +186,10 @@ Future<Style> territoryMapStyle(TerritoryMapStyleRef ref) async {
 @riverpod
 Stream<Position?> myLocation(MyLocationRef ref) async* {
   if (!ref.watch(territoryMapReadyProvider)) {
+    return;
+  }
+
+  if (!_territoryGpsActive(ref)) {
     return;
   }
 
