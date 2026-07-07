@@ -7,13 +7,13 @@ todos:
     status: completed
   - id: apply-migrations
     content: Apply all 8 repo migrations to nankdbntvvopnfvvvaoo via MCP apply_migration in order
-    status: in_progress
+    status: completed
   - id: verify-schema
     content: Run MCP execute_sql checks for tables, RPCs, RLS, Realtime publication, PostGIS
-    status: pending
+    status: completed
   - id: verify-grants
     content: Check Data API table grants for authenticated role; add grant migration if missing
-    status: pending
+    status: in_progress
   - id: configure-auth
     content: Configure Google OAuth + email auth in Supabase Dashboard per supabase_config.dart comments
     status: pending
