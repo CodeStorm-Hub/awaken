@@ -24,11 +24,11 @@ abstract final class SupabaseConfig {
   // ── Supabase ──────────────────────────────────────────────────────────────
   static const String url = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://fsdfqcnjcjtdmdjshrvu.supabase.co',
+    defaultValue: 'https://nankdbntvvopnfvvvaoo.supabase.co',
   );
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzZGZxY25qY2p0ZG1kanNocnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzIwNTEsImV4cCI6MjA5ODI0ODA1MX0.zr4Sbwr3DyWoALowjWX2boCO9jChLrxfhBmnAGNUbSU',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbmtkYm50dnZvcG5mdnZ2YW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDM4NDEsImV4cCI6MjA5OTAxOTg0MX0.jAV0yktnr_N7JKaXEBvtI9iVXbUy48StGoSFyz9qDN0',
   );
 
   // ── Google OAuth (from android/app/google-services.json) ──────────────────

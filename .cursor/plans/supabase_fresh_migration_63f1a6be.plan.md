@@ -4,10 +4,10 @@ overview: Inventory every Supabase touchpoint in `lib/`, then rebuild the full A
 todos:
   - id: align-config
     content: Verify .env + update supabase/config.toml and supabase_config.dart defaults to nankdbntvvopnfvvvaoo
-    status: in_progress
+    status: completed
   - id: apply-migrations
     content: Apply all 8 repo migrations to nankdbntvvopnfvvvaoo via MCP apply_migration in order
-    status: pending
+    status: in_progress
   - id: verify-schema
     content: Run MCP execute_sql checks for tables, RPCs, RLS, Realtime publication, PostGIS
     status: pending

@@ -1,8 +1,8 @@
 # Awaken — Supabase local dev config
-# Remote project: fsdfqcnjcjtdmdjshrvu (ap-northeast-1)
-# Link with: supabase link --project-ref fsdfqcnjcjtdmdjshrvu
+# Remote project: nankdbntvvopnfvvvaoo (ap-southeast-1)
+# Link with: supabase link --project-ref nankdbntvvopnfvvvaoo
 
-project_id = "fsdfqcnjcjtdmdjshrvu"
+project_id = "nankdbntvvopnfvvvaoo"
 
 [api]
 enabled = true
@@ -13,7 +13,7 @@ max_rows = 1000
 
 [db]
 port = 54322
-major_version = 15
+major_version = 17
 
 [studio]
 enabled = true
