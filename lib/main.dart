@@ -6,8 +6,6 @@ import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
 import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/core/utils/expected_async_cancellation.dart';
-import 'package:awaken/firebase_options.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,11 +16,6 @@ import 'package:timezone/timezone.dart' as tz;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ── Firebase (Google OAuth broker only — Supabase owns the session) ───────
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   // ── Timezone setup (required by flutter_local_notifications zonedSchedule) ─
   tz.initializeTimeZones();

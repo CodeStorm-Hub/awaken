@@ -1,25 +1,27 @@
-/// Supabase credentials + Firebase Google OAuth (Android-only).
+/// Supabase credentials + Google OAuth (Android native sign-in).
 ///
-/// **Architecture**: Supabase owns the session. Google sign-in on Android runs
-/// through Firebase Auth, then `signInWithIdToken` — no Flutter web app needed.
+/// **Architecture**: Supabase owns the session. Google sign-in on Android uses
+/// the native `google_sign_in` account picker, then `signInWithIdToken` — no
+/// browser redirect and no Firebase Auth web flow.
 ///
 /// **Android app** (already configured):
-/// - Firebase project `awaken-27f39`, package `com.example.awaken`
-/// - `android/app/google-services.json` with Android + bundled OAuth clients
-/// - Debug SHA-1 registered in Firebase Console
+/// - Package `com.example.awaken`
+/// - Android OAuth client (`client_type: 1`) in Google Cloud / Firebase Console
+/// - Debug SHA-1 registered for that Android client
 ///
 /// **One-time Supabase Dashboard** (Authentication → Providers → Google):
 /// 1. Enable Google
-/// 2. **Client ID**: [googleOAuthClientIdForSupabase] — this is the `client_type: 3`
-///    entry inside `google-services.json`. Google/Firebase attach it to every
-///    Android app so ID tokens can be verified server-side; you are *not* shipping
-///    a web app.
+/// 2. **Client ID**: [googleOAuthClientIdForSupabase] — the `client_type: 3`
+///    Web client from `google-services.json` / Google Cloud Console. Passed as
+///    `serverClientId` to `google_sign_in` so Google issues an ID token Supabase
+///    can verify.
 /// 3. **Skip nonce checks**: ON (required for Android `signInWithIdToken`)
-/// 4. **Client secret**: optional for Android-only ID-token sign-in. Leave blank
-///    if the dashboard allows it. If sign-in fails with an OAuth error, add the
-///    secret from [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials?project=awaken-27f39)
-///    → Web client (auto created by Google Service) → Reset secret.
+/// 4. **Client secret**: optional for native ID-token sign-in; add only if
+///    Supabase rejects the exchange.
 /// 5. **Authorized Client IDs** (if shown): add [googleAndroidClientId]
+///
+/// **Callback URL** (`https://<ref>.supabase.co/auth/v1/callback`) is for
+/// Supabase-hosted web OAuth only — this app does not use it.
 abstract final class SupabaseConfig {
   // ── Supabase ──────────────────────────────────────────────────────────────
   static const String url = String.fromEnvironment(
@@ -40,8 +42,8 @@ abstract final class SupabaseConfig {
         '230513820686-ua1prkedtbtceb4d39e2kqg5m23q7te8.apps.googleusercontent.com',
   );
 
-  /// OAuth client for Supabase Google provider (`client_type: 3` in
-  /// google-services.json). Not a web app — bundled with the Android Firebase app.
+  /// Web OAuth client for Supabase Google provider (`client_type: 3`). Passed to
+  /// `google_sign_in` as [serverClientId] for ID token audience verification.
   static const String googleOAuthClientIdForSupabase = String.fromEnvironment(
     'GOOGLE_OAUTH_CLIENT_ID',
     defaultValue:

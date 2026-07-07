@@ -1,15 +1,13 @@
-import 'package:awaken/core/services/firebase_google_auth_service.dart';
+import 'package:awaken/core/services/google_auth_service.dart';
 import 'package:awaken/features/auth/domain/entities/app_user.dart';
 import 'package:awaken/features/auth/domain/repositories/auth_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Supabase-backed auth repository.
 ///
-/// Email/password flows talk to Supabase directly. Google sign-in uses
-/// **Firebase Auth only** as the OAuth broker: Firebase returns Google ID
-/// tokens, which are exchanged for a Supabase session via [signInWithIdToken].
-/// Firebase is signed out immediately afterward — Supabase owns the session.
+/// Email/password flows talk to Supabase directly. Google sign-in uses native
+/// [GoogleAuthService] to obtain Google ID tokens, then exchanges them for a
+/// Supabase session via [signInWithIdToken]. Supabase owns the session.
 class SupabaseAuthRepository implements AuthRepository {
   SupabaseAuthRepository();
 
@@ -28,7 +26,7 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> signInWithGoogle() async {
     try {
-      final tokens = await FirebaseGoogleAuthService.signInAndGetGoogleTokens();
+      final tokens = await GoogleAuthService.signInAndGetGoogleTokens();
       try {
         await _client.auth.signInWithIdToken(
           provider: OAuthProvider.google,
@@ -36,15 +34,12 @@ class SupabaseAuthRepository implements AuthRepository {
           accessToken: tokens.accessToken,
         );
       } finally {
-        // Supabase session is authoritative — do not keep a Firebase session.
-        await FirebaseGoogleAuthService.signOut();
+        await GoogleAuthService.signOut();
       }
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'cancelled-popup-request' ||
-          e.code == 'web-context-cancelled') {
-        throw Exception('Google sign-in cancelled');
-      }
-      throw Exception(e.message ?? 'Google sign-in failed');
+    } on GoogleSignInCanceledException {
+      throw Exception('Google sign-in cancelled');
+    } on AuthException catch (e) {
+      throw Exception(e.message);
     }
   }
 
@@ -71,7 +66,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() async {
-    await FirebaseGoogleAuthService.signOut();
+    await GoogleAuthService.signOut();
     await _client.auth.signOut();
   }
 
