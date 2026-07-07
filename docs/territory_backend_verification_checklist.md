@@ -1,7 +1,11 @@
 # Territory Capture — Backend Verification Results
 
 Verified live against the `awaken` Supabase project (`fsdfqcnjcjtdmdjshrvu`,
-ap-northeast-1) via the Supabase MCP tools on 2026-07-02. This replaces the
+ap-northeast-1) via the Supabase MCP tools on 2026-07-02.
+
+**Fresh migration (2026-07-08):** Schema rebuilt on new project `nankdbntvvopnfvvvaoo`
+(ap-southeast-1, Postgres 17) via MCP `apply_migration`. Auth dashboard setup
+required — see [`docs/supabase_auth_setup.md`](supabase_auth_setup.md). This replaces the
 original speculative checklist now that the actual schema/RPCs/policies
 have been inspected directly (`list_tables`, `execute_sql` against
 `pg_proc`/`pg_policies`/`information_schema`, `get_advisors`).
@@ -104,3 +108,34 @@ objects already exist. For a fresh local stack: `supabase start` then
 `supabase db reset`. After linking an empty project, use
 `supabase migration repair --status applied` on each version instead of running
 the SQL twice.
+
+## Fresh migration on `nankdbntvvopnfvvvaoo` (2026-07-08)
+
+Applied via Supabase MCP `apply_migration`:
+
+| Migration | Status |
+|---|---|
+| `enable_postgis` | Applied |
+| `core_app_schema` | Applied |
+| `territory_tables` | Applied |
+| `territory_views` | Applied (updated with `security_invoker = true`) |
+| `territory_rpcs` | Applied |
+| `territory_grants` | Applied |
+| `realtime_publication` | Applied |
+| `performance_optimization_fixes` | Applied |
+| `revoke_anon_rpc_grants` | Applied (Supabase default re-granted anon EXECUTE) |
+| `security_invoker_views_and_handle_new_user` | Applied |
+
+### Advisor findings (accepted)
+
+| Finding | Action |
+|---|---|
+| `spatial_ref_sys` RLS disabled | Platform PostGIS limitation — accept |
+| `postgis` in `public` schema | Non-relocatable — accept |
+| Territory RPCs `SECURITY DEFINER` + `authenticated` EXECUTE | Intentional steal mechanic |
+| `st_estimatedextent` / `rls_auto_enable` anon EXECUTE | PostGIS/platform defaults — accept |
+| `unused_index` (performance INFO) | Expected on empty DB — indexes will be used under load |
+
+### Pending manual step
+
+Google OAuth + email auth: see [`docs/supabase_auth_setup.md`](supabase_auth_setup.md).

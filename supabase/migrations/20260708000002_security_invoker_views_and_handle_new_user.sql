@@ -1,5 +1,4 @@
--- Client-facing views used by TerritorySupabaseDatasource.
-
+-- PG17: views should use security_invoker so RLS of querying user applies.
 CREATE OR REPLACE VIEW public.territories_geojson
   WITH (security_invoker = true) AS
 SELECT
@@ -26,3 +25,8 @@ ORDER BY total_area_sqm DESC;
 
 GRANT SELECT ON public.territories_geojson TO authenticated;
 GRANT SELECT ON public.leaderboard_global TO authenticated;
+
+-- Trigger-only function: not callable via PostgREST RPC.
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM anon;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM authenticated;

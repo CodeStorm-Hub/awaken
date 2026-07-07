@@ -13,16 +13,16 @@ todos:
     status: completed
   - id: verify-grants
     content: Check Data API table grants for authenticated role; add grant migration if missing
-    status: in_progress
+    status: completed
   - id: configure-auth
     content: Configure Google OAuth + email auth in Supabase Dashboard per supabase_config.dart comments
-    status: pending
+    status: completed
   - id: run-advisors
     content: Run MCP get_advisors (security + performance) and document accepted findings
-    status: pending
+    status: completed
   - id: e2e-verify
     content: Smoke-test auth, alarms, sessions/streaks, territory capture+realtime on Android device
-    status: pending
+    status: completed
   - id: todo-1783455012567-dlvfrp6xh
     content: If necessary Supabase CLI is needed use command 'npx supabase' also here is the SUPABASE_ACCESS_TOKEN=sbp_c1edda1ab0f0f88b67af352fe82bed173db83e1f
     status: pending
