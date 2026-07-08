@@ -9,27 +9,27 @@ import 'package:flutter/material.dart';
 
 /// Compact HUD card shown during an active run.
 /// Shows distance, elapsed time, optional speed warning, GPS fix quality,
-/// and how far the runner is from closing their loop back to the start.
+/// loop count, and how far the runner is from closing the active segment.
 class RunStatsSheet extends StatelessWidget {
   const RunStatsSheet({
     super.key,
     required this.distanceMeters,
     required this.elapsed,
     this.isOverSpeed = false,
-    this.distToStartMeters,
+    this.distToSegmentStartMeters,
     this.gpsAccuracyMeters,
+    this.pendingLoopCount = 0,
   });
 
   final double distanceMeters;
   final Duration elapsed;
   final bool isOverSpeed;
 
-  /// Distance back to the start point in meters. Null when not yet tracking.
-  final double? distToStartMeters;
+  /// Distance back to the active segment anchor in meters.
+  final double? distToSegmentStartMeters;
 
-  /// `Position.accuracy` (meters) of the most recent GPS fix. Null before
-  /// the first fix arrives.
   final double? gpsAccuracyMeters;
+  final int pendingLoopCount;
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +41,15 @@ class RunStatsSheet extends StatelessWidget {
         elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
 
     final distKm = (distanceMeters / 1000).toStringAsFixed(2);
-    final closureLabel = _closureLabel(distToStartMeters);
+    final closureLabel = _closureLabel(distToSegmentStartMeters);
 
     final guidance = isOverSpeed
         ? 'Vehicle speed detected — this run will not be claimed.'
-        : closureLabel != null
-            ? 'Return to your start point to claim territory.'
-            : 'Keep moving to close the loop.';
+        : pendingLoopCount > 0
+            ? '$pendingLoopCount loop${pendingLoopCount == 1 ? '' : 's'} ready — keep running or stop to claim.'
+            : closureLabel != null
+                ? 'Return to your segment start to close the loop.'
+                : 'Keep moving to close the loop.';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppConstants.cardRadius),
@@ -82,6 +84,13 @@ class RunStatsSheet extends StatelessWidget {
                           value: '$minutes:$seconds',
                           hud: hud,
                         ),
+                        if (pendingLoopCount > 0)
+                          _Stat(
+                            label: 'Loops',
+                            value: '$pendingLoopCount',
+                            hud: hud,
+                            valueColor: AppColors.success,
+                          ),
                         if (isOverSpeed)
                           _Stat(
                             label: 'Speed',
@@ -91,10 +100,10 @@ class RunStatsSheet extends StatelessWidget {
                           )
                         else if (closureLabel != null)
                           _Stat(
-                            label: 'To start',
+                            label: 'To segment',
                             value: closureLabel,
                             hud: hud,
-                            valueColor: _closureColor(distToStartMeters),
+                            valueColor: _closureColor(distToSegmentStartMeters),
                           ),
                       ],
                     ),

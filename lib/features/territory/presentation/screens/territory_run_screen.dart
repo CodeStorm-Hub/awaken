@@ -241,6 +241,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     final status = ref.watch(activeRunProvider.select((s) => s.status));
     final errorMessage = ref.watch(activeRunProvider.select((s) => s.errorMessage));
     final points = ref.watch(activeRunProvider.select((s) => s.points));
+    final anchorIndex =
+        ref.watch(activeRunProvider.select((s) => s.currentSegmentAnchorIndex));
+    final pendingLoopCount =
+        ref.watch(activeRunProvider.select((s) => s.pendingLoops.length));
     final followMe = ref.watch(_followMeProvider);
     final rivalConflict = ref.watch(rivalConflictProvider);
     final mapZoom = ref.watch(territoryMapZoomProvider);
@@ -249,11 +253,13 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     final mapVisible = ref.watch(territoryShellTabIndexProvider) == 1 ||
         ref.watch(territoryRunGpsKeepAliveProvider);
 
-    // Distance from current position back to start — drives the proximity ring.
-    final distToStart = points.length >= 2
-        ? GeoUtils.haversineMeters(points.first, points.last)
+    // Distance from current position back to active segment anchor.
+    final distToSegmentStart = points.length >= 2 &&
+            anchorIndex < points.length
+        ? GeoUtils.haversineMeters(points[anchorIndex], points.last)
         : double.infinity;
-    final isNearClose = distToStart <= AppConstants.loopClosureRadiusMeters * 4;
+    final isNearClose =
+        distToSegmentStart <= AppConstants.loopClosureRadiusMeters * 4;
 
     // ── Listen for state transitions ──────────────────────────────────────
     ref.listen<ActiveRunState>(activeRunProvider, (previous, next) {
@@ -261,6 +267,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       if (previous?.status != RunSessionStatus.finished &&
           next.status == RunSessionStatus.finished) {
         _onRunFinished(next);
+      }
+      // Live loop closure — haptic feedback when a new segment closes.
+      if (next.pendingLoops.length > (previous?.pendingLoops.length ?? 0)) {
+        HapticFeedback.mediumImpact();
       }
       // Permission granted mid-session → re-centre
       if (previous?.status == RunSessionStatus.requestingPermission &&
@@ -366,6 +376,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                             hasPoints: points.isNotEmpty,
                           ),
                         ),
+                        if (isTracking && pendingLoopCount > 0) ...[
+                          const SizedBox(width: 8),
+                          _LoopClosedPill(count: pendingLoopCount),
+                        ],
                         if (isTracking && isNearClose && points.length >= 2) ...[
                           const SizedBox(width: 12),
                           _PulseCloseIndicator(animation: _pulseAnim),
@@ -586,10 +600,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
   void _onRunFinished(ActiveRunState state) {
     final outcome = state.result?.outcome;
-    final capture = state.captureResult;
+    final sessionCapture = state.sessionCaptureResult;
 
-    if (capture != null) {
-      if (capture.stoleFromRival) {
+    if (sessionCapture != null && sessionCapture.loopsCaptured > 0) {
+      if (sessionCapture.stoleFromRival) {
         HapticFeedback.heavyImpact();
       } else {
         HapticFeedback.mediumImpact();
@@ -600,7 +614,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       ref.read(activeRunProvider.notifier).reset();
       CaptureResultSheet.show(
         context,
-        captureResult: capture,
+        sessionCaptureResult: sessionCapture,
         runPoints: runPoints,
       );
       return;
@@ -677,6 +691,7 @@ class _TerritoryMapView extends StatelessWidget {
       children: const [
         TerritoryVectorTileLayer(key: ValueKey('territory-vector-tile-layer-widget')),
         _TerritoryPolygonsLayer(),
+        _PendingLoopLayer(),
         _RunTrailGlowLayer(),
         _RunTrailCoreLayer(),
         _RunStartMarkerLayer(),
@@ -692,6 +707,42 @@ class _TerritoryMapView extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _PendingLoopLayer extends ConsumerWidget {
+  const _PendingLoopLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingLoops =
+        ref.watch(activeRunProvider.select((s) => s.pendingLoops));
+    if (pendingLoops.isEmpty) return const SizedBox.shrink();
+
+    final polygons = <Polygon>[];
+    for (final segment in pendingLoops) {
+      if (segment.points.length < 3) continue;
+      final ring = segment.points
+          .map((p) => LatLng(p.latitude, p.longitude))
+          .toList();
+      if (ring.first != ring.last) {
+        ring.add(ring.first);
+      }
+      polygons.add(
+        Polygon(
+          points: ring,
+          color: AppColors.success.withValues(alpha: 0.22),
+          borderColor: AppColors.success.withValues(alpha: 0.75),
+          borderStrokeWidth: 2,
+        ),
+      );
+    }
+
+    if (polygons.isEmpty) return const SizedBox.shrink();
+
+    return RepaintBoundary(
+      child: PolygonLayer(polygons: polygons),
     );
   }
 }
@@ -772,12 +823,17 @@ class _RunStartMarkerLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final points = ref.watch(activeRunProvider.select((s) => s.points));
-    if (points.isEmpty) return const SizedBox.shrink();
+    final anchorIndex =
+        ref.watch(activeRunProvider.select((s) => s.currentSegmentAnchorIndex));
+    if (points.isEmpty || anchorIndex >= points.length) {
+      return const SizedBox.shrink();
+    }
 
+    final anchor = points[anchorIndex];
     return MarkerLayer(
       markers: [
         Marker(
-          point: LatLng(points.first.latitude, points.first.longitude),
+          point: LatLng(anchor.latitude, anchor.longitude),
           width: 22,
           height: 22,
           child: _StartMarker(),
@@ -851,19 +907,26 @@ class _RunStatsSheetConsumer extends ConsumerWidget {
         ref.watch(activeRunProvider.select((s) => s.isOverSpeed));
     final points =
         ref.watch(activeRunProvider.select((s) => s.points));
+    final anchorIndex =
+        ref.watch(activeRunProvider.select((s) => s.currentSegmentAnchorIndex));
+    final pendingLoopCount =
+        ref.watch(activeRunProvider.select((s) => s.pendingLoops.length));
     final gpsAccuracyMeters =
         ref.watch(activeRunProvider.select((s) => s.gpsAccuracyMeters));
 
-    final distToStart = points.length >= 2
-        ? GeoUtils.haversineMeters(points.first, points.last)
+    final distToSegmentStart = points.length >= 2 &&
+            anchorIndex < points.length
+        ? GeoUtils.haversineMeters(points[anchorIndex], points.last)
         : double.infinity;
 
     return RunStatsSheet(
       distanceMeters: distanceMeters,
       elapsed: elapsed,
       isOverSpeed: isOverSpeed,
-      distToStartMeters: distToStart.isFinite ? distToStart : null,
+      distToSegmentStartMeters:
+          distToSegmentStart.isFinite ? distToSegmentStart : null,
       gpsAccuracyMeters: gpsAccuracyMeters,
+      pendingLoopCount: pendingLoopCount,
     );
   }
 }
@@ -1047,6 +1110,33 @@ class _PulseCloseIndicator extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoopClosedPill extends StatelessWidget {
+  const _LoopClosedPill({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        count == 1 ? '1 loop ready' : '$count loops ready',
+        style: const TextStyle(
+          color: AppColors.primary,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
         ),
       ),
     );

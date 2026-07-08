@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:awaken/app.dart';
+import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/repositories/alarm_repository.dart';
@@ -136,20 +137,14 @@ void main() {
     required DateTime startTime,
     Duration interval = const Duration(seconds: 30),
   }) {
-    final refLatRad = startLat * math.pi / 180.0;
-    const metersPerDegreeLat = 111194.9266;
-    final metersPerDegreeLon = 111194.9266 * math.cos(refLatRad);
-
-    final dLat = heightMeters / metersPerDegreeLat;
-    final dLon = widthMeters / metersPerDegreeLon;
-
-    return [
-      GeoPointEntity(latitude: startLat, longitude: startLng, timestamp: startTime),
-      GeoPointEntity(latitude: startLat + dLat, longitude: startLng, timestamp: startTime.add(interval)),
-      GeoPointEntity(latitude: startLat + dLat, longitude: startLng + dLon, timestamp: startTime.add(interval * 2)),
-      GeoPointEntity(latitude: startLat, longitude: startLng + dLon, timestamp: startTime.add(interval * 3)),
-      GeoPointEntity(latitude: startLat, longitude: startLng, timestamp: startTime.add(interval * 4)),
-    ];
+    return createDenseRectangleLoop(
+      startLat: startLat,
+      startLng: startLng,
+      widthMeters: widthMeters,
+      heightMeters: heightMeters,
+      startTime: startTime,
+      interval: interval,
+    );
   }
 
   group('Tier 1: Feature Coverage (F1-F7)', () {
@@ -464,6 +459,55 @@ void main() {
         wasInvalidatedBySpeed: false,
       );
       expect(outcome, equals(RunOutcome.loopNotClosed));
+    });
+
+    test('17b. F4: Loop closed mid-run with overrun past start is claimed on Stop.', () {
+      fakeAsync((async) {
+        final container = ProviderContainer(
+          overrides: [territoryRepositoryProvider.overrideWithValue(fakeTerritoryRepository)],
+        );
+        addTearDown(container.dispose);
+
+        final notifier = container.read(activeRunProvider.notifier);
+        notifier.startRun();
+        async.flushMicrotasks();
+
+        final baseTime = DateTime.now();
+        final pts = createDenseRectangleLoopWithOverrun(
+          startLat: 40.7128,
+          startLng: -74.0060,
+          widthMeters: 60,
+          heightMeters: 60,
+          overrunMeters: 50,
+          startTime: baseTime,
+        );
+
+        mockGeolocator.feedPosition(
+          createPos(lat: pts[0].latitude, lng: pts[0].longitude, time: pts[0].timestamp, accuracy: 5),
+        );
+        async.flushMicrotasks();
+
+        for (var i = 1; i < pts.length; i++) {
+          async.elapse(const Duration(seconds: 5));
+          mockGeolocator.feedPosition(
+            createPos(lat: pts[i].latitude, lng: pts[i].longitude, time: pts[i].timestamp, accuracy: 5),
+          );
+          async.flushMicrotasks();
+        }
+
+        async.elapse(const Duration(minutes: 2));
+        notifier.finishRun();
+        async.flushMicrotasks();
+
+        final state = container.read(activeRunProvider);
+        expect(state.result?.outcome, equals(RunOutcome.territoryClaimed));
+        expect(state.sessionCaptureResult?.loopsCaptured, equals(1));
+        expect(
+          GeoUtils.haversineMeters(pts.first, pts.last),
+          greaterThan(AppConstants.loopClosureRadiusMeters),
+        );
+        expect(fakeTerritoryRepository.territories.any((t) => t.userId == 'user-1'), isTrue);
+      });
     });
 
     test('18. F4: Closed loop but too short duration (<2m) is classified as `invalidatedTooShort`.', () {

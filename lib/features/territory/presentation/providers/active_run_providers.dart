@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/features/territory/domain/entities/capture_result_entity.dart';
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
+import 'package:awaken/features/territory/domain/entities/loop_segment_entity.dart';
 import 'package:awaken/features/territory/domain/entities/run_track_entity.dart';
 import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 import 'package:awaken/features/territory/domain/services/gps_kalman_filter.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
+import 'package:awaken/features/territory/domain/services/loop_segment_extractor.dart';
 import 'package:awaken/features/territory/domain/services/rdp_simplifier.dart';
 import 'package:awaken/features/territory/domain/services/run_validation_service.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
@@ -38,8 +40,10 @@ class ActiveRunState {
     this.elapsed = Duration.zero,
     this.isOverSpeed = false,
     this.gpsAccuracyMeters,
+    this.pendingLoops = const [],
+    this.currentSegmentAnchorIndex = 0,
     this.result,
-    this.captureResult,
+    this.sessionCaptureResult,
     this.errorMessage,
   });
 
@@ -56,8 +60,14 @@ class ActiveRunState {
   /// HUD's GPS quality chip. Null before the first fix arrives.
   final double? gpsAccuracyMeters;
 
+  /// Loops detected live during the run — finalized on Stop.
+  final List<LoopSegmentEntity> pendingLoops;
+
+  /// Anchor index for the active segment (HUD "to segment start" distance).
+  final int currentSegmentAnchorIndex;
+
   final RunTrackEntity? result;
-  final CaptureResultEntity? captureResult;
+  final SessionCaptureResultEntity? sessionCaptureResult;
   final String? errorMessage;
 
   ActiveRunState copyWith({
@@ -67,8 +77,10 @@ class ActiveRunState {
     Duration? elapsed,
     bool? isOverSpeed,
     double? gpsAccuracyMeters,
+    List<LoopSegmentEntity>? pendingLoops,
+    int? currentSegmentAnchorIndex,
     RunTrackEntity? result,
-    CaptureResultEntity? captureResult,
+    SessionCaptureResultEntity? sessionCaptureResult,
     String? errorMessage,
   }) {
     return ActiveRunState(
@@ -78,8 +90,11 @@ class ActiveRunState {
       elapsed: elapsed ?? this.elapsed,
       isOverSpeed: isOverSpeed ?? this.isOverSpeed,
       gpsAccuracyMeters: gpsAccuracyMeters ?? this.gpsAccuracyMeters,
+      pendingLoops: pendingLoops ?? this.pendingLoops,
+      currentSegmentAnchorIndex:
+          currentSegmentAnchorIndex ?? this.currentSegmentAnchorIndex,
       result: result ?? this.result,
-      captureResult: captureResult ?? this.captureResult,
+      sessionCaptureResult: sessionCaptureResult ?? this.sessionCaptureResult,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -107,6 +122,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   final GpsKalmanFilter _kalmanFilter = GpsKalmanFilter();
   DateTime? _startTime;
   bool _sawSustainedOverSpeed = false;
+  LoopClosureTracker? _loopTracker;
 
   @override
   ActiveRunState build() {
@@ -132,6 +148,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
 
     _kalmanFilter.reset();
     _sawSustainedOverSpeed = false;
+    _loopTracker = LoopClosureTracker();
     _startTime = clock.now();
     ref.read(territoryRunGpsKeepAliveProvider.notifier).state = true;
     state = const ActiveRunState(status: RunSessionStatus.tracking);
@@ -191,17 +208,35 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     final overSpeed = RunValidationService.isSustainedOverSpeed(updatedPoints);
     if (overSpeed) _sawSustainedOverSpeed = true;
 
+    var pendingLoops = state.pendingLoops;
+    var anchorIndex = state.currentSegmentAnchorIndex;
+
+    final tracker = _loopTracker;
+    if (tracker != null &&
+        pendingLoops.length < AppConstants.maxLoopsPerSession) {
+      final closed = tracker.evaluate(
+        updatedPoints,
+        gpsAccuracyMeters: position.accuracy,
+      );
+      if (closed != null) {
+        pendingLoops = [...pendingLoops, closed];
+        anchorIndex = tracker.anchorIndex;
+      }
+    }
+
     state = state.copyWith(
       points: updatedPoints,
       distanceMeters: GeoUtils.pathDistanceMeters(updatedPoints),
       isOverSpeed: overSpeed,
       gpsAccuracyMeters: position.accuracy,
+      pendingLoops: pendingLoops,
+      currentSegmentAnchorIndex: anchorIndex,
     );
   }
 
-  /// Stops tracking, classifies the run, records it, and — if a valid
-  /// loop was closed — calls the capture RPC. Always persists the run
-  /// (closed or not) per Story #2's "counts as a normal workout" rule.
+  /// Stops tracking, classifies the run, records it, and — if valid loop
+  /// segments were detected — calls capture RPC for each. Always persists the
+  /// run (closed or not) per Story #2's "counts as a normal workout" rule.
   Future<void> finishRun() async {
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
@@ -209,49 +244,79 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
 
     state = state.copyWith(status: RunSessionStatus.finishing);
 
-    final simplifiedPoints = state.points.length < 3
-        ? state.points
-        : RdpSimplifier.simplify(state.points, AppConstants.rdpSimplificationEpsilonMeters);
+    final rawPoints = state.points;
+    final simplifiedFullPath = rawPoints.length < 3
+        ? rawPoints
+        : RdpSimplifier.simplify(rawPoints, AppConstants.rdpSimplificationEpsilonMeters);
+
+    // Authoritative re-extraction on raw points (RDP must not shift closure).
+    final loopSegments = RunValidationService.extractLoopSegments(rawPoints);
 
     var outcome = RunValidationService.classify(
-      points: simplifiedPoints,
+      points: simplifiedFullPath,
       distanceMeters: state.distanceMeters,
       duration: state.elapsed,
       wasInvalidatedBySpeed: _sawSustainedOverSpeed,
+      loopSegments: loopSegments,
     );
 
     final repo = ref.read(territoryRepositoryProvider);
-    CaptureResultEntity? captureResult;
+    SessionCaptureResultEntity? sessionCaptureResult;
 
     try {
-      // Attempt capture BEFORE recording the run, so a server-side rejection
-      // (e.g. `loop_too_small`, enforced against the true polygon area rather
-      // than the raw path) downgrades the outcome we actually persist.
-      if (outcome == RunOutcome.territoryClaimed) {
-        try {
-          captureResult = await repo.captureTerritory(simplifiedPoints);
-        } on PostgrestException catch (error) {
-          if (_isLoopTooSmallRejection(error)) {
-            outcome = RunOutcome.invalidatedTooSmall;
-          } else {
-            rethrow;
+      if (outcome == RunOutcome.territoryClaimed && loopSegments.isNotEmpty) {
+        final captureResults = <CaptureResultEntity>[];
+        var rejectedTooSmall = 0;
+
+        for (final segment in loopSegments) {
+          final simplifiedSegment = segment.points.length < 3
+              ? segment.points
+              : RdpSimplifier.simplify(
+                  segment.points,
+                  AppConstants.rdpSimplificationEpsilonMeters,
+                );
+          try {
+            final result = await repo.captureTerritory(simplifiedSegment);
+            captureResults.add(result);
+          } on PostgrestException catch (error) {
+            if (_isLoopTooSmallRejection(error)) {
+              rejectedTooSmall++;
+            } else {
+              rethrow;
+            }
+          } on Exception catch (error) {
+            if (_isLoopTooSmallRejectionMessage(error.toString())) {
+              rejectedTooSmall++;
+            } else {
+              rethrow;
+            }
           }
+        }
+
+        if (captureResults.isEmpty) {
+          outcome = rejectedTooSmall > 0
+              ? RunOutcome.invalidatedTooSmall
+              : RunOutcome.loopNotClosed;
+        } else {
+          sessionCaptureResult = SessionCaptureResultEntity(
+            captures: captureResults,
+            loopsCaptured: captureResults.length,
+            loopsAttempted: loopSegments.length,
+            loopsRejectedTooSmall: rejectedTooSmall,
+          );
         }
       }
 
       if (outcome != RunOutcome.territoryClaimed && outcome != RunOutcome.invalidatedSpeedCap) {
-        // Best-effort: a failure here (auth hiccup, network blip) must not
-        // stop the run itself from being recorded — that's a legitimate
-        // workout per Story #2 even when territory bookkeeping fails.
         try {
-          await repo.touchDefense(simplifiedPoints);
+          await repo.touchDefense(simplifiedFullPath);
         } on Object catch (_) {
           // Ignored — defense-touch is a nice-to-have, not required to save the run.
         }
       }
 
       final run = RunTrackEntity(
-        points: simplifiedPoints,
+        points: simplifiedFullPath,
         distanceMeters: state.distanceMeters,
         duration: state.elapsed,
         outcome: outcome,
@@ -261,11 +326,12 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
       state = state.copyWith(
         status: RunSessionStatus.finished,
         result: run,
-        captureResult: captureResult,
+        sessionCaptureResult: sessionCaptureResult,
+        pendingLoops: loopSegments,
       );
     } catch (error) {
       final run = RunTrackEntity(
-        points: simplifiedPoints,
+        points: simplifiedFullPath,
         distanceMeters: state.distanceMeters,
         duration: state.elapsed,
         outcome: outcome,
@@ -281,17 +347,22 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   void reset() {
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
+    _loopTracker = null;
     ref.read(territoryRunGpsKeepAliveProvider.notifier).state = false;
     state = const ActiveRunState();
   }
 
-  /// Server-side rejections for polygons that fail the minimum-area check.
   static bool _isLoopTooSmallRejection(PostgrestException error) {
-    final haystack = '${error.message} ${error.details ?? ''} ${error.hint ?? ''}'
-        .toLowerCase();
-    return haystack.contains('loop_too_small') ||
-        haystack.contains('too_small') ||
-        haystack.contains('minimum area');
+    return _isLoopTooSmallRejectionMessage(
+      '${error.message} ${error.details ?? ''} ${error.hint ?? ''}',
+    );
+  }
+
+  static bool _isLoopTooSmallRejectionMessage(String haystack) {
+    final lower = haystack.toLowerCase();
+    return lower.contains('loop_too_small') ||
+        lower.contains('too_small') ||
+        lower.contains('minimum area');
   }
 }
 

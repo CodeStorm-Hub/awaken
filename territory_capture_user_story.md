@@ -23,10 +23,12 @@
 > **So that** the app encloses that path and marks that area as mine.
 
 * **Simple Acceptance Criteria:**
-* When "Stop" is pressed, the backend checks if the final GPS coordinate is within 20 meters of the starting GPS coordinate.
-* If **yes**, the map fills the inside of that loop with the user's color.
+* During a run, if the GPS path returns within 20 meters of the active segment's starting point, that loop is marked as pending capture — even if the runner keeps going.
+* When "Stop" is pressed, all pending loops from the session are submitted for territory capture (subject to session-wide anti-cheat: min duration, min distance, speed cap).
+* If at least one valid loop was closed, the map fills the enclosed area(s) with the user's color.
 * If this new loop touches or overlaps territory the user *already* owns, the two areas merge into one larger continuous shape.
-* If **no** (the loop didn't close), the run counts as a normal workout but no territory is claimed.
+* If **no** loop closed during the run, it counts as a normal workout but no territory is claimed.
+* A single run session may close multiple loops; each is captured on Stop (up to the per-session cap).
 
 
 

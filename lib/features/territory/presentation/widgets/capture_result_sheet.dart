@@ -19,16 +19,16 @@ import 'package:share_plus/share_plus.dart';
 class CaptureResultSheet extends StatelessWidget {
   const CaptureResultSheet({
     super.key,
-    required this.captureResult,
+    required this.sessionCaptureResult,
     required this.runPoints,
   });
 
-  final CaptureResultEntity captureResult;
+  final SessionCaptureResultEntity sessionCaptureResult;
   final List<GeoPointEntity> runPoints;
 
   static Future<void> show(
     BuildContext context, {
-    required CaptureResultEntity captureResult,
+    required SessionCaptureResultEntity sessionCaptureResult,
     required List<GeoPointEntity> runPoints,
   }) {
     return showModalBottomSheet<void>(
@@ -36,7 +36,7 @@ class CaptureResultSheet extends StatelessWidget {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => CaptureResultSheet(
-        captureResult: captureResult,
+        sessionCaptureResult: sessionCaptureResult,
         runPoints: runPoints,
       ),
     );
@@ -44,8 +44,14 @@ class CaptureResultSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stole = captureResult.stoleFromRival;
+    final stole = sessionCaptureResult.stoleFromRival;
     final accent = stole ? AppColors.destructive : AppColors.success;
+    final loopCount = sessionCaptureResult.loopsCaptured;
+    final title = stole
+        ? 'Territory stolen!'
+        : loopCount > 1
+            ? '$loopCount territories claimed!'
+            : 'Territory claimed!';
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
@@ -80,7 +86,7 @@ class CaptureResultSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  stole ? 'Territory stolen!' : 'Territory claimed!',
+                  title,
                   style: TextStyle(
                     color: AppColors.foreground,
                     fontWeight: FontWeight.w800,
@@ -91,9 +97,18 @@ class CaptureResultSheet extends StatelessWidget {
                 if (stole) ...[
                   const SizedBox(height: 4),
                   Text(
-                    captureResult.rivalsAffected == 1
+                    sessionCaptureResult.totalRivalsAffected == 1
                         ? 'Cut into 1 rival territory'
-                        : 'Cut into ${captureResult.rivalsAffected} rival territories',
+                        : 'Cut into ${sessionCaptureResult.totalRivalsAffected} rival territories',
+                    style: const TextStyle(
+                      color: AppColors.mutedForeground,
+                      fontSize: 13,
+                    ),
+                  ),
+                ] else if (sessionCaptureResult.hasPartialFailure) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${sessionCaptureResult.loopsRejectedTooSmall} loop(s) too small to claim',
                     style: const TextStyle(
                       color: AppColors.mutedForeground,
                       fontSize: 13,
@@ -119,9 +134,9 @@ class CaptureResultSheet extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _StatBlock(
-                        label: 'Claimed',
+                        label: loopCount > 1 ? 'Claimed (total)' : 'Claimed',
                         value:
-                            '${captureResult.claimedAreaSqMeters.toStringAsFixed(0)} m²',
+                            '${sessionCaptureResult.totalClaimedAreaSqMeters.toStringAsFixed(0)} m²',
                         valueColor: accent,
                       ),
                     ),
@@ -129,7 +144,7 @@ class CaptureResultSheet extends StatelessWidget {
                       child: _StatBlock(
                         label: 'Total owned',
                         value:
-                            '${captureResult.totalOwnedAreaSqMeters.toStringAsFixed(0)} m²',
+                            '${sessionCaptureResult.totalOwnedAreaSqMeters.toStringAsFixed(0)} m²',
                       ),
                     ),
                   ],
@@ -186,9 +201,10 @@ class CaptureResultSheet extends StatelessWidget {
   }
 
   void _shareResult(BuildContext context) {
-    final text = captureResult.stoleFromRival
-        ? 'I just stole ${captureResult.claimedAreaSqMeters.toStringAsFixed(0)} m² of territory on Awaken! 🏃⚔️'
-        : 'I just claimed ${captureResult.claimedAreaSqMeters.toStringAsFixed(0)} m² of territory on Awaken! 🏃🚩';
+    final area = sessionCaptureResult.totalClaimedAreaSqMeters.toStringAsFixed(0);
+    final text = sessionCaptureResult.stoleFromRival
+        ? 'I just stole $area m² of territory on Awaken! 🏃⚔️'
+        : 'I just claimed $area m² of territory on Awaken! 🏃🚩';
     SharePlus.instance.share(ShareParams(text: text));
   }
 }

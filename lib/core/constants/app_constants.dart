@@ -48,6 +48,25 @@ abstract final class AppConstants {
   static const double minLoopAreaSqMeters = 50.0;
   static const Duration minRunDuration = Duration(minutes: 2);
   static const double minRunDistanceMeters = 200.0;
+
+  /// Per-loop path length minimum — below session [minRunDistanceMeters] so
+  /// a single valid loop can be captured without requiring the overrun tail.
+  static const double minLoopSegmentDistanceMeters = 150.0;
+
+  /// Runner must travel this far from the segment anchor before a return
+  /// within [loopClosureRadiusMeters] counts as closure (GPS drift guard).
+  static const double loopClosureGraceMeters = 50.0;
+
+  /// After closing a loop, runner must exit this radius before another
+  /// closure at the same anchor can arm (prevents double-counting).
+  static const double loopExitRadiusMeters = 30.0;
+
+  /// Minimum GPS fixes in a segment before closure is accepted (~30 m at 5 m
+  /// distance filter).
+  static const int minLoopSegmentPointCount = 6;
+
+  /// Anti-farming cap on territory captures per run session.
+  static const int maxLoopsPerSession = 5;
   static const Duration territoryDecayGracePeriod = Duration(days: 7);
 
   /// Rolling window size (GPS pings) for sustained-speed-cap checks —

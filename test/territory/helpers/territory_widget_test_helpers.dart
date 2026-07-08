@@ -1,9 +1,119 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
+import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
+import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Inserts intermediate GPS fixes along each leg so loop-segment extraction
+/// sees a realistic point density (~5 m spacing, matching production
+/// `distanceFilter`). Timestamps advance at ~12 km/h so speed-cap checks
+/// stay realistic on densified paths.
+List<GeoPointEntity> densifyGpsPath(
+  List<GeoPointEntity> points, {
+  double stepMeters = 5.0,
+  double speedKmh = 12.0,
+}) {
+  if (points.length < 2) return points;
+
+  final result = <GeoPointEntity>[points.first];
+  final secondsPerMeter = 3.6 / speedKmh;
+
+  for (var i = 1; i < points.length; i++) {
+    final from = points[i - 1];
+    final to = points[i];
+    final legMeters = GeoUtils.haversineMeters(from, to);
+    final steps = (legMeters / stepMeters).floor();
+
+    for (var s = 1; s <= steps; s++) {
+      final t = s / (steps + 1);
+      final lat = from.latitude + (to.latitude - from.latitude) * t;
+      final lng = from.longitude + (to.longitude - from.longitude) * t;
+      final stepDist = legMeters * t;
+      final ts = from.timestamp.add(
+        Duration(milliseconds: (stepDist * secondsPerMeter * 1000).round()),
+      );
+      result.add(GeoPointEntity(latitude: lat, longitude: lng, timestamp: ts));
+    }
+    result.add(to);
+  }
+  return result;
+}
+
+/// Closed rectangular loop with densified vertices for segment extraction tests.
+List<GeoPointEntity> createDenseRectangleLoop({
+  required double startLat,
+  required double startLng,
+  required double widthMeters,
+  required double heightMeters,
+  required DateTime startTime,
+  Duration interval = const Duration(seconds: 30),
+  double densifyStepMeters = 5.0,
+}) {
+  final refLatRad = startLat * math.pi / 180.0;
+  const metersPerDegreeLat = 111194.9266;
+  final metersPerDegreeLon = 111194.9266 * math.cos(refLatRad);
+
+  final dLat = heightMeters / metersPerDegreeLat;
+  final dLon = widthMeters / metersPerDegreeLon;
+
+  final sparse = [
+    GeoPointEntity(latitude: startLat, longitude: startLng, timestamp: startTime),
+    GeoPointEntity(
+      latitude: startLat + dLat,
+      longitude: startLng,
+      timestamp: startTime.add(interval),
+    ),
+    GeoPointEntity(
+      latitude: startLat + dLat,
+      longitude: startLng + dLon,
+      timestamp: startTime.add(interval * 2),
+    ),
+    GeoPointEntity(
+      latitude: startLat,
+      longitude: startLng + dLon,
+      timestamp: startTime.add(interval * 3),
+    ),
+    GeoPointEntity(
+      latitude: startLat,
+      longitude: startLng,
+      timestamp: startTime.add(interval * 4),
+    ),
+  ];
+  return densifyGpsPath(sparse, stepMeters: densifyStepMeters);
+}
+
+/// Rectangle loop that closes, then continues straight for [overrunMeters].
+List<GeoPointEntity> createDenseRectangleLoopWithOverrun({
+  required double startLat,
+  required double startLng,
+  required double widthMeters,
+  required double heightMeters,
+  required double overrunMeters,
+  required DateTime startTime,
+  Duration interval = const Duration(seconds: 30),
+}) {
+  final loop = createDenseRectangleLoop(
+    startLat: startLat,
+    startLng: startLng,
+    widthMeters: widthMeters,
+    heightMeters: heightMeters,
+    startTime: startTime,
+    interval: interval,
+  );
+  final last = loop.last;
+  const metersPerDegreeLat = 111194.9266;
+  final dLat = overrunMeters / metersPerDegreeLat;
+  final overrunEnd = GeoPointEntity(
+    latitude: last.latitude - dLat,
+    longitude: last.longitude,
+    timestamp: last.timestamp.add(interval),
+  );
+  return densifyGpsPath([...loop, overrunEnd]);
+}
 
 /// Unblocks gated territory Realtime/GPS providers in unit tests.
 void enableTerritoryMapForTests(ProviderContainer container) {
