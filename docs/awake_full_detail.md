@@ -326,8 +326,8 @@ All providers in Phase 1–3 are **manual** (not `@riverpod` codegen). Phase 4+ 
 
 ### ✅ Phase 5 — DONE (Supabase Auth + Cloud Sync)
 
-**Supabase project:** `fsdfqcnjcjtdmdjshrvu` (ap-northeast-1, awaken)
-**Project URL:** `https://fsdfqcnjcjtdmdjshrvu.supabase.co`
+**Supabase project:** `nankdbntvvopnfvvvaoo` (ap-southeast-1, awaken)
+**Project URL:** `https://nankdbntvvopnfvvvaoo.supabase.co`
 **Anon key:** stored in `lib/core/constants/supabase_config.dart`
 
 **Auth:**
@@ -392,7 +392,9 @@ All providers in Phase 1–3 are **manual** (not `@riverpod` codegen). Phase 4+ 
 
 ---
 
-## 10. Supabase Schema (planned, not yet created)
+## 10. Supabase Schema (live — see `supabase/migrations/`)
+
+> **Note (2026-07):** Schema is applied on project `nankdbntvvopnfvvvaoo`. The SQL below is historical reference; prefer the migration files and `docs/territory_backend_verification_checklist.md` as source of truth.
 
 ```sql
 -- Users handled by Supabase Auth (Google OAuth)

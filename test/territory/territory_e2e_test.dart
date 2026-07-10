@@ -1094,17 +1094,24 @@ void main() {
     });
 
     // F4: Loop Claiming & Validation (51-56)
-    test('51. F4: Start/end distance of exactly 20.0m is closed.', () {
+    test('51. F4: Start/end distance of exactly 50.0m is closed.', () {
       final pt1 = GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: _epoch);
-      // 20m latitude delta is approx 20 / 111194.9266 = 0.000179865 degrees
-      final pt2 = GeoPointEntity(latitude: 40.7128 + 0.0001798, longitude: -74.0060, timestamp: _epoch);
+      // Slightly under 50m — floating-point haversine can exceed the exact bound.
+      final pt2 = GeoPointEntity(
+        latitude: 40.7128 + 49.9 / 111194.9266,
+        longitude: -74.0060,
+        timestamp: _epoch,
+      );
       expect(RunValidationService.isClosedLoop([pt1, pt2]), isTrue);
     });
 
-    test('52. F4: Start/end distance of exactly 20.01m is not closed.', () {
+    test('52. F4: Start/end distance of exactly 50.01m is not closed.', () {
       final pt1 = GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: _epoch);
-      // 20.01m latitude delta is approx 20.01 / 111194.9266 = 0.000179955 degrees
-      final pt2 = GeoPointEntity(latitude: 40.7128 + 0.0001801, longitude: -74.0060, timestamp: _epoch);
+      final pt2 = GeoPointEntity(
+        latitude: 40.7128 + 50.01 / 111194.9266,
+        longitude: -74.0060,
+        timestamp: _epoch,
+      );
       expect(RunValidationService.isClosedLoop([pt1, pt2]), isFalse);
     });
 
@@ -1951,6 +1958,10 @@ class FakeSessionRepository implements SessionRepository {
 
   @override
   Future<int> monthlyCalories(String userId, {int days = 30}) async => 0;
+
+  @override
+  Future<({int current, int best})> streakStats(String userId) async =>
+      (current: 0, best: 0);
 }
 
 final DateTime _epoch = DateTime.fromMillisecondsSinceEpoch(0);

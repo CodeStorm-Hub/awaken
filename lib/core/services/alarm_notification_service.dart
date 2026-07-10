@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 /// Fields parsed from an alarm notification payload (`id|reps|scheduledTime`).
@@ -29,6 +30,7 @@ abstract final class AlarmNotificationService {
 
   static const _channelId = 'awaken_alarm';
   static const _channelName = 'Alarm';
+  static const _pendingRouteKey = 'awaken_pending_alarm_route';
 
   // ── Init ──────────────────────────────────────────────────────────
 
@@ -126,12 +128,30 @@ abstract final class AlarmNotificationService {
   /// Call in main() to detect if the app was opened by tapping an alarm.
   /// Returns the route string to use as GoRouter's initialLocation.
   static Future<String> getInitialRoute() async {
+    final pending = await consumePendingRoute();
+    if (pending != null) return pending;
+
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp ?? false) {
       final payload = details?.notificationResponse?.payload;
       return _buildActiveRoute(payload);
     }
     return '/';
+  }
+
+  /// Persists a route for the next foreground/cold-start navigation.
+  static Future<void> stashPendingRoute(String route) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pendingRouteKey, route);
+  }
+
+  /// Returns and clears any stashed alarm route from a background tap.
+  static Future<String?> consumePendingRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    final route = prefs.getString(_pendingRouteKey);
+    if (route == null || route.isEmpty) return null;
+    await prefs.remove(_pendingRouteKey);
+    return route;
   }
 
   static String buildActiveRouteFromPayload(String? payload) {
@@ -232,4 +252,10 @@ abstract final class AlarmNotificationService {
 @pragma('vm:entry-point')
 void _onBackgroundTap(NotificationResponse response) {
   debugPrint('[Alarm] Background tap: ${response.id}');
+  // Background isolate cannot navigate; stash the route for cold start / resume.
+  final route = AlarmNotificationService.buildActiveRouteFromPayload(
+    response.payload,
+  );
+  // Fire-and-forget — SharedPreferences is available in the background isolate.
+  AlarmNotificationService.stashPendingRoute(route);
 }

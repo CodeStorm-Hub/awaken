@@ -27,6 +27,10 @@ class FakeRemoteSessionRepository extends SupabaseSessionRepository {
 
   @override
   Future<int> monthlyCalories(String userId, {int days = 30}) async => 0;
+
+  @override
+  Future<({int current, int best})> streakStats(String userId) async =>
+      (current: 0, best: 0);
 }
 
 void main() {

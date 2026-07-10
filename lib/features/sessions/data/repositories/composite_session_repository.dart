@@ -45,4 +45,13 @@ class CompositeSessionRepository implements SessionRepository {
       return await local.monthlyCalories(userId, days: days);
     }
   }
+
+  @override
+  Future<({int current, int best})> streakStats(String userId) async {
+    try {
+      return await remote.streakStats(userId);
+    } catch (_) {
+      return await local.streakStats(userId);
+    }
+  }
 }

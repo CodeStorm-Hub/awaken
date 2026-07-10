@@ -1,4 +1,5 @@
 import 'package:awaken/core/constants/app_constants.dart';
+import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
 import 'package:awaken/core/services/exact_alarm_permission_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
@@ -25,6 +26,15 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
   String _label = '';
   bool _saving = false;
 
+  /// Safe leave — onboarding uses [GoRouter.go], so there may be nothing to pop.
+  void _leave() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.dashboard);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
@@ -36,7 +46,7 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          onPressed: () => context.pop(),
+          onPressed: _leave,
         ),
       ),
       body: SafeArea(
@@ -183,7 +193,7 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
 
       if (mounted) {
         setState(() => _saving = false);
-        context.pop();
+        _leave();
       }
     } catch (e) {
       if (mounted) {

@@ -3,10 +3,15 @@
 abstract final class AppConstants {
   // ── Alarm ──────────────────────────────────────────────────────────
   static const int defaultSquatCount = 10;
-  static const int outOfFramePenaltySeconds = 15;
+
+  /// Out-of-frame audio ramp interval (shorter = more urgent).
+  static const int outOfFramePenaltySeconds = 8;
 
   /// Hip-to-knee depth ratio below which a squat is rejected as partial
   static const double squatDepthThreshold = 0.6;
+
+  /// Max left/right shoulder height delta (normalized by torso) before bad form.
+  static const double maxShoulderTiltRatio = 0.18;
 
   /// Volume ramp-up step when user leaves frame (per penalty tick)
   static const double volumeRampStep = 0.15;
@@ -44,7 +49,7 @@ abstract final class AppConstants {
   /// acceptance criteria (>25 km/h) and "Drive-by Cheat" refinement
   /// (20–25 km/h) disagree; resolved once here.
   static const double maxRunSpeedKmh = 25.0;
-  static const double loopClosureRadiusMeters = 20.0;
+  static const double loopClosureRadiusMeters = 50.0;
   static const double minLoopAreaSqMeters = 50.0;
   static const Duration minRunDuration = Duration(minutes: 2);
   static const double minRunDistanceMeters = 200.0;

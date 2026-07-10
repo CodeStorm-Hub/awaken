@@ -120,6 +120,23 @@ void main() {
         };
         addTearDown(() => FlutterError.onError = priorFlutterOnError);
 
+        final mockGeolocator = MockGeolocatorPlatform();
+        mockGeolocator.feedPosition(
+          Position(
+            latitude: 43.65,
+            longitude: -79.38,
+            timestamp: DateTime.utc(2026, 1, 1),
+            accuracy: 5,
+            altitude: 0,
+            altitudeAccuracy: 0,
+            heading: 0,
+            headingAccuracy: 0,
+            speed: 0,
+            speedAccuracy: 0,
+          ),
+        );
+        GeolocatorPlatform.instance = mockGeolocator;
+
         final fakeRepo = FakeTerritoryRepository();
         await tester.pumpWidget(
           ProviderScope(
@@ -262,4 +279,8 @@ class FakeSessionRepository implements SessionRepository {
 
   @override
   Future<int> monthlyCalories(String userId, {int days = 30}) async => 0;
+
+  @override
+  Future<({int current, int best})> streakStats(String userId) async =>
+      (current: 0, best: 0);
 }

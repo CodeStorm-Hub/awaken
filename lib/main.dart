@@ -6,6 +6,7 @@ import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
 import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/core/utils/expected_async_cancellation.dart';
+import 'package:awaken/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,9 +42,16 @@ void main() async {
   // getInitialRoute() returns AppRoutes.dashboard ('/' in the old router) when
   // not launched from a notification. Remap that to '/dashboard' (the shell
   // branch root) so the new StatefulShellRoute resolves correctly.
-  final rawRoute = await AlarmNotificationService.getInitialRoute();
-  final initialRoute =
-      rawRoute == '/' ? AppRoutes.dashboard : rawRoute;
+  var rawRoute = await AlarmNotificationService.getInitialRoute();
+  if (rawRoute == '/' || rawRoute == AppRoutes.dashboard) {
+    final onboardingDone = await OnboardingScreen.isComplete();
+    if (!onboardingDone) {
+      rawRoute = AppRoutes.onboarding;
+    } else {
+      rawRoute = AppRoutes.dashboard;
+    }
+  }
+  final initialRoute = rawRoute;
 
   // ── System UI ─────────────────────────────────────────────────────────────
   await SystemChrome.setPreferredOrientations([

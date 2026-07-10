@@ -5,6 +5,7 @@ import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart'
     show GpsQuality, gpsQualityFromAccuracy;
+import 'package:awaken/features/territory/presentation/widgets/loop_closure_progress_bar.dart';
 import 'package:flutter/material.dart';
 
 /// Compact HUD card shown during an active run.
@@ -114,6 +115,14 @@ class RunStatsSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
+              if (distToSegmentStartMeters != null &&
+                  distToSegmentStartMeters!.isFinite) ...[
+                LoopClosureProgressBar(
+                  metersToStart: distToSegmentStartMeters!,
+                  closureRadiusMeters: AppConstants.loopClosureRadiusMeters,
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(
                 guidance,
                 style: hud.statLabel.copyWith(

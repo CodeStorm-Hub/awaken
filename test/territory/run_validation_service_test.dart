@@ -102,15 +102,15 @@ void main() {
       expect(RunValidationService.isClosedLoop([pt]), isFalse);
     });
 
-    test('returns true when start/end distance is within 20.0m closure radius', () {
+    test('returns true when start/end distance is within 50.0m closure radius', () {
       final pt1 = GeoPointEntity(
         latitude: 40.7128,
         longitude: -74.0060,
         timestamp: DateTime.now(),
       );
-      // ~20m north — same delta used in territory_e2e_test boundary cases.
+      // Slightly under 50m to avoid floating-point edge on the exact bound.
       final pt2 = GeoPointEntity(
-        latitude: 40.7128 + 0.0001798,
+        latitude: 40.7128 + 49.9 / 111194.9266,
         longitude: -74.0060,
         timestamp: DateTime.now(),
       );
@@ -121,14 +121,14 @@ void main() {
       expect(RunValidationService.isClosedLoop([pt1, pt2]), isTrue);
     });
 
-    test('returns false when start/end distance exceeds 20.0m', () {
+    test('returns false when start/end distance exceeds 50.0m', () {
       final pt1 = GeoPointEntity(
         latitude: 40.7128,
         longitude: -74.0060,
         timestamp: DateTime.now(),
       );
       final pt2 = GeoPointEntity(
-        latitude: 40.7128 + 20.01 / 111194.9266,
+        latitude: 40.7128 + 50.01 / 111194.9266,
         longitude: -74.0060,
         timestamp: DateTime.now(),
       );

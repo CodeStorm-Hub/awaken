@@ -1,7 +1,8 @@
 # Territory Capture — Backend Verification Results
 
-Verified live against the `awaken` Supabase project (`fsdfqcnjcjtdmdjshrvu`,
-ap-northeast-1) via the Supabase MCP tools on 2026-07-02.
+Verified live against the `awaken` Supabase project (`nankdbntvvopnfvvvaoo`,
+ap-southeast-1) via the Supabase MCP tools. Older checklists referenced
+`fsdfqcnjcjtdmdjshrvu` (ap-northeast-1) — that project was replaced.
 
 **Fresh migration (2026-07-08):** Schema rebuilt on new project `nankdbntvvopnfvvvaoo`
 (ap-southeast-1, Postgres 17) via MCP `apply_migration`. Auth dashboard setup
@@ -77,7 +78,7 @@ concurrency risk. It's already done, not a gap.
 
 ## ✅ Built: leaderboard time-window filters (24h / 7d / all-time)
 
-Previously flagged as needing new backend work — now implemented and live on `fsdfqcnjcjtdmdjshrvu`:
+Previously flagged as needing new backend work — now implemented and live on `nankdbntvvopnfvvvaoo`:
 
 - **`territory_captures`** — new append-only history table (`id, user_id, geom, area_sqm, rivals_affected, captured_at`) logging every successful capture. RLS enabled, `SELECT` open to `authenticated` (needed for the shared leaderboard), no `INSERT`/`UPDATE`/`DELETE` policy — only written by `capture_territory` as `SECURITY DEFINER`, same write-boundary pattern as `territories`. GiST index on `geom`, btree indexes on `user_id`/`captured_at`.
 - **`capture_territory`** now inserts one row into `territory_captures` per successful capture (using the raw claimed-loop geometry, not the merged total, so spatial "nearby" windowed queries reflect where that specific run happened).
@@ -103,7 +104,8 @@ version control:
 | `20250702000006_territory_grants.sql` | `authenticated`-only EXECUTE grants |
 | `20250702000007_realtime_publication.sql` | `supabase_realtime` on `territories` |
 
-**Do not re-apply** this baseline to the linked remote (`fsdfqcnjcjtdmdjshrvu`) —
+**Do not re-apply** this baseline to a production remote that already has
+equivalent migrations — use `supabase/migrations/` for local `db reset` only.
 objects already exist. For a fresh local stack: `supabase start` then
 `supabase db reset`. After linking an empty project, use
 `supabase migration repair --status applied` on each version instead of running

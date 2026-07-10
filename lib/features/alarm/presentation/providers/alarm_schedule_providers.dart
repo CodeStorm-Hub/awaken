@@ -6,6 +6,7 @@ import 'package:awaken/features/alarm/data/repositories/alarm_supabase_repositor
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/repositories/alarm_repository.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'alarm_schedule_providers.g.dart';
@@ -36,7 +37,11 @@ class AlarmList extends _$AlarmList {
     final now = DateTime.now();
     for (final alarm in alarms) {
       if (alarm.isActive && alarm.scheduledTime.isAfter(now)) {
-        await AlarmNotificationService.scheduleAlarm(alarm);
+        try {
+          await AlarmNotificationService.scheduleAlarm(alarm);
+        } catch (e) {
+          debugPrint('[Alarm] schedule on load failed: $e');
+        }
       }
     }
 
@@ -64,7 +69,12 @@ class AlarmList extends _$AlarmList {
     final updated = alarm.copyWith(isActive: false);
     final repo = ref.read(alarmRepositoryProvider);
     await repo.saveAlarm(updated);
-    await AlarmNotificationService.cancelAlarm(updated);
+    try {
+      await AlarmNotificationService.cancelAlarm(updated);
+    } catch (e) {
+      // Plugin may be uninitialized in tests / early cold start.
+      debugPrint('[Alarm] cancel after complete failed: $e');
+    }
 
     state = AsyncData(
       (state.valueOrNull ?? []).map((a) => a.id == alarm.id ? updated : a).toList(),

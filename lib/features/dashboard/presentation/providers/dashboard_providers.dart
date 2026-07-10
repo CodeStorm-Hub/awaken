@@ -1,9 +1,9 @@
 import 'package:awaken/core/services/exact_alarm_permission_service.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/domain/entities/dashboard_stats_entity.dart';
+import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
 import 'package:awaken/features/sessions/presentation/providers/session_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'dashboard_providers.g.dart';
 
@@ -31,56 +31,52 @@ Stream<DateTime> clock(ClockRef ref) {
 /// this, not [clockProvider], to avoid rebuilding every second.
 @Riverpod(keepAlive: true)
 Stream<String> clockDisplay(ClockDisplayRef ref) async* {
-  final now = DateTime.now();
-  yield _fmt(now);
+  var last = _fmt(DateTime.now());
+  yield last;
 
   await for (final dt in Stream.periodic(
     const Duration(seconds: 1),
     (_) => DateTime.now(),
   )) {
-    yield _fmt(dt);
+    final next = _fmt(dt);
+    if (next != last) {
+      last = next;
+      yield next;
+    }
   }
 }
 
 String _fmt(DateTime t) =>
     '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-/// Dashboard stats — reads from Supabase when signed in, falls back to stubs.
+/// Dashboard stats — cloud when signed in, local SharedPreferences when guest.
 @Riverpod(keepAlive: true)
 Future<DashboardStatsEntity> dashboardStats(DashboardStatsRef ref) async {
   final user = ref.watch(currentUserProvider);
+  final sessionRepo = ref.read(sessionRepositoryProvider);
 
   if (user == null) {
-    // Not signed in — return stub data
+    const guestId = SessionEntity.localGuestUserId;
+    final streak = await sessionRepo.streakStats(guestId);
+    final weeklyReps = await sessionRepo.weeklyReps(guestId);
+    final monthlyCalories = await sessionRepo.monthlyCalories(guestId);
     return DashboardStatsEntity(
-      currentStreak: 0,
-      bestStreak: 0,
-      weeklyReps: 0,
-      monthlyCalories: 0,
+      currentStreak: streak.current,
+      bestStreak: streak.best,
+      weeklyReps: weeklyReps,
+      monthlyCalories: monthlyCalories,
       nextAlarm: DateTime.now().add(const Duration(hours: 8)),
       nextAlarmReps: 10,
     );
   }
 
-  final client = Supabase.instance.client;
-  final sessionRepo = ref.read(sessionRepositoryProvider);
-
-  // Run all three queries in parallel using explicit futures
-  final streakFuture = client
-      .from('streaks')
-      .select('current_streak, best_streak')
-      .eq('user_id', user.id)
-      .maybeSingle();
-  final weeklyRepsFuture = sessionRepo.weeklyReps(user.id);
-  final monthlyCalsFuture = sessionRepo.monthlyCalories(user.id);
-
-  final streakRow = await streakFuture;
-  final weeklyReps = await weeklyRepsFuture;
-  final monthlyCalories = await monthlyCalsFuture;
+  final streak = await sessionRepo.streakStats(user.id);
+  final weeklyReps = await sessionRepo.weeklyReps(user.id);
+  final monthlyCalories = await sessionRepo.monthlyCalories(user.id);
 
   return DashboardStatsEntity(
-    currentStreak: (streakRow?['current_streak'] as int?) ?? 0,
-    bestStreak: (streakRow?['best_streak'] as int?) ?? 0,
+    currentStreak: streak.current,
+    bestStreak: streak.best,
     weeklyReps: weeklyReps,
     monthlyCalories: monthlyCalories,
     nextAlarm: DateTime.now().add(const Duration(hours: 8)),

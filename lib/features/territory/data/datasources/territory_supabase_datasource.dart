@@ -84,7 +84,11 @@ class TerritorySupabaseDatasource {
   Future<CaptureResultModel> captureTerritory(List<GeoPointEntity> loopPoints) async {
     final result = await _client.rpc<List<dynamic>>(
       'capture_territory',
-      params: {'new_geom': TerritoryGeoCodec.pointsToPolygonEwkt(loopPoints)},
+      params: {
+        'new_geom': TerritoryGeoCodec.pointsToPolygonEwkt(loopPoints),
+        // Server re-validates path length / point density (anti-forge).
+        'run_path': TerritoryGeoCodec.pointsToLineStringEwkt(loopPoints),
+      },
     );
     if (result.isEmpty) {
       throw StateError('capture_territory returned no rows.');

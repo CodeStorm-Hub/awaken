@@ -9,6 +9,7 @@ import 'package:awaken/features/auth/presentation/providers/auth_providers.dart'
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
 import 'package:awaken/features/territory/domain/entities/run_track_entity.dart';
 import 'package:awaken/features/territory/domain/services/geo_utils.dart';
+import 'package:awaken/features/territory/domain/services/location_fix_service.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/domain/services/trail_display_utils.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
@@ -19,6 +20,7 @@ import 'package:awaken/features/territory/presentation/widgets/run_stats_sheet.d
 import 'package:awaken/features/territory/presentation/widgets/territory_map_status_overlay.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_polygon_layer.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_vector_tile_layer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -61,8 +63,9 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
   bool _didRequestInitialCenter = false;
   bool _didAutoCenterFromStream = false;
-  _LocatingPhase _locatingPhase = _LocatingPhase.acquiringFix;
+  _LocatingPhase _locatingPhase = _LocatingPhase.hidden;
   String? _locationErrorMessage;
+  LocationAccessKind? _locationErrorKind;
   String? _resultMessage;
   Timer? _resultMessageTimer;
 
@@ -148,19 +151,23 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       setState(() {
         _locatingPhase = _LocatingPhase.requestingPermission;
         _locationErrorMessage = null;
+        _locationErrorKind = null;
       });
     }
 
     try {
       await LocationPermissionHelper.ensureLocationAccess(
-        serviceDisabledMessage: 'Turn on location services to see your position on the map.',
-        permissionDeniedMessage: 'Allow location access to see your position on the map.',
+        serviceDisabledMessage:
+            'Turn on location services to see your position on the map.',
+        permissionDeniedMessage:
+            'Allow location access to see your position on the map.',
       );
     } on LocationAccessException catch (e) {
       if (mounted) {
         setState(() {
           _locatingPhase = _LocatingPhase.failed;
           _locationErrorMessage = e.message;
+          _locationErrorKind = e.kind;
         });
       }
       return;
@@ -169,21 +176,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     if (!mounted) return;
     setState(() => _locatingPhase = _LocatingPhase.acquiringFix);
 
-    try {
-      final lastKnown = await Geolocator.getLastKnownPosition();
-      if (lastKnown != null && mounted) {
-        ref.read(mapLastKnownPositionProvider.notifier).state = lastKnown;
-        _animateTo(
-          LatLng(lastKnown.latitude, lastKnown.longitude),
-          zoom: AppConstants.territoryMapUserZoom,
-        );
-        _didAutoCenterFromStream = true;
-        setState(() => _locatingPhase = _LocatingPhase.hidden);
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
-      ).timeout(const Duration(seconds: 8));
+    void applyFix(Position position) {
       if (!mounted) return;
       ref.read(mapLastKnownPositionProvider.notifier).state = position;
       _animateTo(
@@ -191,7 +184,28 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
         zoom: AppConstants.territoryMapUserZoom,
       );
       _didAutoCenterFromStream = true;
-      setState(() => _locatingPhase = _LocatingPhase.hidden);
+      if (_locatingPhase != _LocatingPhase.hidden) {
+        setState(() => _locatingPhase = _LocatingPhase.hidden);
+      }
+    }
+
+    try {
+      final position = await LocationFixService.acquireForMapCentering(
+        onInterim: applyFix,
+      );
+      if (!mounted) return;
+      if (position != null) {
+        applyFix(position);
+        return;
+      }
+      if (_locatingPhase != _LocatingPhase.hidden) {
+        setState(() {
+          _locatingPhase = _LocatingPhase.failed;
+          _locationErrorMessage =
+              'Could not get a GPS fix. Try again outdoors with a clear sky view.';
+          _locationErrorKind = null;
+        });
+      }
     } catch (_) {
       if (!mounted) return;
       if (_locatingPhase != _LocatingPhase.hidden) {
@@ -199,10 +213,15 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
           _locatingPhase = _LocatingPhase.failed;
           _locationErrorMessage =
               'Could not get a GPS fix. Try again outdoors with a clear sky view.';
+          _locationErrorKind = null;
         });
       }
     } finally {
-      if (userInitiated && mounted && _locatingPhase == _LocatingPhase.acquiringFix) {
+      // User-initiated recenter: don't leave a spinner up if we already
+      // centered from last-known / interim and a later strategy failed.
+      if (userInitiated &&
+          mounted &&
+          _locatingPhase == _LocatingPhase.acquiringFix) {
         setState(() => _locatingPhase = _LocatingPhase.hidden);
       }
     }
@@ -334,7 +353,16 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                     child: _LocatingIndicator(
                       phase: _locatingPhase,
                       errorMessage: _locationErrorMessage,
-                      onRetry: () => _centerOnCurrentLocation(userInitiated: true),
+                      onRetry: () =>
+                          _centerOnCurrentLocation(userInitiated: true),
+                      onOpenSettings: switch (_locationErrorKind) {
+                        LocationAccessKind.serviceDisabled ||
+                        LocationAccessKind.permissionDeniedForever =>
+                          () => LocationPermissionHelper.openSettingsFor(
+                                _locationErrorKind!,
+                              ),
+                        _ => null,
+                      },
                     ),
                   ),
                 ),
@@ -448,14 +476,15 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                       enabled: !atMinZoom,
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      'z${mapZoom.toStringAsFixed(1)}',
-                      style: const TextStyle(
-                        color: AppColors.mutedForeground,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                    if (kDebugMode)
+                      Text(
+                        'z${mapZoom.toStringAsFixed(1)}',
+                        style: const TextStyle(
+                          color: AppColors.mutedForeground,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -468,6 +497,23 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                 right: 56, // clear the right rail
                 bottom: 110,
                 child: _RunStatsSheetConsumer(),
+              ),
+
+            // ── Outdoor safety strip ──────────────────────────────────────
+            if (isTracking)
+              Positioned(
+                left: AppConstants.screenPaddingH,
+                right: AppConstants.screenPaddingH,
+                bottom: 72,
+                child: Text(
+                  'Stay aware of traffic and surroundings',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.mutedForeground.withValues(alpha: 0.85),
+                    fontSize: 10,
+                    letterSpacing: 0.6,
+                  ),
+                ),
               ),
 
             // ── Error banner ───────────────────────────────────────────────
@@ -1344,11 +1390,13 @@ class _LocatingIndicator extends StatelessWidget {
     required this.phase,
     this.errorMessage,
     this.onRetry,
+    this.onOpenSettings,
   });
 
   final _LocatingPhase phase;
   final String? errorMessage;
   final VoidCallback? onRetry;
+  final VoidCallback? onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -1420,11 +1468,24 @@ class _LocatingIndicator extends StatelessWidget {
               ),
             ),
           ],
-          if (phase == _LocatingPhase.failed && onRetry != null) ...[
+          if (phase == _LocatingPhase.failed) ...[
             const SizedBox(height: 14),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (onOpenSettings != null) ...[
+                  TextButton(
+                    onPressed: onOpenSettings,
+                    child: const Text('Open settings'),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (onRetry != null)
+                  TextButton(
+                    onPressed: onRetry,
+                    child: const Text('Retry'),
+                  ),
+              ],
             ),
           ],
         ],

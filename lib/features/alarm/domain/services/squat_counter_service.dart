@@ -95,7 +95,16 @@ class SquatCounterService {
 
         if (angle > standThresholdDeg) {
           final achievedDepth = _deepestDepthRatio;
+          final tilted = _hasExcessiveShoulderTilt(pose);
           _resetSquatTracking();
+
+          if (tilted) {
+            return SquatProcessResult(
+              badForm: true,
+              depthRatio: achievedDepth,
+              hasPose: true,
+            );
+          }
 
           if (achievedDepth >= AppConstants.squatDepthThreshold) {
             return SquatProcessResult(
@@ -212,6 +221,31 @@ class SquatCounterService {
     if (left == null) return right;
     if (right == null) return left;
     return (left + right) / 2;
+  }
+
+  /// Flags leaning / collapsing form when shoulders are uneven relative to torso.
+  bool _hasExcessiveShoulderTilt(Pose pose) {
+    final left = pose.landmarks[PoseLandmarkType.leftShoulder];
+    final right = pose.landmarks[PoseLandmarkType.rightShoulder];
+    final leftHip = pose.landmarks[PoseLandmarkType.leftHip];
+    final rightHip = pose.landmarks[PoseLandmarkType.rightHip];
+    if (left == null ||
+        right == null ||
+        leftHip == null ||
+        rightHip == null ||
+        left.likelihood < minConfidence ||
+        right.likelihood < minConfidence ||
+        leftHip.likelihood < minConfidence ||
+        rightHip.likelihood < minConfidence) {
+      return false;
+    }
+
+    final torso =
+        (((leftHip.y + rightHip.y) / 2) - ((left.y + right.y) / 2)).abs();
+    if (torso < 1) return false;
+
+    final tilt = (left.y - right.y).abs() / torso;
+    return tilt > AppConstants.maxShoulderTiltRatio;
   }
 
   double? _kneeAngle(

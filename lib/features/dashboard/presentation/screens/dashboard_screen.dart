@@ -369,7 +369,7 @@ class _ExactAlarmWarningCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Allow "Alarms & reminders" so your wake-up alarm can ring on time.',
+                      'Allow "Alarms & reminders" so your wake-up alarm can ring on time — then return here.',
                       style: tt.statLabel.copyWith(fontSize: 13),
                     ),
                   ],
@@ -378,14 +378,16 @@ class _ExactAlarmWarningCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
               onPressed: onOpenSettings,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.destructive,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.destructive,
+                foregroundColor: AppColors.foreground,
+                minimumSize: const Size.fromHeight(44),
               ),
-              child: const Text('Open Settings'),
+              child: const Text('ENABLE EXACT ALARMS'),
             ),
           ),
         ],

@@ -7,6 +7,7 @@ import 'package:awaken/features/alarm/presentation/screens/active_alarm_screen.d
 import 'package:awaken/features/alarm/presentation/screens/alarm_setup_screen.dart';
 import 'package:awaken/features/auth/presentation/screens/auth_screen.dart';
 import 'package:awaken/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:awaken/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:awaken/features/success/presentation/screens/success_screen.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
@@ -30,6 +31,7 @@ abstract final class AppRoutes {
   static const String activeAlarm = '/alarm/active';
   static const String alarmSetup = '/alarm/setup';
   static const String success = '/alarm/success';
+  static const String onboarding = '/onboarding';
 
   // Legacy aliases kept so existing code using these still compiles.
   static const String territoryRun = '/territory';
@@ -100,7 +102,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.success,
-        builder: (context, state) => const SuccessScreen(),
+        builder: (context, state) => SuccessScreen(
+          alarm: state.extra is AlarmEntity ? state.extra as AlarmEntity : null,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (context, state) => const OnboardingScreen(),
       ),
 
       // ── Redirect bare '/' to '/dashboard' ────────────────────────────────
@@ -252,7 +260,7 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: AppColors.background,
       body: widget.navigationShell,
       bottomNavigationBar: _AwakenBottomNav(
         currentIndex: widget.navigationShell.currentIndex,
@@ -271,11 +279,11 @@ class _AwakenBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const _primary = Color(0xFF4A9EFF);
-  static const _accent = Color(0xFFA259FF);
-  static const _card = Color(0xFF282828);
-  static const _muted = Color(0xFF9E9E9E);
-  static const _border = Color(0x1AFFFFFF);
+  static const _primary = AppColors.primary;
+  static const _accent = AppColors.accent;
+  static const _card = AppColors.card;
+  static const _muted = AppColors.mutedForeground;
+  static const _border = AppColors.border;
 
   @override
   Widget build(BuildContext context) {

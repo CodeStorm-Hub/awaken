@@ -11,7 +11,12 @@ class LocalSessionRepository implements SessionRepository {
   Future<List<SessionEntity>> _getSessions() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = prefs.getStringList(_sessionsKey) ?? [];
-    return jsonList.map((jsonStr) => SessionEntity.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>)).toList();
+    return jsonList
+        .map(
+          (jsonStr) =>
+              SessionEntity.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>),
+        )
+        .toList();
   }
 
   Future<void> _saveSessions(List<SessionEntity> sessions) async {
@@ -52,4 +57,57 @@ class LocalSessionRepository implements SessionRepository {
     }
     return total;
   }
+
+  @override
+  Future<({int current, int best})> streakStats(String userId) async {
+    final sessions = await _getSessions();
+    final days = sessions
+        .where((s) => s.userId == userId)
+        .map(
+          (s) => DateTime(
+            s.completedAt.year,
+            s.completedAt.month,
+            s.completedAt.day,
+          ),
+        )
+        .toSet()
+        .toList()
+      ..sort();
+
+    if (days.isEmpty) return (current: 0, best: 0);
+
+    var best = 1;
+    var run = 1;
+    for (var i = 1; i < days.length; i++) {
+      final gap = days[i].difference(days[i - 1]).inDays;
+      if (gap == 1) {
+        run++;
+        if (run > best) best = run;
+      } else if (gap > 1) {
+        run = 1;
+      }
+    }
+
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final yesterday = todayDate.subtract(const Duration(days: 1));
+    final last = days.last;
+
+    var current = 0;
+    if (last == todayDate || last == yesterday) {
+      current = 1;
+      for (var i = days.length - 1; i > 0; i--) {
+        if (days[i].difference(days[i - 1]).inDays == 1) {
+          current++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    return (current: current, best: best);
+  }
+
+  /// All locally stored sessions (used when migrating guest workouts on sign-in).
+  Future<List<SessionEntity>> getAllSessions() => _getSessions();
 }

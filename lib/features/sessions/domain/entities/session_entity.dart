@@ -12,6 +12,9 @@ class SessionEntity {
     required this.caloriesBurned,
   });
 
+  /// Stable user id for workouts completed while signed out (local-only).
+  static const String localGuestUserId = 'local';
+
   final String? id; // UUID assigned by Supabase; null before save
   final String userId;
   final String? alarmId;

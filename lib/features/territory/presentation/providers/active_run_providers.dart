@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:awaken/core/constants/app_constants.dart';
+import 'package:awaken/features/territory/data/datasources/pending_capture_queue.dart';
 import 'package:awaken/features/territory/domain/entities/capture_result_entity.dart';
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
 import 'package:awaken/features/territory/domain/entities/loop_segment_entity.dart';
@@ -151,6 +152,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     _loopTracker = LoopClosureTracker();
     _startTime = clock.now();
     ref.read(territoryRunGpsKeepAliveProvider.notifier).state = true;
+    ref.read(runOwnsHighAccuracyGpsProvider.notifier).state = true;
     state = const ActiveRunState(status: RunSessionStatus.tracking);
 
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -160,7 +162,21 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
 
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: _runLocationSettings(),
-    ).listen(_onPosition);
+    ).listen(
+      _onPosition,
+      onError: (Object error, StackTrace stackTrace) {
+        // Surface FGS / permission failures instead of an unhandled
+        // EventChannel PlatformException that leaves the run stuck.
+        _tickTimer?.cancel();
+        _positionSubscription = null;
+        ref.read(runOwnsHighAccuracyGpsProvider.notifier).state = false;
+        state = state.copyWith(
+          status: RunSessionStatus.error,
+          errorMessage:
+              'Location tracking failed. Check that location permission is allowed.',
+        );
+      },
+    );
   }
 
   LocationSettings _runLocationSettings() {
@@ -180,7 +196,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
         accuracy: LocationAccuracy.best,
         activityType: ActivityType.fitness,
         distanceFilter: 5,
-        pauseLocationUpdatesAutomatically: true,
+        pauseLocationUpdatesAutomatically: false,
       );
     }
     return const LocationSettings(
@@ -240,6 +256,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   Future<void> finishRun() async {
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
+    ref.read(runOwnsHighAccuracyGpsProvider.notifier).state = false;
     if (state.status != RunSessionStatus.tracking) return;
 
     state = state.copyWith(status: RunSessionStatus.finishing);
@@ -330,6 +347,27 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
         pendingLoops: loopSegments,
       );
     } catch (error) {
+      // Queue closed loops for retry so a network blip doesn't drop captures.
+      if (outcome == RunOutcome.territoryClaimed && loopSegments.isNotEmpty) {
+        const queue = PendingCaptureQueue();
+        for (var i = 0; i < loopSegments.length; i++) {
+          final segment = loopSegments[i];
+          final simplifiedSegment = segment.points.length < 3
+              ? segment.points
+              : RdpSimplifier.simplify(
+                  segment.points,
+                  AppConstants.rdpSimplificationEpsilonMeters,
+                );
+          await queue.enqueue(
+            PendingCapture(
+              id: '${clock.now().microsecondsSinceEpoch}_$i',
+              points: simplifiedSegment,
+              enqueuedAt: clock.now(),
+            ),
+          );
+        }
+      }
+
       final run = RunTrackEntity(
         points: simplifiedFullPath,
         distanceMeters: state.distanceMeters,
@@ -344,11 +382,32 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     }
   }
 
+  /// Retries any captures that failed to sync on a previous finish.
+  Future<int> flushPendingCaptures() async {
+    const queue = PendingCaptureQueue();
+    final pending = await queue.peek();
+    if (pending.isEmpty) return 0;
+
+    final repo = ref.read(territoryRepositoryProvider);
+    var flushed = 0;
+    for (final item in pending) {
+      try {
+        await repo.captureTerritory(item.points);
+        await queue.remove(item.id);
+        flushed++;
+      } catch (e) {
+        debugPrint('[CaptureQueue] retry failed for ${item.id}: $e');
+      }
+    }
+    return flushed;
+  }
+
   void reset() {
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
     _loopTracker = null;
     ref.read(territoryRunGpsKeepAliveProvider.notifier).state = false;
+    ref.read(runOwnsHighAccuracyGpsProvider.notifier).state = false;
     state = const ActiveRunState();
   }
 

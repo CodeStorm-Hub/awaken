@@ -49,26 +49,25 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
     _sessionRecorded = true;
 
     final user = ref.read(currentUserProvider);
-    if (user == null) {
-      if (mounted) setState(() => _isSaving = false);
-      return; // Not signed in — local mode, no recording
-    }
+    final userId = user?.id ?? SessionEntity.localGuestUserId;
 
     try {
-      if (widget.alarm != null) {
-        await ref.read(alarmListProvider.notifier).markCompleted(widget.alarm!);
-      }
-
+      // Persist workout first so a notification cancel failure cannot drop it.
       await ref.read(sessionRepositoryProvider).recordSession(
             SessionEntity(
-              userId: user.id,
+              userId: userId,
+              alarmId: widget.alarm?.id,
               completedAt: DateTime.now(),
               repsCompleted: _repsCompleted,
               durationSeconds: _durationSeconds,
               caloriesBurned: _caloriesBurned,
             ),
           );
-      // Invalidate dashboard stats so they refresh on next view
+
+      if (widget.alarm != null) {
+        await ref.read(alarmListProvider.notifier).markCompleted(widget.alarm!);
+      }
+
       ref.invalidate(dashboardStatsProvider);
       await ref.read(dashboardStatsProvider.future);
     } catch (e) {

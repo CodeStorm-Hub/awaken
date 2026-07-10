@@ -27,6 +27,9 @@
     <!-- Foreground service for audio playback -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <!-- Required on Android 14+ when Geolocator starts a location FGS
+         (territory runs use foregroundNotificationConfig). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
 
     <application
         android:label="awaken"

@@ -55,7 +55,7 @@ Key providers worth knowing before touching the alarm flow:
 - `repCountProvider`, `repFeedbackProvider` (`neutral`/`success`/`failure`), `requiredRepsProvider`, `outOfFrameProvider` — session-local squat state (`alarm_providers.dart`)
 - `alarmListProvider` (`AsyncNotifierProvider`) — CRUD for scheduled alarms; `alarmRepositoryProvider` watches `isSignedInProvider` and swaps between the SharedPreferences-backed repo and the Supabase-backed repo automatically (local ↔ cloud)
 - `nextAlarmProvider` — derived next upcoming active alarm
-- `clockDisplayProvider` — `StreamProvider<String>` using `.distinct()` (from `rxdart`, a transitive dep of `supabase_flutter`) so it only emits on minute change, not every tick
+- `clockDisplayProvider` — `StreamProvider<String>` that only yields when the HH:MM string changes (once per minute), so the digital clock does not rebuild every second
 
 Territory run state lives in `activeRunProvider` and map readiness in `territoryMapReadyProvider` (`active_run_providers.dart`, `territory_providers.dart`). Tab switches away from an active run prompt discard confirmation via `_ShellScaffold` in `app_router.dart`.
 
@@ -111,7 +111,7 @@ Dark theme only (`ThemeData.dark`, forced — no light mode exists anywhere). Co
 
 ### Backend (Supabase)
 
-Project `fsdfqcnjcjtdmdjshrvu` (ap-northeast-1). Tables `alarms`, `sessions`, `streaks`, and territory-related tables all have RLS scoped to `auth.users` — see schema in `docs/awake_full_detail.md` §10 if you need exact columns. Google OAuth requires `googleWebClientId`/`googleAndroidClientId`/`googleIosClientId` to be filled in `lib/core/constants/supabase_config.dart` plus `google-services.json` (Android) / `GIDClientID` in `Info.plist` (iOS) — these are environment-specific and not committed.
+Project `nankdbntvvopnfvvvaoo` (ap-southeast-1). Tables `alarms`, `sessions`, `streaks`, and territory-related tables all have RLS scoped to `auth.users` — see schema in `docs/awake_full_detail.md` §10 and `supabase/migrations/` for exact columns. Google OAuth requires `googleWebClientId`/`googleAndroidClientId`/`googleIosClientId` to be filled in `lib/core/constants/supabase_config.dart` plus `google-services.json` (Android) / `GIDClientID` in `Info.plist` (iOS) — these are environment-specific and not committed.
 
 ### Tests
 

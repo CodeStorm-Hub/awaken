@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
+import 'package:awaken/features/territory/data/datasources/pending_capture_queue.dart';
 import 'package:awaken/features/territory/data/datasources/territory_supabase_datasource.dart';
 import 'package:awaken/features/territory/data/repositories/territory_local_repository_impl.dart';
 import 'package:awaken/features/territory/data/repositories/territory_supabase_repository_impl.dart';
@@ -10,8 +11,10 @@ import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart'
 import 'package:awaken/features/territory/domain/entities/leaderboard_entry_entity.dart';
 import 'package:awaken/features/territory/domain/entities/territory_entity.dart';
 import 'package:awaken/features/territory/domain/repositories/territory_repository.dart';
+import 'package:awaken/features/territory/domain/services/location_fix_service.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_style.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -27,6 +30,10 @@ final territoryShellTabIndexProvider = StateProvider<int>((ref) => 0);
 /// Set true while a run is actively tracking so GPS/map layers stay warm if the
 /// user briefly backgrounds the app (not shell tab switches during a run).
 final territoryRunGpsKeepAliveProvider = StateProvider<bool>((ref) => false);
+
+/// When true, [ActiveRunNotifier] owns the high-accuracy GPS stream — idle
+/// [myLocationProvider] must not open a second Geolocator subscription.
+final runOwnsHighAccuracyGpsProvider = StateProvider<bool>((ref) => false);
 
 /// Live map camera zoom — updated by [TerritoryRunScreen] on pan/zoom.
 final territoryMapZoomProvider = StateProvider<double>(
@@ -193,6 +200,12 @@ Stream<Position?> myLocation(MyLocationRef ref) async* {
     return;
   }
 
+  // Active run already has a high-accuracy stream — avoid a second subscription.
+  if (ref.watch(runOwnsHighAccuracyGpsProvider)) {
+    yield ref.read(mapLastKnownPositionProvider);
+    return;
+  }
+
   try {
     await LocationPermissionHelper.ensureLocationAccess();
   } on LocationAccessException {
@@ -204,22 +217,18 @@ Stream<Position?> myLocation(MyLocationRef ref) async* {
   final cached = ref.read(mapLastKnownPositionProvider);
   if (cached != null) {
     yield cached;
-  } else {
-    final lastKnown = await Geolocator.getLastKnownPosition();
-    if (lastKnown != null) {
-      ref.read(mapLastKnownPositionProvider.notifier).state = lastKnown;
-      yield lastKnown;
-    }
   }
 
   try {
-    final current = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.medium,
-      ),
-    ).timeout(const Duration(seconds: 8));
-    ref.read(mapLastKnownPositionProvider.notifier).state = current;
-    yield current;
+    final current = await LocationFixService.acquireForMapCentering(
+      onInterim: (position) {
+        ref.read(mapLastKnownPositionProvider.notifier).state = position;
+      },
+    );
+    if (current != null) {
+      ref.read(mapLastKnownPositionProvider.notifier).state = current;
+      yield current;
+    }
   } catch (_) {
     // Keep any cached/last-known fix already emitted above.
   }
@@ -274,3 +283,25 @@ LatLng? territoryApproxCentroid(TerritoryEntity territory) {
   }
   return LatLng(sumLat / ring.length, sumLng / ring.length);
 }
+
+/// Retries queued territory captures after sign-in (parity with session sync).
+final captureSyncOnSignInProvider = Provider<void>((ref) {
+  ref.listen(authStateProvider, (previous, next) {
+    next.whenData((state) async {
+      if (state.session == null) return;
+      const queue = PendingCaptureQueue();
+      final pending = await queue.peek();
+      if (pending.isEmpty) return;
+
+      final repo = ref.read(territoryRepositoryProvider);
+      for (final item in pending) {
+        try {
+          await repo.captureTerritory(item.points);
+          await queue.remove(item.id);
+        } catch (e) {
+          debugPrint('[CaptureQueue] sign-in flush failed for ${item.id}: $e');
+        }
+      }
+    });
+  });
+});
