@@ -425,7 +425,7 @@ void main() {
     });
 
     // F4: Loop Claiming & Validation (16-20)
-    test('16. F4: Closed loop (start/end distance <= 20m) with min duration (2m) and min distance (200m) and area (>50m²) is valid.', () {
+    test('16. F4: Closed loop (start/end distance <= 50m) with min duration (2m) and min distance (200m) and area (>50m²) is valid.', () {
       final baseTime = DateTime.now();
       final loop = createRectangleLoop(
         startLat: 40.7128,
@@ -443,14 +443,19 @@ void main() {
       expect(outcome, equals(RunOutcome.territoryClaimed));
     });
 
-    test('17. F4: Loop not closed (start/end distance > 20m) is classified as normal workout (not claimed).', () {
+    test('17. F4: Loop not closed (start/end distance > 50m) is classified as normal workout (not claimed).', () {
       final baseTime = DateTime.now();
+      // End ~80m south of start — outside loopClosureRadiusMeters (50).
       final loop = [
         GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: baseTime),
         GeoPointEntity(latitude: 40.7138, longitude: -74.0060, timestamp: baseTime.add(const Duration(seconds: 30))),
         GeoPointEntity(latitude: 40.7138, longitude: -74.0050, timestamp: baseTime.add(const Duration(seconds: 60))),
         GeoPointEntity(latitude: 40.7128, longitude: -74.0050, timestamp: baseTime.add(const Duration(seconds: 90))),
-        GeoPointEntity(latitude: 40.7124, longitude: -74.0060, timestamp: baseTime.add(const Duration(seconds: 120))),
+        GeoPointEntity(
+          latitude: 40.7128 - 80 / 111194.9266,
+          longitude: -74.0060,
+          timestamp: baseTime.add(const Duration(seconds: 120)),
+        ),
       ];
       final outcome = RunValidationService.classify(
         points: loop,
@@ -895,7 +900,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('LEADERBOARD'), findsOneWidget);
+      expect(find.text('Nearby rivals'), findsOneWidget);
+      expect(find.text('RANKS'), findsWidgets);
     });
   });
 

@@ -207,6 +207,7 @@ void main() {
 
     test('returns loopNotClosed when path does not close near start', () {
       final baseTime = DateTime.now();
+      // End ~80m from start — outside loopClosureRadiusMeters (50).
       final openPath = [
         GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: baseTime),
         GeoPointEntity(
@@ -220,7 +221,7 @@ void main() {
           timestamp: baseTime.add(const Duration(seconds: 60)),
         ),
         GeoPointEntity(
-          latitude: 40.7124,
+          latitude: 40.7128 - 80 / 111194.9266,
           longitude: -74.0060,
           timestamp: baseTime.add(const Duration(seconds: 90)),
         ),
