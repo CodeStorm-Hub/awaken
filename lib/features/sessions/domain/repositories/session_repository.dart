@@ -8,4 +8,7 @@ abstract class SessionRepository {
 
   /// Returns sum of caloriesBurned from sessions in the last [days] days.
   Future<int> monthlyCalories(String userId, {int days = 30});
+
+  /// Consecutive calendar-day streak ending today (or yesterday if none today).
+  Future<({int current, int best})> streakStats(String userId);
 }

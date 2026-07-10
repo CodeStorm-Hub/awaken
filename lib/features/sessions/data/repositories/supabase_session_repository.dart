@@ -46,6 +46,19 @@ class SupabaseSessionRepository implements SessionRepository {
         .fold<int>(0, (sum, row) => sum + (row['calories_burned'] as int));
   }
 
+  @override
+  Future<({int current, int best})> streakStats(String userId) async {
+    final row = await _client
+        .from('streaks')
+        .select('current_streak, best_streak')
+        .eq('user_id', userId)
+        .maybeSingle();
+    return (
+      current: (row?['current_streak'] as int?) ?? 0,
+      best: (row?['best_streak'] as int?) ?? 0,
+    );
+  }
+
   // ── Streak logic ──────────────────────────────────────────────────────────
 
   static DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);

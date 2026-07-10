@@ -1,39 +1,55 @@
-/// Supabase + Google OAuth credentials.
+/// Supabase credentials + Google OAuth (Android native sign-in).
 ///
-/// Fill these in from:
-///   - Supabase Dashboard → Project Settings → API
-///   - Google Cloud Console → OAuth 2.0 Client IDs
+/// **Architecture**: Supabase owns the session. Google sign-in on Android uses
+/// the native `google_sign_in` account picker, then `signInWithIdToken` — no
+/// browser redirect and no Firebase Auth web flow.
 ///
-/// DO NOT commit real keys — put them in .env or flavour-specific config
-/// and swap the const values here via dart-define or environment injection.
+/// **Android app** (already configured):
+/// - Package `com.example.awaken`
+/// - Android OAuth client (`client_type: 1`) in Google Cloud / Firebase Console
+/// - Debug SHA-1 registered for that Android client
+///
+/// **One-time Supabase Dashboard** (Authentication → Providers → Google):
+/// 1. Enable Google
+/// 2. **Client ID**: [googleOAuthClientIdForSupabase] — the `client_type: 3`
+///    Web client from `google-services.json` / Google Cloud Console. Passed as
+///    `serverClientId` to `google_sign_in` so Google issues an ID token Supabase
+///    can verify.
+/// 3. **Skip nonce checks**: ON (required for Android `signInWithIdToken`)
+/// 4. **Client secret**: optional for native ID-token sign-in; add only if
+///    Supabase rejects the exchange.
+/// 5. **Authorized Client IDs** (if shown): add [googleAndroidClientId]
+///
+/// **Callback URL** (`https://<ref>.supabase.co/auth/v1/callback`) is for
+/// Supabase-hosted web OAuth only — this app does not use it.
 abstract final class SupabaseConfig {
   // ── Supabase ──────────────────────────────────────────────────────────────
   static const String url = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://fsdfqcnjcjtdmdjshrvu.supabase.co',
+    defaultValue: 'https://nankdbntvvopnfvvvaoo.supabase.co',
   );
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzZGZxY25qY2p0ZG1kanNocnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzIwNTEsImV4cCI6MjA5ODI0ODA1MX0.zr4Sbwr3DyWoALowjWX2boCO9jChLrxfhBmnAGNUbSU',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbmtkYm50dnZvcG5mdnZ2YW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDM4NDEsImV4cCI6MjA5OTAxOTg0MX0.jAV0yktnr_N7JKaXEBvtI9iVXbUy48StGoSFyz9qDN0',
   );
 
-  // ── Google OAuth ──────────────────────────────────────────────────────────
-  // The "Web application" client ID from Google Cloud Console.
-  // Used as serverClientId in google_sign_in so Supabase can verify the token.
-  static const String googleWebClientId = String.fromEnvironment(
-    'GOOGLE_WEB_CLIENT_ID',
-    defaultValue: 'your-web-client-id.apps.googleusercontent.com',
-  );
+  // ── Google OAuth (from android/app/google-services.json) ──────────────────
 
-  // Android client ID (SHA-1 fingerprint registered in GCC)
+  /// Android OAuth client (`client_type: 1`). Used for SHA-1 / package binding.
   static const String googleAndroidClientId = String.fromEnvironment(
     'GOOGLE_ANDROID_CLIENT_ID',
-    defaultValue: 'your-android-client-id.apps.googleusercontent.com',
+    defaultValue:
+        '230513820686-ua1prkedtbtceb4d39e2kqg5m23q7te8.apps.googleusercontent.com',
   );
 
-  // iOS client ID (matches GIDClientID in Info.plist)
-  static const String googleIosClientId = String.fromEnvironment(
-    'GOOGLE_IOS_CLIENT_ID',
-    defaultValue: 'your-ios-client-id.apps.googleusercontent.com',
+  /// Web OAuth client for Supabase Google provider (`client_type: 3`). Passed to
+  /// `google_sign_in` as [serverClientId] for ID token audience verification.
+  static const String googleOAuthClientIdForSupabase = String.fromEnvironment(
+    'GOOGLE_OAUTH_CLIENT_ID',
+    defaultValue:
+        '230513820686-ku2co5m68332qjv7t0cgbe5vk8nlvrea.apps.googleusercontent.com',
   );
+
+  /// @deprecated Use [googleOAuthClientIdForSupabase]. Kept for dart-define compat.
+  static const String googleWebClientId = googleOAuthClientIdForSupabase;
 }

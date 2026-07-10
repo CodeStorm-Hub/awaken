@@ -1,0 +1,12 @@
+{
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Awaken",
+        "supportEmail": "salman.reza.2026@gmail.com",
+        "authorizedDomains": ["localhost"]
+      },
+      "emailPassword": true
+    }
+  }
+}

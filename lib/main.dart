@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:awaken/app.dart';
 import 'package:awaken/core/constants/supabase_config.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
+import 'package:awaken/core/services/territory_decay_notification_service.dart';
+import 'package:awaken/core/utils/expected_async_cancellation.dart';
+import 'package:awaken/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +22,7 @@ void main() async {
   tz.initializeTimeZones();
   try {
     final localTimezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(localTimezone));
+    tz.setLocalLocation(tz.getLocation(localTimezone.identifier));
   } catch (_) {
     tz.setLocalLocation(tz.UTC);
   }
@@ -28,11 +33,25 @@ void main() async {
     anonKey: SupabaseConfig.anonKey, // ignore: deprecated_member_use
   );
 
-  // ── Alarm notification init ───────────────────────────────────────────────
+  // ── Alarm notification init (must complete before runApp for scheduling) ──
   await AlarmNotificationService.initialize();
+  // TerritoryDecayNotificationService.initialize() is deferred to after the
+  // first frame — see [_deferNonCriticalStartup] below.
 
   // Detect if we were launched by tapping an alarm notification
-  final initialRoute = await AlarmNotificationService.getInitialRoute();
+  // getInitialRoute() returns AppRoutes.dashboard ('/' in the old router) when
+  // not launched from a notification. Remap that to '/dashboard' (the shell
+  // branch root) so the new StatefulShellRoute resolves correctly.
+  var rawRoute = await AlarmNotificationService.getInitialRoute();
+  if (rawRoute == '/' || rawRoute == AppRoutes.dashboard) {
+    final onboardingDone = await OnboardingScreen.isComplete();
+    if (!onboardingDone) {
+      rawRoute = AppRoutes.onboarding;
+    } else {
+      rawRoute = AppRoutes.dashboard;
+    }
+  }
+  final initialRoute = rawRoute;
 
   // ── System UI ─────────────────────────────────────────────────────────────
   await SystemChrome.setPreferredOrientations([
@@ -51,6 +70,16 @@ void main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
+  // Swallow expected vector_map_tiles tile-render cancellations (tab dispose /
+  // visible-tile churn) before runApp so they never flood the console.
+  installExpectedAsyncCancellationHandlers();
+
+  // Defer non-critical startup work until after the first frame is painted.
+  // Keeps timezone + alarm notification init on the critical path above.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(_deferNonCriticalStartup());
+  });
+
   runApp(
     ProviderScope(
       overrides: [
@@ -60,4 +89,12 @@ void main() async {
       child: const AwakenApp(),
     ),
   );
+}
+
+/// Startup work intentionally deferred from [main] to reduce first-frame jank.
+///
+/// - [TerritoryDecayNotificationService.initialize]: creates a secondary
+///   notification channel; not needed until the dashboard surfaces decay warnings.
+Future<void> _deferNonCriticalStartup() async {
+  await TerritoryDecayNotificationService.initialize();
 }

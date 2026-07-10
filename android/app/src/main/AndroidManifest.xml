@@ -5,6 +5,10 @@
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
+    <!-- ── Territory capture: live GPS tracking ─────────────────────── -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
     <!-- ── Alarm & wake permissions ──────────────────────────────────── -->
     <!-- Keep CPU alive while alarm fires -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -23,6 +27,9 @@
     <!-- Foreground service for audio playback -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <!-- Required on Android 14+ when Geolocator starts a location FGS
+         (territory runs use foregroundNotificationConfig). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
 
     <application
         android:label="awaken"

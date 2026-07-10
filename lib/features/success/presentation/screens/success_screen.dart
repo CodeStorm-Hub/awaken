@@ -2,7 +2,9 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
+import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_providers.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
@@ -10,11 +12,13 @@ import 'package:awaken/features/sessions/presentation/providers/session_provider
 import 'package:awaken/features/success/presentation/widgets/stat_reveal_item.dart';
 import 'package:awaken/features/success/presentation/widgets/streak_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class SuccessScreen extends ConsumerStatefulWidget {
-  const SuccessScreen({super.key});
+  const SuccessScreen({super.key, this.alarm});
+  final AlarmEntity? alarm;
 
   @override
   ConsumerState<SuccessScreen> createState() => _SuccessScreenState();
@@ -25,6 +29,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   late final int _durationSeconds;
   late final int _caloriesBurned;
   bool _sessionRecorded = false;
+  bool _isSaving = true;
 
   @override
   void initState() {
@@ -44,29 +49,38 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
     _sessionRecorded = true;
 
     final user = ref.read(currentUserProvider);
-    if (user == null) return; // Not signed in — local mode, no recording
+    final userId = user?.id ?? SessionEntity.localGuestUserId;
 
     try {
+      // Persist workout first so a notification cancel failure cannot drop it.
       await ref.read(sessionRepositoryProvider).recordSession(
             SessionEntity(
-              userId: user.id,
+              userId: userId,
+              alarmId: widget.alarm?.id,
               completedAt: DateTime.now(),
               repsCompleted: _repsCompleted,
               durationSeconds: _durationSeconds,
               caloriesBurned: _caloriesBurned,
             ),
           );
-      // Invalidate dashboard stats so they refresh on next view
+
+      if (widget.alarm != null) {
+        await ref.read(alarmListProvider.notifier).markCompleted(widget.alarm!);
+      }
+
       ref.invalidate(dashboardStatsProvider);
+      await ref.read(dashboardStatsProvider.future);
     } catch (e) {
       debugPrint('[Session] Failed to record: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   void _startMyDay() {
-    ref.read(repCountProvider.notifier).state = 0;
-    ref.read(repFeedbackProvider.notifier).state = RepFeedback.neutral;
-    ref.read(sessionStartTimeProvider.notifier).state = null;
+    ref.read(repCountProvider.notifier).setCount(0);
+    ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
+    ref.read(sessionStartTimeProvider.notifier).setStartTime(null);
     context.go(AppRoutes.dashboard);
   }
 
@@ -74,11 +88,13 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final statsAsync = ref.watch(dashboardStatsProvider);
-    final currentStreak = statsAsync.whenOrNull(data: (s) => s.currentStreak) ?? 0;
+    final currentStreak = statsAsync.valueOrNull?.currentStreak ?? 0;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(
@@ -91,7 +107,10 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               const SizedBox(height: 24),
 
               // ── Streak badge ───────────────────────────────────────
-              StreakBadge(streak: currentStreak),
+              if (_isSaving)
+                const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))
+              else
+                StreakBadge(streak: currentStreak),
 
               const SizedBox(height: 48),
 
@@ -109,7 +128,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               StatRevealItem(
                 icon: Icons.fitness_center_rounded,
                 label: 'Squats completed',
-                value: '$_repsCompleted',
+                targetValue: _repsCompleted,
                 unit: 'reps',
                 delay: AppConstants.floatUpDelay0,
               ),
@@ -118,7 +137,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               StatRevealItem(
                 icon: Icons.local_fire_department_rounded,
                 label: 'Calories burned',
-                value: '$_caloriesBurned',
+                targetValue: _caloriesBurned,
                 unit: 'kcal',
                 delay: AppConstants.floatUpDelay1,
                 accentColor: AppColors.accent,
@@ -128,7 +147,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               StatRevealItem(
                 icon: Icons.timer_outlined,
                 label: 'Wake-up time',
-                value: '$_durationSeconds',
+                targetValue: _durationSeconds,
                 unit: 'sec',
                 delay: AppConstants.floatUpDelay2,
                 accentColor: AppColors.success,
@@ -156,16 +175,27 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 
 // ── Sub-widgets ────────────────────────────────────────────────────────────
 
-class _MotivationalQuote extends StatelessWidget {
+class _MotivationalQuote extends StatefulWidget {
   const _MotivationalQuote({required this.delay});
 
   final Duration delay;
+
+  @override
+  State<_MotivationalQuote> createState() => _MotivationalQuoteState();
+}
+
+class _MotivationalQuoteState extends State<_MotivationalQuote>
+    with SingleTickerProviderStateMixin {
+  late final String _quote;
+  late final AnimationController _charCtrl;
+  late final Animation<int> _charCountAnim;
+  int _lastCharCount = 0;
 
   static const _quotes = [
     'The morning is the foundation of the day.',
@@ -175,9 +205,46 @@ class _MotivationalQuote extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
     final idx = DateTime.now().day % _quotes.length;
+    _quote = '"${_quotes[idx]}"';
 
+    final duration = Duration(milliseconds: _quote.length * 30);
+    _charCtrl = AnimationController(
+      vsync: this,
+      duration: duration,
+    );
+
+    _charCountAnim = IntTween(begin: 0, end: _quote.length).animate(
+      CurvedAnimation(parent: _charCtrl, curve: Curves.linear),
+    );
+
+    _charCountAnim.addListener(() {
+      final current = _charCountAnim.value;
+      if (current != _lastCharCount) {
+        _lastCharCount = current;
+        if (current % 2 == 0) {
+          HapticFeedback.lightImpact();
+        }
+      }
+    });
+
+    Future.delayed(widget.delay, () {
+      if (mounted) {
+        _charCtrl.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _charCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -186,14 +253,20 @@ class _MotivationalQuote extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         border: Border.all(color: AppColors.border),
       ),
-      child: Text(
-        '"${_quotes[idx]}"',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontStyle: FontStyle.italic,
-              color: AppColors.mutedForeground,
-              height: 1.6,
-            ),
-        textAlign: TextAlign.center,
+      child: AnimatedBuilder(
+        animation: _charCountAnim,
+        builder: (context, child) {
+          final visibleText = _quote.substring(0, _charCountAnim.value);
+          return Text(
+            visibleText,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.mutedForeground,
+                  height: 1.6,
+                ),
+            textAlign: TextAlign.center,
+          );
+        },
       ),
     );
   }

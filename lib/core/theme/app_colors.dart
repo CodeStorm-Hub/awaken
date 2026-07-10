@@ -41,6 +41,11 @@ abstract final class AppColors {
   /// oklch(1 0 0 / 10%) — hairline separators
   static const Color border = Color(0x1AFFFFFF);
 
+  // ── Rank medals (leaderboard podium) ──────────────────────────────
+  static const Color medalGold = Color(0xFFE8C547);
+  static const Color medalSilver = Color(0xFFB8C0CC);
+  static const Color medalBronze = Color(0xFFC47A3A);
+
   // ── Glow variants (for CustomPainter BlurMaskFilter) ─────────────
   static const Color primaryGlow = Color(0x664A9EFF);
   static const Color accentGlow = Color(0x66A259FF);

@@ -24,6 +24,12 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> signInWithGoogle() async {}
 
   @override
+  Future<void> signInWithEmailAndPassword(String email, String password) async {}
+
+  @override
+  Future<void> signUpWithEmailAndPassword(String email, String password, {String? displayName}) async {}
+
+  @override
   Future<void> signOut() async {}
 }
 
@@ -47,6 +53,10 @@ class FakeSessionRepository implements SessionRepository {
 
   @override
   Future<int> monthlyCalories(String userId, {int days = 30}) async => 0;
+
+  @override
+  Future<({int current, int best})> streakStats(String userId) async =>
+      (current: 0, best: 0);
 }
 
 void main() {

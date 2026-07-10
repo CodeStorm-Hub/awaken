@@ -1,0 +1,27 @@
+# Awaken — Supabase local dev config
+# Remote project: nankdbntvvopnfvvvaoo (ap-southeast-1)
+# Link with: supabase link --project-ref nankdbntvvopnfvvvaoo
+
+project_id = "nankdbntvvopnfvvvaoo"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+
+[realtime]
+enabled = true

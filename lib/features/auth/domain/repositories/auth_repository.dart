@@ -9,5 +9,7 @@ abstract class AuthRepository {
   Stream<AuthState> get authStateChanges;
 
   Future<void> signInWithGoogle();
+  Future<void> signInWithEmailAndPassword(String email, String password);
+  Future<void> signUpWithEmailAndPassword(String email, String password, {String? displayName});
   Future<void> signOut();
 }

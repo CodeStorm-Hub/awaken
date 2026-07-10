@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
@@ -20,26 +22,48 @@ class DigitalClock extends ConsumerWidget {
     final mm = display.substring(3, 5);
 
     return RepaintBoundary(
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: child,
-        ),
-        child: Text.rich(
-          key: ValueKey(display),
-          TextSpan(
-            style: tt.hudClock,
-            children: [
-              TextSpan(text: hh),
-              TextSpan(
-                text: ':',
-                style: tt.hudClock.copyWith(
-                  color: AppColors.mutedForeground,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.12),
+                width: 0.8,
+              ),
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+                    CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                  ),
+                  child: child,
                 ),
               ),
-              TextSpan(text: mm),
-            ],
+              child: Text.rich(
+                key: ValueKey(display),
+                TextSpan(
+                  style: tt.hudClock,
+                  children: [
+                    TextSpan(text: hh),
+                    TextSpan(
+                      text: ':',
+                      style: tt.hudClock.copyWith(
+                        color: AppColors.mutedForeground,
+                      ),
+                    ),
+                    TextSpan(text: mm),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

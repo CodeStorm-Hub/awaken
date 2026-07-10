@@ -4,7 +4,22 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
+
+/// Fields parsed from an alarm notification payload (`id|reps|scheduledTime`).
+@immutable
+class AlarmNotificationPayload {
+  const AlarmNotificationPayload({
+    required this.id,
+    required this.reps,
+    required this.scheduledTime,
+  });
+
+  final String id;
+  final int reps;
+  final DateTime scheduledTime;
+}
 
 /// Manages alarm scheduling via flutter_local_notifications.
 ///
@@ -15,6 +30,7 @@ abstract final class AlarmNotificationService {
 
   static const _channelId = 'awaken_alarm';
   static const _channelName = 'Alarm';
+  static const _pendingRouteKey = 'awaken_pending_alarm_route';
 
   // ── Init ──────────────────────────────────────────────────────────
 
@@ -81,6 +97,7 @@ abstract final class AlarmNotificationService {
 
   static Future<void> scheduleAlarm(AlarmEntity alarm) async {
     final scheduledTz = tz.TZDateTime.from(alarm.scheduledTime, tz.local);
+    final payload = buildPayload(alarm);
 
     await _plugin.zonedSchedule(
       _notifId(alarm),
@@ -88,6 +105,7 @@ abstract final class AlarmNotificationService {
       'Complete ${alarm.requiredReps} squats to dismiss your alarm.',
       scheduledTz,
       _buildDetails(alarm.requiredReps),
+      payload: payload,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -110,18 +128,74 @@ abstract final class AlarmNotificationService {
   /// Call in main() to detect if the app was opened by tapping an alarm.
   /// Returns the route string to use as GoRouter's initialLocation.
   static Future<String> getInitialRoute() async {
+    final pending = await consumePendingRoute();
+    if (pending != null) return pending;
+
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp ?? false) {
-      return '/alarm/active';
+      final payload = details?.notificationResponse?.payload;
+      return _buildActiveRoute(payload);
     }
     return '/';
   }
 
+  /// Persists a route for the next foreground/cold-start navigation.
+  static Future<void> stashPendingRoute(String route) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pendingRouteKey, route);
+  }
+
+  /// Returns and clears any stashed alarm route from a background tap.
+  static Future<String?> consumePendingRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    final route = prefs.getString(_pendingRouteKey);
+    if (route == null || route.isEmpty) return null;
+    await prefs.remove(_pendingRouteKey);
+    return route;
+  }
+
+  static String buildActiveRouteFromPayload(String? payload) {
+    final parsed = parsePayload(payload);
+    if (parsed == null) return '/alarm/active';
+
+    final scheduled =
+        Uri.encodeComponent(parsed.scheduledTime.toIso8601String());
+    return '/alarm/active?id=${parsed.id}&reps=${parsed.reps}&scheduled=$scheduled';
+  }
+
+  /// Builds the notification payload: `id|reps|scheduledTime` (ISO8601).
+  static String buildPayload(AlarmEntity alarm) =>
+      '${alarm.id}|${alarm.requiredReps}|${alarm.scheduledTime.toIso8601String()}';
+
+  /// Parses a notification payload. Returns null for missing or malformed input.
+  static AlarmNotificationPayload? parsePayload(String? payload) {
+    if (payload == null || !payload.contains('|')) return null;
+
+    final parts = payload.split('|');
+    if (parts.length < 2 || parts[0].isEmpty) return null;
+
+    final reps = int.tryParse(parts[1]) ?? 10;
+    final scheduledTime = parts.length >= 3 && parts[2].isNotEmpty
+        ? DateTime.parse(parts[2])
+        : DateTime.now();
+
+    return AlarmNotificationPayload(
+      id: parts[0],
+      reps: reps,
+      scheduledTime: scheduledTime,
+    );
+  }
+
+  /// Stable notification ID derived from [AlarmEntity.id] (fits int32).
+  @visibleForTesting
+  static int notificationIdFor(AlarmEntity alarm) => _notifId(alarm);
+
   // ── Internal helpers ──────────────────────────────────────────────
 
-  /// Notification ID derived from the alarm's epoch second (fits int32).
-  static int _notifId(AlarmEntity alarm) =>
-      alarm.scheduledTime.millisecondsSinceEpoch ~/ 1000 & 0x7FFFFFFF;
+  static int _notifId(AlarmEntity alarm) => alarm.id.hashCode & 0x7FFFFFFF;
+
+  static String _buildActiveRoute(String? payload) =>
+      buildActiveRouteFromPayload(payload);
 
   static NotificationDetails _buildDetails(int reps) {
     return NotificationDetails(
@@ -166,7 +240,7 @@ abstract final class AlarmNotificationService {
   static void _onForegroundTap(NotificationResponse response) {
     final ctx = navigatorKey.currentContext;
     if (ctx != null && ctx.mounted) {
-      GoRouter.of(ctx).go('/alarm/active');
+      GoRouter.of(ctx).go(_buildActiveRoute(response.payload));
     }
   }
 }
@@ -178,4 +252,10 @@ abstract final class AlarmNotificationService {
 @pragma('vm:entry-point')
 void _onBackgroundTap(NotificationResponse response) {
   debugPrint('[Alarm] Background tap: ${response.id}');
+  // Background isolate cannot navigate; stash the route for cold start / resume.
+  final route = AlarmNotificationService.buildActiveRouteFromPayload(
+    response.payload,
+  );
+  // Fire-and-forget — SharedPreferences is available in the background isolate.
+  AlarmNotificationService.stashPendingRoute(route);
 }

@@ -168,6 +168,8 @@ abstract final class AppTheme {
           TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
         },
       ),
+
+      extensions: <ThemeExtension<dynamic>>[AppTypography.extension],
     );
   }
 }

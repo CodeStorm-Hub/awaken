@@ -1,5 +1,9 @@
+import 'dart:ui';
+
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
+import 'package:awaken/core/services/exact_alarm_permission_service.dart';
+import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
@@ -10,6 +14,8 @@ import 'package:awaken/features/dashboard/presentation/widgets/armed_alarm_card.
 import 'package:awaken/features/dashboard/presentation/widgets/digital_clock.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/streak_ring.dart';
+import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,10 +27,21 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final nextAlarm = ref.watch(nextAlarmProvider);
+    final exactAlarmGranted = ref.watch(exactAlarmPermissionProvider);
     final isSignedIn = ref.watch(isSignedInProvider);
     final user = ref.watch(currentUserProvider);
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final size = MediaQuery.sizeOf(context);
+
+    // Surface a local notification once per dashboard load if any owned
+    // territory is within its decay grace period (Product Decision #4).
+    ref.listen(decayWarningsProvider, (previous, next) {
+      next.whenData(
+        (warnings) => TerritoryDecayNotificationService.notifyIfDecaying(
+          territoryCount: warnings.length,
+        ),
+      );
+    });
 
     final now = DateTime.now();
     final dateStr =
@@ -50,7 +67,29 @@ class DashboardScreen extends ConsumerWidget {
                 displayName: user?.displayName,
                 onAddAlarm: () => context.push(AppRoutes.alarmSetup),
                 onSignIn: () => context.push(AppRoutes.auth),
-                onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+                onSignOut: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: AppColors.card,
+                      title: const Text('Sign Out'),
+                      content: const Text('Are you sure you want to sign out? Your local data will be safe, but you won\'t be able to sync alarms.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel', style: TextStyle(color: AppColors.mutedForeground)),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Sign Out', style: TextStyle(color: AppColors.destructive)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    ref.read(authRepositoryProvider).signOut();
+                  }
+                },
               ),
               SizedBox(height: size.height * 0.05),
 
@@ -60,6 +99,19 @@ class DashboardScreen extends ConsumerWidget {
               Center(child: Text(dateStr, style: tt.eyebrow)),
 
               SizedBox(height: size.height * 0.05),
+
+              // ── Exact alarm permission warning (Android 12+) ───────────
+              if (exactAlarmGranted.valueOrNull == false)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _ExactAlarmWarningCard(
+                    tt: tt,
+                    onOpenSettings: () async {
+                      await ExactAlarmPermissionService.openSettings();
+                      ref.invalidate(exactAlarmPermissionProvider);
+                    },
+                  ),
+                ),
 
               // ── Alarm card ────────────────────────────────────────────
               if (nextAlarm != null)
@@ -72,6 +124,15 @@ class DashboardScreen extends ConsumerWidget {
                   tt: tt,
                   onTap: () => context.push(AppRoutes.alarmSetup),
                 ),
+
+              const SizedBox(height: 16),
+
+              // ── Territory capture entry point ──────────────────────────
+              _TerritoryCard(
+                tt: tt,
+                onTap: () => context.go(AppRoutes.territory),
+                onViewDetails: () => context.push(AppRoutes.territoryOverview),
+              ),
 
               const SizedBox(height: 16),
 
@@ -136,7 +197,7 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // ── Dev shortcut ──────────────────────────────────────────
-              _TestAlarmButton(nextAlarm: nextAlarm),
+              if (kDebugMode) _TestAlarmButton(nextAlarm: nextAlarm),
             ],
           ),
         ),
@@ -265,6 +326,76 @@ class _Header extends StatelessWidget {
   }
 }
 
+class _ExactAlarmWarningCard extends StatelessWidget {
+  const _ExactAlarmWarningCard({
+    required this.tt,
+    required this.onOpenSettings,
+  });
+
+  final AwakenTypography tt;
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.destructive.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        border: Border.all(
+          color: AppColors.destructive.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.destructive,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ALARMS MAY NOT FIRE',
+                      style: tt.eyebrow.copyWith(color: AppColors.destructive),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Allow "Alarms & reminders" so your wake-up alarm can ring on time — then return here.',
+                      style: tt.statLabel.copyWith(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onOpenSettings,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.destructive,
+                foregroundColor: AppColors.foreground,
+                minimumSize: const Size.fromHeight(44),
+              ),
+              child: const Text('ENABLE EXACT ALARMS'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StreakCard extends StatelessWidget {
   const _StreakCard({
     required this.progress,
@@ -324,31 +455,103 @@ class _NoAlarmCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-          border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.3),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.4),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.add_alarm_rounded, color: AppColors.primary),
+                const SizedBox(width: 12),
+                Text(
+                  'Tap to set your alarm',
+                  style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.primary),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ),
-        child: Row(
-          children: [
-            const Icon(Icons.add_alarm_rounded, color: AppColors.primary),
-            const SizedBox(width: 12),
-            Text(
-              'Tap to set your alarm',
-              style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.primary),
+      ),
+    );
+  }
+}
+
+class _TerritoryCard extends StatelessWidget {
+  const _TerritoryCard({
+    required this.tt,
+    required this.onTap,
+    required this.onViewDetails,
+  });
+
+  final AwakenTypography tt;
+  final VoidCallback onTap;
+  final VoidCallback onViewDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+              border: Border.all(
+                color: AppColors.accent.withValues(alpha: 0.4),
+                width: 0.8,
+              ),
             ),
-            const Spacer(),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.primary,
-              size: 18,
+            child: Row(
+              children: [
+                const Icon(Icons.map_rounded, color: AppColors.accent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Run a loop, claim territory',
+                    style: tt.statLabel.copyWith(fontSize: 14, color: AppColors.accent),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: onViewDetails,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: Text(
+                      'Details',
+                      style: tt.statLabel.copyWith(
+                        fontSize: 12,
+                        color: AppColors.mutedForeground,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.accent, size: 18),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

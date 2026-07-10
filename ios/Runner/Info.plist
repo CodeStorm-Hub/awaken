@@ -34,6 +34,8 @@
 	<string>Awaken uses the camera microphone during squat detection.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Awaken uses the camera to verify your squats via pose detection.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Awaken tracks your GPS path while you run so it can map the territory you claim.</string>
 
 	<!-- Background modes: audio keeps alarm playing when screen locks -->
 	<key>UIBackgroundModes</key>

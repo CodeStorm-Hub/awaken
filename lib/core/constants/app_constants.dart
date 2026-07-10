@@ -3,10 +3,15 @@
 abstract final class AppConstants {
   // ── Alarm ──────────────────────────────────────────────────────────
   static const int defaultSquatCount = 10;
-  static const int outOfFramePenaltySeconds = 15;
+
+  /// Out-of-frame audio ramp interval (shorter = more urgent).
+  static const int outOfFramePenaltySeconds = 8;
 
   /// Hip-to-knee depth ratio below which a squat is rejected as partial
   static const double squatDepthThreshold = 0.6;
+
+  /// Max left/right shoulder height delta (normalized by torso) before bad form.
+  static const double maxShoulderTiltRatio = 0.18;
 
   /// Volume ramp-up step when user leaves frame (per penalty tick)
   static const double volumeRampStep = 0.15;
@@ -38,4 +43,60 @@ abstract final class AppConstants {
   static const double glowBlurRadius = 12.0;
   static const double skeletonStrokeWidth = 2.5;
   static const double skeletonJointRadius = 4.0;
+
+  // ── Territory capture: anti-cheat & loop validation ────────────────
+  /// Single source of truth for the speed cap — the user story's own
+  /// acceptance criteria (>25 km/h) and "Drive-by Cheat" refinement
+  /// (20–25 km/h) disagree; resolved once here.
+  static const double maxRunSpeedKmh = 25.0;
+  static const double loopClosureRadiusMeters = 50.0;
+  static const double minLoopAreaSqMeters = 50.0;
+  static const Duration minRunDuration = Duration(minutes: 2);
+  static const double minRunDistanceMeters = 200.0;
+
+  /// Per-loop path length minimum — below session [minRunDistanceMeters] so
+  /// a single valid loop can be captured without requiring the overrun tail.
+  static const double minLoopSegmentDistanceMeters = 150.0;
+
+  /// Runner must travel this far from the segment anchor before a return
+  /// within [loopClosureRadiusMeters] counts as closure (GPS drift guard).
+  static const double loopClosureGraceMeters = 50.0;
+
+  /// After closing a loop, runner must exit this radius before another
+  /// closure at the same anchor can arm (prevents double-counting).
+  static const double loopExitRadiusMeters = 30.0;
+
+  /// Minimum GPS fixes in a segment before closure is accepted (~30 m at 5 m
+  /// distance filter).
+  static const int minLoopSegmentPointCount = 6;
+
+  /// Anti-farming cap on territory captures per run session.
+  static const int maxLoopsPerSession = 5;
+  static const Duration territoryDecayGracePeriod = Duration(days: 7);
+
+  /// Rolling window size (GPS pings) for sustained-speed-cap checks —
+  /// a single noisy ping should not invalidate a run.
+  static const int speedRollingWindowSize = 6;
+
+  /// RDP simplification epsilon (meters) applied to the run path before
+  /// it's sent to Supabase as the capture polygon.
+  static const double rdpSimplificationEpsilonMeters = 3.0;
+
+  // ── Territory map ─────────────────────────────────────────────────
+  static const double territoryMapMinZoom = 2.0;
+
+  /// Client overzoom cap — OpenMapTiles vector data is native to z14; z18 is
+  /// the comfortable overzoom limit per OpenMapTiles guidance.
+  static const double territoryMapMaxZoom = 18.0;
+  static const double territoryMapInitialZoom = 14.0;
+  static const double territoryMapUserZoom = 16.5;
+
+  /// Native max zoom of the OpenFreeMap / OpenMapTiles vector source.
+  static const int territoryVectorTileMaxZoom = 14;
+
+  /// Max GPS points drawn on the run trail overlay (full path kept for capture).
+  static const int territoryTrailDisplayMaxPoints = 500;
+
+  /// Below this zoom, territory polygon glow rings are skipped (core only).
+  static const double territoryPolygonGlowMinZoom = 12.0;
 }
