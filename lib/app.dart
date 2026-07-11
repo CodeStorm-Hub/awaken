@@ -27,6 +27,11 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref.read(activeRunProvider.notifier).restoreFromCheckpoint(),
+      );
+    });
   }
 
   @override
@@ -42,8 +47,15 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
       unawaited(
         ref.read(activeRunProvider.notifier).flushPendingCaptures(),
       );
+      unawaited(
+        ref.read(activeRunProvider.notifier).ensureBackgroundTracking(),
+      );
       unawaited(_applyBailouts());
       unawaited(_navigatePendingAlarmRoute());
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      // Best-effort flush so a kill mid-background still has a fresh checkpoint.
+      unawaited(ref.read(activeRunProvider.notifier).persistCheckpointNow());
     }
   }
 
@@ -67,6 +79,9 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
     ref.watch(sessionSyncOnSignInProvider);
     ref.watch(captureSyncOnSignInProvider);
     ref.watch(turfHitRealtimeProvider);
+    // Keep active-run notifier alive at app root so checkpoint restore runs
+    // on cold start even before the user opens the Territory tab.
+    ref.watch(activeRunProvider);
 
     final router = ref.watch(appRouterProvider);
     final hudTheme = ref.watch(activeHudThemeProvider);

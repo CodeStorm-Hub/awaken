@@ -8,9 +8,11 @@ import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 /// Mirrors the batch rules in [LoopSegmentExtractor.extract] so live
 /// detection and finish-time re-extraction stay consistent.
 class LoopClosureTracker {
-  LoopClosureTracker({this.anchorIndex = 0})
-      : maxDistFromAnchor = 0,
-        closureArmed = false;
+  LoopClosureTracker({
+    this.anchorIndex = 0,
+    this.maxDistFromAnchor = 0,
+    this.closureArmed = false,
+  });
 
   int anchorIndex;
   double maxDistFromAnchor;

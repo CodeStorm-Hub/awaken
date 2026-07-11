@@ -34,10 +34,14 @@ class SupabaseAuthRepository implements AuthRepository {
           accessToken: tokens.accessToken,
         );
       } finally {
+        // Clear only the ephemeral Google account picker session — never the
+        // Supabase session we just created (or any prior email session).
         await GoogleAuthService.signOut();
       }
     } on GoogleSignInCanceledException {
-      throw Exception('Google sign-in cancelled');
+      // Soft cancel — rethrow typed so the UI can dismiss loading without an
+      // error banner. Does not touch the Supabase session.
+      rethrow;
     } on AuthException catch (e) {
       throw Exception(e.message);
     }

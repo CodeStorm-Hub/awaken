@@ -36,11 +36,14 @@
 	<string>Awaken uses the camera to verify your squats via pose detection.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Awaken tracks your GPS path while you run so it can map the territory you claim.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Awaken continues tracking your run in the background until you tap Stop, so your territory path stays accurate if you leave the app mid-run.</string>
 
-	<!-- Background modes: audio keeps alarm playing when screen locks -->
+	<!-- Background modes: audio keeps alarm playing; location keeps run GPS alive -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>location</string>
 		<string>remote-notification</string>
 		<string>fetch</string>
 	</array>

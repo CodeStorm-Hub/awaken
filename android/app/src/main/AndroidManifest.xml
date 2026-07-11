@@ -80,6 +80,16 @@
             android:stopWithTask="false"
             android:foregroundServiceType="mediaPlayback"/>
 
+        <!-- Geolocator location FGS — keep tracking after the task is removed
+             from recents so territory runs survive "exit app". Merged from
+             geolocator_android; stopWithTask=false is the critical override. -->
+        <service
+            android:name="com.baseflow.geolocator.GeolocatorLocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            android:stopWithTask="false"/>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>

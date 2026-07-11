@@ -1,4 +1,3 @@
-import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/navigator_key.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
@@ -196,58 +195,13 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
     }
   }
 
-  Future<bool> _confirmDiscardRun(BuildContext context) async {
-    final discard = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-        ),
-        title: const Text(
-          'Discard this run?',
-          style: TextStyle(color: AppColors.foreground),
-        ),
-        content: const Text(
-          'Leaving now stops GPS tracking and this run will not be saved.',
-          style: TextStyle(color: AppColors.mutedForeground),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Keep running'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Discard run',
-              style: TextStyle(color: AppColors.destructive),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (discard == true) {
-      ref.read(activeRunProvider.notifier).reset();
-    }
-    return discard ?? false;
-  }
-
-  Future<void> _onTabSelected(int index) async {
+  void _onTabSelected(int index) {
     if (index == widget.navigationShell.currentIndex) {
       widget.navigationShell.goBranch(index, initialLocation: true);
       return;
     }
 
-    final status = ref.read(activeRunProvider).status;
-    final isTracking = status == RunSessionStatus.tracking ||
-        status == RunSessionStatus.paused ||
-        status == RunSessionStatus.finishing;
-    if (isTracking) {
-      final discard = await _confirmDiscardRun(context);
-      if (!discard || !context.mounted) return;
-    }
-
+    // Active runs keep GPS tracking across tab switches — only Stop ends them.
     _syncShellTabIndex(index);
     widget.navigationShell.goBranch(index);
   }
@@ -260,12 +214,18 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
       _syncShellTabIndex(widget.navigationShell.currentIndex);
     });
 
+    final runStatus = ref.watch(activeRunProvider.select((s) => s.status));
+    final runActive = runStatus == RunSessionStatus.tracking ||
+        runStatus == RunSessionStatus.paused ||
+        runStatus == RunSessionStatus.finishing;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: widget.navigationShell,
       bottomNavigationBar: _AwakenBottomNav(
         currentIndex: widget.navigationShell.currentIndex,
         onTap: _onTabSelected,
+        territoryRunActive: runActive,
       ),
     );
   }
@@ -275,10 +235,12 @@ class _AwakenBottomNav extends StatelessWidget {
   const _AwakenBottomNav({
     required this.currentIndex,
     required this.onTap,
+    this.territoryRunActive = false,
   });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final bool territoryRunActive;
 
   static const _primary = AppColors.primary;
   static const _accent = AppColors.accent;
@@ -314,6 +276,7 @@ class _AwakenBottomNav extends StatelessWidget {
                 onTap: () => onTap(1),
                 accent: _accent,
                 muted: _muted,
+                showLiveDot: territoryRunActive,
               ),
               _NavItem(
                 icon: Icons.leaderboard_rounded,
@@ -339,6 +302,7 @@ class _NavItem extends StatelessWidget {
     required this.onTap,
     required this.accent,
     required this.muted,
+    this.showLiveDot = false,
   });
 
   final IconData icon;
@@ -347,6 +311,7 @@ class _NavItem extends StatelessWidget {
   final VoidCallback onTap;
   final Color accent;
   final Color muted;
+  final bool showLiveDot;
 
   @override
   Widget build(BuildContext context) {
@@ -368,7 +333,26 @@ class _NavItem extends StatelessWidget {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, color: color, size: 22),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, color: color, size: 22),
+                  if (showLiveDot)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppColors.destructive,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.card, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 2),
             Text(

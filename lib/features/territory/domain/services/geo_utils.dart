@@ -39,6 +39,41 @@ abstract final class GeoUtils {
     return total;
   }
 
+  /// Inserts intermediate points so consecutive fixes are at most
+  /// [maxGapMeters] apart. Needed before `capture_territory`, which rejects
+  /// any run-path segment longer than 80 m (`path_segment_too_fast`) — RDP
+  /// simplification routinely creates those gaps.
+  static List<GeoPointEntity> densifyPath(
+    List<GeoPointEntity> points, {
+    double maxGapMeters = 70,
+  }) {
+    if (points.length < 2 || maxGapMeters <= 0) return points;
+    final out = <GeoPointEntity>[points.first];
+    for (var i = 1; i < points.length; i++) {
+      final from = out.last;
+      final to = points[i];
+      final dist = haversineMeters(from, to);
+      if (dist > maxGapMeters) {
+        final steps = (dist / maxGapMeters).ceil();
+        final spanMs = to.timestamp.difference(from.timestamp).inMilliseconds;
+        for (var s = 1; s < steps; s++) {
+          final t = s / steps;
+          out.add(
+            GeoPointEntity(
+              latitude: from.latitude + (to.latitude - from.latitude) * t,
+              longitude: from.longitude + (to.longitude - from.longitude) * t,
+              timestamp: from.timestamp.add(
+                Duration(milliseconds: (spanMs * t).round()),
+              ),
+            ),
+          );
+        }
+      }
+      out.add(to);
+    }
+    return out;
+  }
+
   /// Ray-casting point-in-polygon test (even-odd rule). `ring` is treated as
   /// a closed loop — the first/last point need not be duplicated. Approximate
   /// but sufficient for lat/lng at the scale of a single territory: no

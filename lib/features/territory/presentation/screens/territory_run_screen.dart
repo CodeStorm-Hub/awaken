@@ -327,15 +327,12 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     final isFinishing = status == RunSessionStatus.finishing;
 
     return PopScope(
-      canPop: !isTracking,
-      onPopInvokedWithResult: (didPop, _) async {
+      // Shell-tab root often has nothing to pop — always handle leave ourselves.
+      // Leaving does not stop GPS — only Stop / finishRun() ends the session.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        final discard = await _confirmDiscardRun();
-        if (discard) {
-          ref.read(activeRunProvider.notifier).reset();
-          if (!context.mounted) return;
-          Navigator.of(context).pop();
-        }
+        _leaveTerritory();
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
@@ -399,18 +396,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                       children: [
                         _CircleIconButton(
                           icon: Icons.arrow_back_ios_new_rounded,
-                          onTap: () async {
-                            if (!isTracking) {
-                              context.pop();
-                              return;
-                            }
-                            final discard = await _confirmDiscardRun();
-                            if (discard) {
-                              ref.read(activeRunProvider.notifier).reset();
-                              if (!context.mounted) return;
-                              context.pop();
-                            }
-                          },
+                          onTap: _leaveTerritory,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -685,38 +671,16 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     }
   }
 
-  Future<bool> _confirmDiscardRun() async {
-    final discard = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-        ),
-        title: const Text(
-          'Discard this run?',
-          style: TextStyle(color: AppColors.foreground),
-        ),
-        content: const Text(
-          'Leaving now stops GPS tracking and this run will not be saved.',
-          style: TextStyle(color: AppColors.mutedForeground),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Keep running'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Discard run',
-              style: TextStyle(color: AppColors.destructive),
-            ),
-          ),
-        ],
-      ),
-    );
-    return discard ?? false;
+  /// Safe leave — `/territory` is a shell-tab root, so [GoRouter.canPop] is
+  /// often false (same pattern as [AlarmSetupScreen]). Does not reset an
+  /// active run; GPS keeps tracking until the user taps Stop.
+  void _leaveTerritory() {
+    if (!context.mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.dashboard);
+    }
   }
 
   void _onRunFinished(ActiveRunState state) {

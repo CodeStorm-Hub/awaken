@@ -15,6 +15,7 @@ import 'package:awaken/features/territory/domain/entities/nemesis_entity.dart';
 import 'package:awaken/features/territory/domain/entities/territory_entity.dart';
 import 'package:awaken/features/territory/domain/repositories/territory_repository.dart';
 import 'package:awaken/features/territory/domain/services/explored_cells_sync_service.dart';
+import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 import 'package:awaken/features/territory/domain/services/location_fix_service.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_style.dart';
@@ -318,8 +319,9 @@ final captureSyncOnSignInProvider = Provider<void>((ref) {
         final repo = ref.read(territoryRepositoryProvider);
         for (final item in pending) {
           try {
-            await repo.captureTerritory(item.points);
+            await repo.captureTerritory(GeoUtils.densifyPath(item.points));
             await queue.remove(item.id);
+            ref.invalidate(territoryListProvider);
           } catch (e) {
             debugPrint('[CaptureQueue] sign-in flush failed for ${item.id}: $e');
           }
