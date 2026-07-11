@@ -2,6 +2,7 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/constants/iap_config.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/hud_theme.dart';
+import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/hud_theme_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/iap_providers.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +18,8 @@ class HudThemePicker extends ConsumerWidget {
     final unlocked = ref.watch(unlockedHudThemesProvider);
     final selected = ref.watch(selectedHudThemeIdProvider);
     final isPro = ref.watch(isProEntitledProvider);
+    final streak =
+        ref.watch(dashboardStatsProvider).valueOrNull?.currentStreak ?? 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,22 +38,7 @@ class HudThemePicker extends ConsumerWidget {
             const Spacer(),
             if (!isPro)
               TextButton(
-                onPressed: () async {
-                  final ok =
-                      await ref.read(isProEntitledProvider.notifier).purchasePro();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        ok
-                            ? (kDebugMode
-                                ? 'Pro unlocked (debug / store)'
-                                : 'Opening store…')
-                            : 'Store unavailable — configure ${IapConfig.productMonthly}',
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _unlockPro(context, ref),
                 child: const Text(
                   'UNLOCK PRO',
                   style: TextStyle(
@@ -73,21 +61,85 @@ class HudThemePicker extends ConsumerWidget {
                 id: id,
                 selected: selected == id,
                 unlocked: unlocked.contains(id),
-                onTap: unlocked.contains(id)
-                    ? () => ref
-                        .read(selectedHudThemeIdProvider.notifier)
-                        .select(id)
-                    : IapConfig.proHudThemes.contains(id.name) && !isPro
-                        ? () async {
-                            await ref
-                                .read(isProEntitledProvider.notifier)
-                                .purchasePro();
-                          }
-                        : null,
+                onTap: () => _onThemeTap(
+                  context,
+                  ref,
+                  id: id,
+                  unlocked: unlocked.contains(id),
+                  isPro: isPro,
+                  streak: streak,
+                ),
               ),
           ],
         ),
       ],
+    );
+  }
+
+  Future<void> _onThemeTap(
+    BuildContext context,
+    WidgetRef ref, {
+    required HudThemeId id,
+    required bool unlocked,
+    required bool isPro,
+    required int streak,
+  }) async {
+    if (unlocked) {
+      await ref.read(selectedHudThemeIdProvider.notifier).select(id);
+      return;
+    }
+
+    // Debug: preview any theme so HUD cosmetics can be dogfooded at streak 0.
+    if (kDebugMode) {
+      await ref.read(selectedHudThemeIdProvider.notifier).selectPreview(id);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${id.label} preview (debug) — unlocks at streak ${id.requiredStreak}'
+            '${IapConfig.proHudThemes.contains(id.name) ? ' + Pro' : ''}',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final needsPro = IapConfig.proHudThemes.contains(id.name);
+    if (needsPro && !isPro) {
+      await _unlockPro(context, ref);
+      return;
+    }
+
+    if (!context.mounted) return;
+    final parts = <String>[
+      if (streak < id.requiredStreak)
+        'Need a ${id.requiredStreak}-day streak (you have $streak)',
+      if (needsPro && !isPro) 'Requires Awaken Pro',
+    ];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          parts.isEmpty
+              ? '${id.label} is locked'
+              : '${id.label}: ${parts.join(' · ')}',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _unlockPro(BuildContext context, WidgetRef ref) async {
+    final ok = await ref.read(isProEntitledProvider.notifier).purchasePro();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? (kDebugMode
+                  ? 'Pro unlocked — Acid/Mono still need streak 30/90'
+                  : 'Opening store…')
+              : 'Store unavailable — configure ${IapConfig.productMonthly}',
+        ),
+      ),
     );
   }
 }
@@ -103,13 +155,14 @@ class _ThemeChip extends StatelessWidget {
   final HudThemeId id;
   final bool selected;
   final bool unlocked;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = HudTheme.forId(id);
+    final needsPro = IapConfig.proHudThemes.contains(id.name);
     return Opacity(
-      opacity: unlocked ? 1 : 0.35,
+      opacity: unlocked ? 1 : 0.45,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -141,11 +194,7 @@ class _ThemeChip extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  unlocked
-                      ? id.label.toUpperCase()
-                      : IapConfig.proHudThemes.contains(id.name)
-                          ? 'PRO'
-                          : 'STR ${id.requiredStreak}',
+                  id.label.toUpperCase(),
                   style: TextStyle(
                     color: selected ? theme.primary : AppColors.foreground,
                     fontSize: 10,
@@ -153,6 +202,18 @@ class _ThemeChip extends StatelessWidget {
                     letterSpacing: 0.8,
                   ),
                 ),
+                if (!unlocked) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    needsPro ? 'PRO' : 'STR${id.requiredStreak}',
+                    style: TextStyle(
+                      color: theme.primary.withValues(alpha: 0.85),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

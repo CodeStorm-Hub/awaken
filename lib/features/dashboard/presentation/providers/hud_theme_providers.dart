@@ -2,6 +2,7 @@ import 'package:awaken/core/constants/iap_config.dart';
 import 'package:awaken/core/theme/hud_theme.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/iap_providers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,11 +50,20 @@ class _HudThemeIdNotifier extends StateNotifier<HudThemeId> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKey, id.name);
   }
+
+  /// Debug-only: apply a locked theme for HUD preview without unlocking it.
+  Future<void> selectPreview(HudThemeId id) async {
+    assert(kDebugMode, 'HUD theme preview is debug-only');
+    state = id;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefKey, id.name);
+  }
 }
 
 final activeHudThemeProvider = Provider<HudTheme>((ref) {
   final id = ref.watch(selectedHudThemeIdProvider);
   final unlocked = ref.watch(unlockedHudThemesProvider);
-  final safeId = unlocked.contains(id) ? id : HudThemeId.cyan;
+  // In debug, honor preview selection even when streak/Pro gates aren't met.
+  final safeId = (unlocked.contains(id) || kDebugMode) ? id : HudThemeId.cyan;
   return HudTheme.forId(safeId);
 });

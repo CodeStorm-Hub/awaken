@@ -263,7 +263,7 @@ class MapEngineNotifier extends _$MapEngineNotifier {
 final mapEngineProvider = mapEngineNotifierProvider;
 
 /// Fog-of-war toggle (default on). Persisted for the session via StateProvider.
-final fogOfWarEnabledProvider = StateProvider<bool>((ref) => true);
+final fogOfWarEnabledProvider = StateProvider<bool>((ref) => false);
 
 /// Shared explored-cell store for fog mask + path reveal.
 final exploredCellsStoreProvider = Provider<ExploredCellsStore>((ref) {
