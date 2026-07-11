@@ -6,29 +6,38 @@ import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/features/territory/domain/entities/capture_result_entity.dart';
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
+import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:awaken/features/territory/presentation/widgets/distance_format.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_vector_tile_layer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Rich, non-auto-dismissing result surface shown after a run claims (or
 /// steals) territory — opens with a cinematic flyover, then reveals stats.
-class CaptureResultSheet extends StatefulWidget {
+class CaptureResultSheet extends ConsumerStatefulWidget {
   const CaptureResultSheet({
     super.key,
     required this.sessionCaptureResult,
     required this.runPoints,
+    this.distanceMeters = 0,
+    this.elapsed = Duration.zero,
   });
 
   final SessionCaptureResultEntity sessionCaptureResult;
   final List<GeoPointEntity> runPoints;
+  final double distanceMeters;
+  final Duration elapsed;
 
   static Future<void> show(
     BuildContext context, {
     required SessionCaptureResultEntity sessionCaptureResult,
     required List<GeoPointEntity> runPoints,
+    double distanceMeters = 0,
+    Duration elapsed = Duration.zero,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -37,15 +46,17 @@ class CaptureResultSheet extends StatefulWidget {
       builder: (_) => CaptureResultSheet(
         sessionCaptureResult: sessionCaptureResult,
         runPoints: runPoints,
+        distanceMeters: distanceMeters,
+        elapsed: elapsed,
       ),
     );
   }
 
   @override
-  State<CaptureResultSheet> createState() => _CaptureResultSheetState();
+  ConsumerState<CaptureResultSheet> createState() => _CaptureResultSheetState();
 }
 
-class _CaptureResultSheetState extends State<CaptureResultSheet>
+class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
     with TickerProviderStateMixin {
   late final MapController _mapController;
   late final AnimationController _fillCtrl;
@@ -300,6 +311,28 @@ class _CaptureResultSheetState extends State<CaptureResultSheet>
                             children: [
                               Expanded(
                                 child: _StatBlock(
+                                  label: 'Distance',
+                                  value: formatDistanceKm(widget.distanceMeters),
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatBlock(
+                                  label: 'Avg speed',
+                                  value: formatSpeedKmh(
+                                    averageSpeedKmh(
+                                      widget.distanceMeters,
+                                      widget.elapsed,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatBlock(
                                   label: loopCount > 1
                                       ? 'Claimed (total)'
                                       : 'Claimed',
@@ -312,7 +345,7 @@ class _CaptureResultSheetState extends State<CaptureResultSheet>
                                 child: _StatBlock(
                                   label: 'Total owned',
                                   value:
-                                      '${widget.sessionCaptureResult.totalOwnedAreaSqMeters.toStringAsFixed(0)} m²',
+                                      '${(widget.sessionCaptureResult.totalOwnedAreaSqMeters / 1e6).toStringAsFixed(3)} km²',
                                 ),
                               ),
                             ],
@@ -348,8 +381,10 @@ class _CaptureResultSheetState extends State<CaptureResultSheet>
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () {
+                                    ref.invalidate(leaderboardProvider);
+                                    ref.invalidate(territoryListProvider);
                                     Navigator.of(context).pop();
-                                    context.push(AppRoutes.leaderboard);
+                                    context.go(AppRoutes.leaderboard);
                                   },
                                   icon: const Icon(
                                     Icons.leaderboard_rounded,

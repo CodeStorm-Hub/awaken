@@ -5,6 +5,7 @@ import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart'
     show GpsQuality, gpsQualityFromAccuracy;
+import 'package:awaken/features/territory/presentation/widgets/distance_format.dart';
 import 'package:awaken/features/territory/presentation/widgets/loop_closure_progress_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -17,6 +18,7 @@ class RunStatsSheet extends StatelessWidget {
     required this.distanceMeters,
     required this.elapsed,
     this.isOverSpeed = false,
+    this.speedKmh = 0,
     this.distToSegmentStartMeters,
     this.gpsAccuracyMeters,
     this.pendingLoopCount = 0,
@@ -25,6 +27,9 @@ class RunStatsSheet extends StatelessWidget {
   final double distanceMeters;
   final Duration elapsed;
   final bool isOverSpeed;
+
+  /// Live speed from the latest GPS segment (km/h).
+  final double speedKmh;
 
   /// Distance back to the active segment anchor in meters.
   final double? distToSegmentStartMeters;
@@ -41,7 +46,8 @@ class RunStatsSheet extends StatelessWidget {
     final seconds =
         elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
 
-    final distKm = (distanceMeters / 1000).toStringAsFixed(2);
+    final distKm = formatDistanceKm(distanceMeters);
+    final speedLabel = formatSpeedKmh(speedKmh);
     final closureLabel = _closureLabel(distToSegmentStartMeters);
 
     final guidance = isOverSpeed
@@ -77,13 +83,21 @@ class RunStatsSheet extends StatelessWidget {
                       children: [
                         _Stat(
                           label: 'Distance',
-                          value: '$distKm km',
+                          value: distKm,
                           hud: hud,
                         ),
                         _Stat(
                           label: 'Time',
                           value: '$minutes:$seconds',
                           hud: hud,
+                        ),
+                        _Stat(
+                          label: 'Speed',
+                          value: speedLabel,
+                          hud: hud,
+                          valueColor: isOverSpeed
+                              ? AppColors.destructive
+                              : AppColors.foreground,
                         ),
                         if (pendingLoopCount > 0)
                           _Stat(
@@ -94,7 +108,7 @@ class RunStatsSheet extends StatelessWidget {
                           ),
                         if (isOverSpeed)
                           _Stat(
-                            label: 'Speed',
+                            label: 'Status',
                             value: 'Too fast',
                             hud: hud,
                             valueColor: AppColors.destructive,
@@ -142,10 +156,7 @@ class RunStatsSheet extends StatelessWidget {
 
   static String? _closureLabel(double? dist) {
     if (dist == null || dist.isInfinite) return null;
-    if (dist < 1000) {
-      return '${dist.toStringAsFixed(0)} m';
-    }
-    return '${(dist / 1000).toStringAsFixed(2)} km';
+    return formatDistanceKm(dist);
   }
 
   static Color _closureColor(double? dist) {

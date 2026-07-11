@@ -1,5 +1,6 @@
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/theme/app_colors.dart';
+import 'package:awaken/features/territory/presentation/widgets/distance_format.dart';
 import 'package:flutter/material.dart';
 
 /// Primary run HUD signal: progress toward closing the current loop.
@@ -26,7 +27,7 @@ class LoopClosureProgressBar extends StatelessWidget {
         Text(
           canClose
               ? 'LOOP READY — CLOSE IT'
-              : '${metersToStart.round()} m TO CLOSE',
+              : '${formatDistanceKm(metersToStart)} TO CLOSE',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: canClose ? AppColors.success : AppColors.mutedForeground,

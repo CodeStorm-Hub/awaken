@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
@@ -29,11 +31,14 @@ class _TerritoryLeaderboardScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureViewerLocation());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureViewerLocation();
+      ref.invalidate(leaderboardProvider);
+    });
   }
 
-  Future<void> _ensureViewerLocation() async {
-    if (ref.read(viewerLocationProvider) != null) return;
+  Future<void> _ensureViewerLocation({bool forceRefresh = false}) async {
+    if (!forceRefresh && ref.read(viewerLocationProvider) != null) return;
     try {
       await LocationPermissionHelper.ensureLocationAccess(
         serviceDisabledMessage:
@@ -86,6 +91,15 @@ class _TerritoryLeaderboardScreenState
     final window = ref.watch(leaderboardWindowProvider);
     final leaderboardAsync = ref.watch(leaderboardProvider);
     final viewerUserId = ref.watch(currentUserProvider)?.id;
+
+    // IndexedStack keeps this screen alive — refresh when the Ranks tab
+    // becomes visible so post-capture totals match the database.
+    ref.listen<int>(territoryShellTabIndexProvider, (previous, next) {
+      if (next == 2 && previous != 2) {
+        ref.invalidate(leaderboardProvider);
+        unawaited(_ensureViewerLocation(forceRefresh: true));
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,

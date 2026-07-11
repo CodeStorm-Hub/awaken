@@ -89,11 +89,11 @@ class LeaderboardMetricBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOwned = window == LeaderboardWindow.allTime;
-    final label = isOwned ? 'LAND OWNED' : 'UNIQUE AREA CLAIMED';
+    final label = isOwned ? 'LAND OWNED (km²)' : 'UNIQUE AREA CLAIMED (km²)';
     final detail = switch (window) {
       LeaderboardWindow.allTime => mode == LeaderboardMode.nearby
-          ? 'Current territory near you'
-          : 'Current territory worldwide',
+          ? 'Current territory near you — area, not run distance'
+          : 'Current territory worldwide — area, not run distance',
       LeaderboardWindow.day => 'Distinct land claimed in the last 24 hours',
       LeaderboardWindow.week => 'Distinct land claimed in the last 7 days',
     };

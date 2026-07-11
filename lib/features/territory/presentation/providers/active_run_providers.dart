@@ -54,6 +54,7 @@ class ActiveRunState {
     this.distanceMeters = 0,
     this.elapsed = Duration.zero,
     this.isOverSpeed = false,
+    this.speedKmh = 0,
     this.gpsAccuracyMeters,
     this.pendingLoops = const [],
     this.currentSegmentAnchorIndex = 0,
@@ -70,6 +71,9 @@ class ActiveRunState {
   /// True when the most recent rolling-window check found sustained
   /// over-speed — drives a live "vehicle detected" HUD warning.
   final bool isOverSpeed;
+
+  /// Instantaneous speed from the latest pair of GPS fixes (km/h).
+  final double speedKmh;
 
   /// `Position.accuracy` (meters) of the most recent GPS fix — drives the
   /// HUD's GPS quality chip. Null before the first fix arrives.
@@ -91,6 +95,7 @@ class ActiveRunState {
     double? distanceMeters,
     Duration? elapsed,
     bool? isOverSpeed,
+    double? speedKmh,
     double? gpsAccuracyMeters,
     List<LoopSegmentEntity>? pendingLoops,
     int? currentSegmentAnchorIndex,
@@ -105,6 +110,7 @@ class ActiveRunState {
       distanceMeters: distanceMeters ?? this.distanceMeters,
       elapsed: elapsed ?? this.elapsed,
       isOverSpeed: isOverSpeed ?? this.isOverSpeed,
+      speedKmh: speedKmh ?? this.speedKmh,
       gpsAccuracyMeters: gpsAccuracyMeters ?? this.gpsAccuracyMeters,
       pendingLoops: pendingLoops ?? this.pendingLoops,
       currentSegmentAnchorIndex:
@@ -372,6 +378,15 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     final overSpeed = RunValidationService.isSustainedOverSpeed(updatedPoints);
     if (overSpeed) _sawSustainedOverSpeed = true;
 
+    var speedKmh = 0.0;
+    if (updatedPoints.length >= 2) {
+      speedKmh = GeoUtils.speedKmh(
+        updatedPoints[updatedPoints.length - 2],
+        updatedPoints.last,
+      );
+      if (!speedKmh.isFinite || speedKmh < 0) speedKmh = 0;
+    }
+
     var pendingLoops = state.pendingLoops;
     var anchorIndex = state.currentSegmentAnchorIndex;
 
@@ -392,6 +407,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
       points: updatedPoints,
       distanceMeters: GeoUtils.pathDistanceMeters(updatedPoints),
       isOverSpeed: overSpeed,
+      speedKmh: speedKmh,
       gpsAccuracyMeters: position.accuracy,
       pendingLoops: pendingLoops,
       currentSegmentAnchorIndex: anchorIndex,
@@ -403,7 +419,10 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   void pauseRun({bool auto = false}) {
     if (state.status != RunSessionStatus.tracking) return;
     _stationarySince = null;
-    state = state.copyWith(status: RunSessionStatus.paused);
+    state = state.copyWith(
+      status: RunSessionStatus.paused,
+      speedKmh: 0,
+    );
     unawaited(_persistCheckpoint());
   }
 
@@ -449,16 +468,19 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   /// segments were detected — calls capture RPC for each. Always persists the
   /// run (closed or not) per Story #2's "counts as a normal workout" rule.
   Future<void> finishRun() async {
+    // Guard before any await — a second Stop tap must not double-capture.
+    if (state.status != RunSessionStatus.tracking &&
+        state.status != RunSessionStatus.paused) {
+      return;
+    }
+    state = state.copyWith(status: RunSessionStatus.finishing);
+
     _checkpointDebounce?.cancel();
     await _checkpointStore.clear();
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
     _isListening = false;
     ref.read(runOwnsHighAccuracyGpsProvider.notifier).state = false;
-    if (state.status != RunSessionStatus.tracking &&
-        state.status != RunSessionStatus.paused) {
-      return;
-    }
 
     final rawPoints = state.points;
     final simplifiedFullPath = rawPoints.length < 3
@@ -573,11 +595,13 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
         }
       }
 
+      final claimedArea = sessionCaptureResult?.totalClaimedAreaSqMeters;
       final run = RunTrackEntity(
         points: simplifiedFullPath,
         distanceMeters: state.distanceMeters,
         duration: state.elapsed,
         outcome: outcome,
+        areaClaimedSqMeters: claimedArea,
       );
       await repo.recordRun(run);
 
@@ -592,6 +616,11 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
           // Fog is best-effort.
         }
       }());
+
+      // Always refresh ranks after a capture so the shell tab never shows
+      // pre-steal totals (IndexedStack keeps the old AsyncData otherwise).
+      ref.invalidate(territoryListProvider);
+      ref.invalidate(leaderboardProvider);
 
       state = state.copyWith(
         status: RunSessionStatus.finished,
@@ -621,6 +650,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
         distanceMeters: state.distanceMeters,
         duration: state.elapsed,
         outcome: outcome,
+        areaClaimedSqMeters: sessionCaptureResult?.totalClaimedAreaSqMeters,
       );
       try {
         await repo.recordRun(run);

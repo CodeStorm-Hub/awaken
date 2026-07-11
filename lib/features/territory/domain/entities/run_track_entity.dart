@@ -27,12 +27,16 @@ class RunTrackEntity {
     required this.distanceMeters,
     required this.duration,
     required this.outcome,
+    this.areaClaimedSqMeters,
   });
 
   final List<GeoPointEntity> points;
   final double distanceMeters;
   final Duration duration;
   final RunOutcome outcome;
+
+  /// Net area claimed/stolen this run (null when no successful capture).
+  final double? areaClaimedSqMeters;
 
   bool get isClosedLoop => outcome == RunOutcome.territoryClaimed;
 }

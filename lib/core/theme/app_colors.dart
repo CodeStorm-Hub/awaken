@@ -51,4 +51,28 @@ abstract final class AppColors {
   static const Color accentGlow = Color(0x66A259FF);
   static const Color successGlow = Color(0x6634D399);
   static const Color destructiveGlow = Color(0x66F87171);
+
+  // ── Territory map overlays (dark basemap) ─────────────────────────
+  /// Aurora teal — your claimed turf. Cool + luminous so streets stay
+  /// readable underneath; distinct from path purple and bounty violet.
+  static const Color territoryOwned = Color(0xFF2EE6C5);
+  static const Color territoryOwnedGlow = Color(0x552EE6C5);
+
+  /// Amber alert for "crossing rival" — urgency without painting every
+  /// rival polygon the same error-red as failure states.
+  static const Color territoryRivalAlert = Color(0xFFFFB020);
+
+  /// Deterministic rival turf hues (hashed by user id). Warm / cool mix
+  /// chosen for contrast on near-black vector tiles; avoids brand blue,
+  /// bounty purple, and owned teal.
+  static const List<Color> territoryRivalPalette = [
+    Color(0xFFFF7A59), // coral ember
+    Color(0xFFFFC14D), // sun amber
+    Color(0xFFFF6B9D), // hot rose
+    Color(0xFF8B9CFF), // periwinkle
+    Color(0xFF7DD3FC), // frost sky
+    Color(0xFFF0ABFC), // orchid
+    Color(0xFFFB923C), // tangerine
+    Color(0xFFA3E635), // lime signal
+  ];
 }

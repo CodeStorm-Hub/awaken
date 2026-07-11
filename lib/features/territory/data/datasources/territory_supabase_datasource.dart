@@ -71,6 +71,7 @@ class TerritorySupabaseDatasource {
       'duration_seconds': run.duration.inSeconds,
       'is_closed_loop': run.isClosedLoop,
       'territory_claimed': run.outcome == RunOutcome.territoryClaimed,
+      'area_claimed_sqm': run.areaClaimedSqMeters,
       'invalidated_reason': switch (run.outcome) {
         RunOutcome.territoryClaimed => null,
         RunOutcome.loopNotClosed => null,

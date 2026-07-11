@@ -542,6 +542,7 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
         'distance_meters': run.distanceMeters,
         'duration_seconds': run.duration.inSeconds,
         'outcome': run.outcome.name,
+        'area_claimed_sq_meters': run.areaClaimedSqMeters,
       };
 
   RunTrackEntity _runTrackFromJson(Map<String, dynamic> json) => RunTrackEntity(
@@ -551,5 +552,7 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
         distanceMeters: (json['distance_meters'] as num).toDouble(),
         duration: Duration(seconds: json['duration_seconds'] as int),
         outcome: RunOutcome.values.byName(json['outcome'] as String),
+        areaClaimedSqMeters:
+            (json['area_claimed_sq_meters'] as num?)?.toDouble(),
       );
 }

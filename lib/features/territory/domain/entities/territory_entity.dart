@@ -16,6 +16,7 @@ class TerritoryEntity {
     required this.areaSqMeters,
     required this.lastDefendedAt,
     required this.isOwnedByCurrentUser,
+    this.mapColorHex = '#94a3b8',
   });
 
   final String id;
@@ -30,4 +31,7 @@ class TerritoryEntity {
   final double areaSqMeters;
   final DateTime lastDefendedAt;
   final bool isOwnedByCurrentUser;
+
+  /// Unique `#rrggbb` assigned on the owner's profile (no two users share one).
+  final String mapColorHex;
 }

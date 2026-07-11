@@ -542,6 +542,14 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                 ),
               ),
 
+            // ── Territory color key (idle map) ────────────────────────────
+            if (!isTracking)
+              const Positioned(
+                left: AppConstants.screenPaddingH,
+                bottom: 118,
+                child: _TerritoryMapLegend(),
+              ),
+
             // ── Outdoor safety strip ──────────────────────────────────────
             if (isTracking)
               Positioned(
@@ -696,11 +704,15 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
       if (!mounted) return;
       final runPoints = state.result?.points ?? const <GeoPointEntity>[];
+      final distanceMeters = state.result?.distanceMeters ?? state.distanceMeters;
+      final elapsed = state.result?.duration ?? state.elapsed;
       ref.read(activeRunProvider.notifier).reset();
       CaptureResultSheet.show(
         context,
         sessionCaptureResult: sessionCapture,
         runPoints: runPoints,
+        distanceMeters: distanceMeters,
+        elapsed: elapsed,
       );
       return;
     }
@@ -1015,6 +1027,8 @@ class _RunStatsSheetConsumer extends ConsumerWidget {
         ref.watch(activeRunProvider.select((s) => s.elapsed));
     final isOverSpeed =
         ref.watch(activeRunProvider.select((s) => s.isOverSpeed));
+    final speedKmh =
+        ref.watch(activeRunProvider.select((s) => s.speedKmh));
     final points =
         ref.watch(activeRunProvider.select((s) => s.points));
     final anchorIndex =
@@ -1033,6 +1047,7 @@ class _RunStatsSheetConsumer extends ConsumerWidget {
       distanceMeters: distanceMeters,
       elapsed: elapsed,
       isOverSpeed: isOverSpeed,
+      speedKmh: speedKmh,
       distToSegmentStartMeters:
           distToSegmentStart.isFinite ? distToSegmentStart : null,
       gpsAccuracyMeters: gpsAccuracyMeters,
@@ -1236,14 +1251,16 @@ class _LoopClosedPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.18),
+        color: AppColors.territoryOwned.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: AppColors.territoryOwned.withValues(alpha: 0.5),
+        ),
       ),
       child: Text(
         count == 1 ? '1 loop ready' : '$count loops ready',
         style: const TextStyle(
-          color: AppColors.primary,
+          color: AppColors.territoryOwned,
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.6,
@@ -1252,6 +1269,97 @@ class _LoopClosedPill extends StatelessWidget {
     );
   }
 }
+
+/// Compact map key — teaches the aurora-teal / rival-hue language without
+/// crowding the live run HUD.
+class _TerritoryMapLegend extends StatelessWidget {
+  const _TerritoryMapLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.card.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _LegendSwatch(
+                color: AppColors.territoryOwned,
+                label: 'Yours',
+              ),
+              const SizedBox(width: 12),
+              _LegendSwatch(
+                color: AppColors.territoryRivalPalette[0],
+                label: 'Rivals',
+                secondary: AppColors.territoryRivalPalette[3],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LegendSwatch extends StatelessWidget {
+  const _LegendSwatch({
+    required this.color,
+    required this.label,
+    this.secondary,
+  });
+
+  final Color color;
+  final String label;
+  final Color? secondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 16,
+          height: 10,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(3),
+              gradient: secondary == null
+                  ? null
+                  : LinearGradient(colors: [color, secondary!]),
+              color: secondary == null ? color.withValues(alpha: 0.55) : null,
+              border: Border.all(color: color, width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.45),
+                  blurRadius: 6,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.mutedForeground,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 
 /// "Crossing rival territory" cue shown while the runner's live position is
 /// inside a rival's owned polygon — see `rivalConflictProvider`. Purely
@@ -1265,19 +1373,25 @@ class _ConflictPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.destructive.withValues(alpha: 0.16),
+        color: AppColors.territoryRivalAlert.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.destructive.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: AppColors.territoryRivalAlert.withValues(alpha: 0.45),
+        ),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.destructive, size: 12),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: AppColors.territoryRivalAlert,
+            size: 12,
+          ),
           SizedBox(width: 6),
           Text(
             'Crossing rival territory',
             style: TextStyle(
-              color: AppColors.destructive,
+              color: AppColors.territoryRivalAlert,
               fontSize: 10,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,
