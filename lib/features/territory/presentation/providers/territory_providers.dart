@@ -341,6 +341,10 @@ final captureSyncOnSignInProvider = Provider<void>((ref) {
   });
 });
 
+/// Whether purple bounty loops / labels / the idle explainer card are shown.
+/// Defaults on; toggled from the Territory map right-rail control.
+final bountyZonesVisibleProvider = StateProvider<bool>((ref) => true);
+
 /// Active bounty zones — calls the `list_active_bounty_zones` RPC and parses
 /// the GeoJSON polygon rings. Returns an empty list when the call fails so
 /// the map layer degrades gracefully.

@@ -19,6 +19,7 @@ import 'package:awaken/features/territory/presentation/widgets/capture_result_sh
 import 'package:awaken/features/territory/presentation/widgets/run_controls.dart';
 import 'package:awaken/features/territory/presentation/widgets/run_stats_sheet.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_fog_layer.dart';
+import 'package:awaken/features/territory/presentation/widgets/territory_map_palette.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_status_overlay.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_polygon_layer.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_vector_tile_layer.dart';
@@ -279,6 +280,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     final pendingLoopCount =
         ref.watch(activeRunProvider.select((s) => s.pendingLoops.length));
     final followMe = ref.watch(_followMeProvider);
+    final bountyVisible = ref.watch(bountyZonesVisibleProvider);
     final rivalConflict = ref.watch(rivalConflictProvider);
     final mapZoom = ref.watch(territoryMapZoomProvider);
     final atMaxZoom = mapZoom >= AppConstants.territoryMapMaxZoom - 0.01;
@@ -464,6 +466,20 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                         }
                       },
                       tint: followMe ? AppColors.primary : null,
+                    ),
+                    const SizedBox(height: 8),
+                    _CircleIconButton(
+                      icon: bountyVisible
+                          ? Icons.workspace_premium_rounded
+                          : Icons.hide_source_rounded,
+                      onTap: () {
+                        ref.read(bountyZonesVisibleProvider.notifier).state =
+                            !bountyVisible;
+                      },
+                      tint: bountyVisible ? AppColors.accent : null,
+                      tooltip: bountyVisible
+                          ? 'Hide bounty zones'
+                          : 'Show bounty zones',
                     ),
                     const SizedBox(height: 8),
                     _CircleIconButton(
@@ -1270,13 +1286,31 @@ class _LoopClosedPill extends StatelessWidget {
   }
 }
 
-/// Compact map key — teaches the aurora-teal / rival-hue language without
-/// crowding the live run HUD.
-class _TerritoryMapLegend extends StatelessWidget {
+/// Compact map key — shows your assigned profile color vs rival hues.
+class _TerritoryMapLegend extends ConsumerWidget {
   const _TerritoryMapLegend();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final territories =
+        ref.watch(territoryListProvider).valueOrNull ?? const [];
+    Color yours = AppColors.territoryOwned;
+    final rivalColors = <Color>[];
+    for (final t in territories) {
+      final ink = TerritoryPaintStyle.colorFromHex(t.mapColorHex);
+      if (t.isOwnedByCurrentUser) {
+        yours = ink;
+      } else if (rivalColors.length < 3) {
+        rivalColors.add(ink);
+      }
+    }
+    if (rivalColors.isEmpty) {
+      rivalColors.addAll([
+        AppColors.territoryRivalPalette[0],
+        AppColors.territoryRivalPalette[3],
+      ]);
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
@@ -1291,15 +1325,12 @@ class _TerritoryMapLegend extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const _LegendSwatch(
-                color: AppColors.territoryOwned,
-                label: 'Yours',
-              ),
+              _LegendSwatch(color: yours, label: 'Yours'),
               const SizedBox(width: 12),
               _LegendSwatch(
-                color: AppColors.territoryRivalPalette[0],
+                color: rivalColors.first,
                 label: 'Rivals',
-                secondary: AppColors.territoryRivalPalette[3],
+                secondary: rivalColors.length > 1 ? rivalColors[1] : null,
               ),
             ],
           ),
@@ -1471,18 +1502,20 @@ class _CircleIconButton extends StatelessWidget {
     required this.onTap,
     this.tint,
     this.enabled = true,
+    this.tooltip,
   });
 
   final IconData icon;
   final VoidCallback? onTap;
   final Color? tint;
   final bool enabled;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     final isAccented = tint != null;
     final effectiveTint = enabled ? tint : AppColors.mutedForeground;
-    return Material(
+    final button = Material(
       color: isAccented
           ? (tint ?? AppColors.primary).withValues(alpha: enabled ? 0.15 : 0.08)
           : AppColors.card.withValues(alpha: enabled ? 0.82 : 0.5),
@@ -1500,6 +1533,8 @@ class _CircleIconButton extends StatelessWidget {
         ),
       ),
     );
+    if (tooltip == null) return button;
+    return Tooltip(message: tooltip!, child: button);
   }
 }
 

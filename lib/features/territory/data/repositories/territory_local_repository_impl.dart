@@ -217,6 +217,7 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
           areaSqMeters: rivalArea,
           lastDefendedAt: t.lastDefendedAt,
           isOwnedByCurrentUser: false,
+          mapColorHex: t.mapColorHex,
         ));
       }
     }
@@ -278,6 +279,9 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
       totalUserArea += _calculatePolygonArea(poly);
     }
 
+    final existingColor = userTerritoryIndex != -1
+        ? _cachedTerritories![userTerritoryIndex].mapColorHex
+        : null;
     final userTerritory = TerritoryEntity(
       id: userTerritoryIndex != -1
           ? _cachedTerritories![userTerritoryIndex].id
@@ -288,6 +292,7 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
       areaSqMeters: totalUserArea,
       lastDefendedAt: DateTime.now(),
       isOwnedByCurrentUser: true,
+      mapColorHex: existingColor ?? _allocateLocalMapColor(),
     );
 
     _cachedTerritories!.clear();
@@ -336,6 +341,7 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
         areaSqMeters: t.areaSqMeters,
         lastDefendedAt: DateTime.now(),
         isOwnedByCurrentUser: true,
+        mapColorHex: t.mapColorHex,
       );
       await _save();
     }
@@ -520,6 +526,7 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
             .toList(),
         'area_sq_meters': t.areaSqMeters,
         'last_defended_at': t.lastDefendedAt.toIso8601String(),
+        'map_color_hex': t.mapColorHex,
       };
 
   TerritoryEntity _territoryFromJson(Map<String, dynamic> json) =>
@@ -535,7 +542,82 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
         areaSqMeters: (json['area_sq_meters'] as num).toDouble(),
         lastDefendedAt: DateTime.parse(json['last_defended_at'] as String),
         isOwnedByCurrentUser: json['user_id'] as String == _currentUserId,
+        mapColorHex: (json['map_color_hex'] as String?) ?? '#94a3b8',
       );
+
+  /// Offline mirror of `allocate_territory_color` — unique among local cache.
+  String _allocateLocalMapColor() {
+    const palette = [
+      '#2ee6c5',
+      '#ff7a59',
+      '#ffc14d',
+      '#ff6b9d',
+      '#8b9cff',
+      '#7dd3fc',
+      '#f0abfc',
+      '#fb923c',
+      '#a3e635',
+      '#34d399',
+      '#f472b6',
+      '#60a5fa',
+    ];
+    final used = {
+      for (final t in _cachedTerritories ?? const <TerritoryEntity>[])
+        t.mapColorHex.toLowerCase(),
+    };
+    for (final color in palette) {
+      if (!used.contains(color)) return color;
+    }
+    var i = used.length;
+    while (i < 4096) {
+      final hue = (i * 137.508) % 360.0;
+      final color = _hslToHex(hue, 0.72, 0.58);
+      if (!used.contains(color)) return color;
+      i++;
+    }
+    return '#94a3b8';
+  }
+
+  static String _hslToHex(double hue, double sat, double light) {
+    final h = ((hue % 360) + 360) % 360;
+    final s = sat.clamp(0.0, 1.0);
+    final l = light.clamp(0.0, 1.0);
+    final c = (1 - (2 * l - 1).abs()) * s;
+    final x = c * (1 - ((h / 60) % 2 - 1).abs());
+    final m = l - c / 2;
+    late final double r;
+    late final double g;
+    late final double b;
+    if (h < 60) {
+      r = c;
+      g = x;
+      b = 0;
+    } else if (h < 120) {
+      r = x;
+      g = c;
+      b = 0;
+    } else if (h < 180) {
+      r = 0;
+      g = c;
+      b = x;
+    } else if (h < 240) {
+      r = 0;
+      g = x;
+      b = c;
+    } else if (h < 300) {
+      r = x;
+      g = 0;
+      b = c;
+    } else {
+      r = c;
+      g = 0;
+      b = x;
+    }
+    int ch(double v) => ((v + m) * 255).round().clamp(0, 255);
+    return '#${ch(r).toRadixString(16).padLeft(2, '0')}'
+        '${ch(g).toRadixString(16).padLeft(2, '0')}'
+        '${ch(b).toRadixString(16).padLeft(2, '0')}';
+  }
 
   Map<String, dynamic> _runTrackToJson(RunTrackEntity run) => {
         'points': run.points.map(_geoPointToJson).toList(),

@@ -1,13 +1,14 @@
-import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
 import 'package:awaken/features/territory/domain/entities/territory_entity.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_palette.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TerritoryEntity territory({
     required String userId,
     required bool owned,
+    required String color,
   }) {
     return TerritoryEntity(
       id: 't-$userId',
@@ -35,25 +36,26 @@ void main() {
       areaSqMeters: 100,
       lastDefendedAt: DateTime.utc(2026, 1, 1),
       isOwnedByCurrentUser: owned,
+      mapColorHex: color,
     );
   }
 
-  test('owned territory uses aurora teal paint', () {
-    final style = TerritoryPaintStyle.forTerritory(
-      territory(userId: 'me', owned: true),
+  test('paint style uses each profile map color', () {
+    final mine = TerritoryPaintStyle.forTerritory(
+      territory(userId: 'me', owned: true, color: '#2ee6c5'),
     );
-    expect(style.fill, AppColors.territoryOwned);
-    expect(style.fillAlpha, greaterThan(0.2));
+    final rival = TerritoryPaintStyle.forTerritory(
+      territory(userId: 'them', owned: false, color: '#ff7a59'),
+    );
+    expect(mine.fill, const Color(0xFF2EE6C5));
+    expect(rival.fill, const Color(0xFFFF7A59));
+    expect(mine.fillAlpha, greaterThan(rival.fillAlpha));
   });
 
-  test('rival colors are stable per user id and not owned teal', () {
-    final a = TerritoryPaintStyle.rivalColorForUserId('user-aaa');
-    final b = TerritoryPaintStyle.rivalColorForUserId('user-aaa');
-    final c = TerritoryPaintStyle.rivalColorForUserId('user-bbb');
-    expect(a, b);
-    expect(a, isNot(AppColors.territoryOwned));
-    // Different ids usually differ; if hash collides, still must be palette.
-    expect(AppColors.territoryRivalPalette.contains(a), isTrue);
-    expect(AppColors.territoryRivalPalette.contains(c), isTrue);
+  test('colorFromHex accepts lowercase profile colors', () {
+    expect(
+      TerritoryPaintStyle.colorFromHex('#abCDef'),
+      const Color(0xFFABCDEF),
+    );
   });
 }

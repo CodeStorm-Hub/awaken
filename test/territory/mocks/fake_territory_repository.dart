@@ -147,6 +147,7 @@ class FakeTerritoryRepository implements TerritoryRepository {
           areaSqMeters: rivalArea,
           lastDefendedAt: t.lastDefendedAt,
           isOwnedByCurrentUser: false,
+          mapColorHex: t.mapColorHex,
         ));
       }
     }
@@ -214,6 +215,9 @@ class FakeTerritoryRepository implements TerritoryRepository {
       areaSqMeters: totalUserArea,
       lastDefendedAt: DateTime.now(),
       isOwnedByCurrentUser: true,
+      mapColorHex: userTerritoryIndex != -1
+          ? territories[userTerritoryIndex].mapColorHex
+          : '#2ee6c5',
     );
 
     territories.clear();
@@ -260,6 +264,7 @@ class FakeTerritoryRepository implements TerritoryRepository {
         areaSqMeters: t.areaSqMeters,
         lastDefendedAt: DateTime.now(),
         isOwnedByCurrentUser: true,
+        mapColorHex: t.mapColorHex,
       );
       _controller.add(List.unmodifiable(territories));
     }
@@ -372,6 +377,7 @@ class FakeTerritoryRepository implements TerritoryRepository {
         areaSqMeters: newArea,
         lastDefendedAt: newLastDefended,
         isOwnedByCurrentUser: t.isOwnedByCurrentUser,
+        mapColorHex: t.mapColorHex,
       );
     }
     _controller.add(List.unmodifiable(territories));

@@ -3,7 +3,6 @@
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS territory_color text;
 
--- Existing rows get colors before the NOT NULL / UNIQUE constraints.
 CREATE OR REPLACE FUNCTION public.hsl_to_hex(
   hue double precision,
   sat double precision,
@@ -49,8 +48,6 @@ BEGIN
 END;
 $$;
 
--- Picks the next unused turf color. Prefers a curated dark-map palette,
--- then falls back to golden-angle HSL so uniqueness scales past the palette.
 CREATE OR REPLACE FUNCTION public.allocate_territory_color()
 RETURNS text
 LANGUAGE plpgsql
@@ -69,7 +66,7 @@ DECLARE
     '#BE185D', '#1D4ED8', '#6D28D9', '#047857', '#B91C1C', '#4338CA',
     '#0E7490', '#A16207', '#9D174D', '#1E40AF', '#5B21B6', '#065F46',
     '#FCA5A5', '#93C5FD', '#FDE68A', '#C4B5FD', '#6EE7B7', '#FDA4AF',
-    '#67E8F9', '#F0ABFC', '#FDBA74', '#BEF264', '#FDBA74', '#A5B4FC'
+    '#67E8F9', '#FDBA74', '#BEF264', '#A5B4FC'
   ];
   candidate text;
   i int := 0;
@@ -85,7 +82,6 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- Unlimited unique colors via golden-angle walk in HSL space.
   i := (SELECT COUNT(*)::int FROM public.profiles);
   WHILE i < max_tries LOOP
     candidate := lower(public.hsl_to_hex(i * 137.508, 0.72, 0.58));
@@ -104,7 +100,6 @@ $$;
 REVOKE ALL ON FUNCTION public.allocate_territory_color() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.allocate_territory_color() TO service_role;
 
--- Backfill existing profiles in created_at order for stable assignment.
 DO $$
 DECLARE
   r record;
@@ -136,7 +131,6 @@ ALTER TABLE public.profiles
   ADD CONSTRAINT profiles_territory_color_format
   CHECK (territory_color ~ '^#[0-9a-f]{6}$');
 
--- Lock color after assignment (users cannot steal another hue via UPDATE).
 CREATE OR REPLACE FUNCTION public.profiles_lock_territory_color()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -159,7 +153,6 @@ CREATE TRIGGER profiles_lock_territory_color
   FOR EACH ROW
   EXECUTE FUNCTION public.profiles_lock_territory_color();
 
--- Assign a unique color on every new auth user.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -183,7 +176,8 @@ REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.handle_new_user() FROM anon;
 REVOKE ALL ON FUNCTION public.handle_new_user() FROM authenticated;
 
-CREATE OR REPLACE VIEW public.territories_geojson
+DROP VIEW IF EXISTS public.territories_geojson;
+CREATE VIEW public.territories_geojson
   WITH (security_invoker = true) AS
 SELECT
   t.id,

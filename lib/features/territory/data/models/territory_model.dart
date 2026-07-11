@@ -9,6 +9,7 @@ class TerritoryModel {
     required this.geojson,
     required this.areaSqMeters,
     required this.lastDefendedAt,
+    required this.territoryColor,
   });
 
   factory TerritoryModel.fromJson(Map<String, dynamic> json) {
@@ -19,6 +20,7 @@ class TerritoryModel {
       geojson: json['geojson'] as String,
       areaSqMeters: (json['area_sqm'] as num).toDouble(),
       lastDefendedAt: DateTime.parse(json['last_defended_at'] as String),
+      territoryColor: (json['territory_color'] as String?) ?? '#94a3b8',
     );
   }
 
@@ -28,6 +30,7 @@ class TerritoryModel {
   final String geojson;
   final double areaSqMeters;
   final DateTime lastDefendedAt;
+  final String territoryColor;
 
   TerritoryEntity toEntity({required String currentUserId}) {
     return TerritoryEntity(
@@ -38,6 +41,7 @@ class TerritoryModel {
       areaSqMeters: areaSqMeters,
       lastDefendedAt: lastDefendedAt,
       isOwnedByCurrentUser: userId == currentUserId,
+      mapColorHex: territoryColor,
     );
   }
 }

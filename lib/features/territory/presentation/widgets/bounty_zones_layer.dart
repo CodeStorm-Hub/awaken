@@ -14,6 +14,10 @@ class BountyZonesLayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(bountyZonesVisibleProvider)) {
+      return const SizedBox.shrink();
+    }
+
     final zones = ref.watch(bountyZonesProvider).valueOrNull ?? const [];
     if (zones.isEmpty) return const SizedBox.shrink();
 
@@ -175,6 +179,10 @@ class BountyZonesLegendCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(bountyZonesVisibleProvider)) {
+      return const SizedBox.shrink();
+    }
+
     final zones = ref.watch(bountyZonesProvider).valueOrNull ?? const [];
     if (zones.isEmpty) return const SizedBox.shrink();
 
@@ -199,21 +207,40 @@ class BountyZonesLegendCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.workspace_premium_rounded,
                   size: 16,
                   color: AppColors.accent,
                 ),
-                SizedBox(width: 6),
-                Text(
-                  'BOUNTY ZONES',
-                  style: TextStyle(
-                    color: AppColors.accent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text(
+                    'BOUNTY ZONES',
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                Tooltip(
+                  message: 'Hide bounty zones',
+                  child: InkWell(
+                    onTap: () =>
+                        ref.read(bountyZonesVisibleProvider.notifier).state =
+                            false,
+                    borderRadius: BorderRadius.circular(16),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.visibility_off_rounded,
+                        size: 18,
+                        color: AppColors.mutedForeground,
+                      ),
+                    ),
                   ),
                 ),
               ],

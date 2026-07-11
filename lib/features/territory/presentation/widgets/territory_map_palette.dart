@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 
 /// Visual recipe for one territory on the dark run map.
 ///
-/// Cartography notes (Mapbox Dark / Stamen dark-map guidance + territory
-/// games like TerraRun): keep the basemap quiet, give overlays saturated
-/// strokes with translucent fills, and use glow borders so shapes read at
-/// night without burying street labels.
+/// Each profile owns a unique [TerritoryEntity.mapColorHex] assigned in
+/// Supabase on signup (`profiles.territory_color`). Fill/stroke always come
+/// from that color — owned land is only emphasized with stronger alpha /
+/// stroke, never by forcing a shared teal that would collide with rivals.
 class TerritoryPaintStyle {
   const TerritoryPaintStyle({
     required this.fill,
@@ -25,38 +25,38 @@ class TerritoryPaintStyle {
   final double strokeWidth;
   final double glowWidth;
 
-  /// Resolves owned vs rival styling. Rivals get a stable hue from
-  /// [AppColors.territoryRivalPalette] so neighboring players stay
-  /// distinguishable without a legend of identical red blobs.
   static TerritoryPaintStyle forTerritory(TerritoryEntity territory) {
+    final ink = colorFromHex(territory.mapColorHex);
     if (territory.isOwnedByCurrentUser) {
-      return const TerritoryPaintStyle(
-        fill: AppColors.territoryOwned,
-        stroke: AppColors.territoryOwned,
-        glow: AppColors.territoryOwnedGlow,
-        fillAlpha: 0.30,
+      return TerritoryPaintStyle(
+        fill: ink,
+        stroke: ink,
+        glow: ink.withValues(alpha: 0.42),
+        fillAlpha: 0.32,
         strokeWidth: 2.8,
         glowWidth: 14,
       );
     }
-
-    final ink = rivalColorForUserId(territory.userId);
     return TerritoryPaintStyle(
       fill: ink,
       stroke: ink,
-      glow: ink.withValues(alpha: 0.38),
+      glow: ink.withValues(alpha: 0.36),
       fillAlpha: 0.22,
       strokeWidth: 2.2,
       glowWidth: 11,
     );
   }
 
-  static Color rivalColorForUserId(String userId) {
-    const palette = AppColors.territoryRivalPalette;
-    var hash = 0;
-    for (final unit in userId.codeUnits) {
-      hash = (hash * 31 + unit) & 0x7fffffff;
+  /// Parses `#rgb` / `#rrggbb` (case-insensitive). Falls back to slate if bad.
+  static Color colorFromHex(String raw) {
+    var hex = raw.trim().toLowerCase();
+    if (hex.startsWith('#')) hex = hex.substring(1);
+    if (hex.length == 3) {
+      hex = '${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}';
     }
-    return palette[hash % palette.length];
+    if (hex.length != 6) return AppColors.mutedForeground;
+    final value = int.tryParse(hex, radix: 16);
+    if (value == null) return AppColors.mutedForeground;
+    return Color(0xFF000000 | value);
   }
 }
