@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Shared numeric and timing constants across all features.
 /// No magic numbers anywhere else in the codebase — always reference here.
 abstract final class AppConstants {
@@ -73,7 +75,11 @@ abstract final class AppConstants {
   static const double maxRunSpeedKmh = 25.0;
   static const double loopClosureRadiusMeters = 50.0;
   static const double minLoopAreaSqMeters = 50.0;
-  static const Duration minRunDuration = Duration(minutes: 2);
+
+  /// Production: 2 minutes. Debug/emulator: 45s so GPS sims can finish quickly.
+  static Duration get minRunDuration =>
+      kDebugMode ? const Duration(seconds: 45) : const Duration(minutes: 2);
+
   static const double minRunDistanceMeters = 200.0;
 
   /// Per-loop path length minimum — below session [minRunDistanceMeters] so

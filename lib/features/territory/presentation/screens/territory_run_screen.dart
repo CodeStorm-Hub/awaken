@@ -14,6 +14,7 @@ import 'package:awaken/features/territory/domain/services/location_permission_he
 import 'package:awaken/features/territory/domain/services/trail_display_utils.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:awaken/features/territory/presentation/widgets/bounty_zones_layer.dart';
 import 'package:awaken/features/territory/presentation/widgets/capture_result_sheet.dart';
 import 'package:awaken/features/territory/presentation/widgets/run_controls.dart';
 import 'package:awaken/features/territory/presentation/widgets/run_stats_sheet.dart';
@@ -592,6 +593,18 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                 child: _ResultBanner(message: _resultMessage!),
               ),
 
+            // ── Bounty explainer (idle) ───────────────────────────────────
+            if (!isTracking && !isFinishing)
+              const Positioned(
+                left: AppConstants.screenPaddingH,
+                right: AppConstants.screenPaddingH,
+                bottom: 76,
+                child: SafeArea(
+                  top: false,
+                  child: BountyZonesLegendCard(),
+                ),
+              ),
+
             // ── Start / Stop control ───────────────────────────────────────
             Positioned(
               left: AppConstants.screenPaddingH,
@@ -804,8 +817,8 @@ class _TerritoryMapView extends StatelessWidget {
         _RunTrailCoreLayer(),
         _RunStartMarkerLayer(),
         _FogOfWarLayer(),
+        BountyZonesLayer(),
         _MyLocationMarkerLayer(),
-        _BountyZonesLayer(),
         RichAttributionWidget(
           alignment: AttributionAlignment.bottomRight,
           popupBackgroundColor: AppColors.card,
@@ -830,31 +843,6 @@ class _FogOfWarLayer extends ConsumerWidget {
     ref.watch(exploredCellsVersionProvider);
     final store = ref.watch(exploredCellsStoreProvider);
     return TerritoryFogLayer(store: store, enabled: enabled);
-  }
-}
-
-class _BountyZonesLayer extends ConsumerWidget {
-  const _BountyZonesLayer();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final zones = ref.watch(bountyZonesProvider).valueOrNull ?? const [];
-    if (zones.isEmpty) return const SizedBox.shrink();
-
-    return PolygonLayer(
-      polygons: [
-        for (final zone in zones)
-          if (zone.ring.length >= 3)
-            Polygon(
-              points: zone.ring
-                  .map((p) => LatLng(p.latitude, p.longitude))
-                  .toList(),
-              color: AppColors.accent.withValues(alpha: 0.12),
-              borderColor: AppColors.accent,
-              borderStrokeWidth: 2.5,
-            ),
-      ],
-    );
   }
 }
 
