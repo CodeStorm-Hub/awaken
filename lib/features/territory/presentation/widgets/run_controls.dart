@@ -2,22 +2,26 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
-/// Start/Stop run control, pinned in the thumb zone.
-/// Shows a pulsing glow ring while tracking, and a loading spinner
-/// while the run is being processed (status == finishing).
+/// Start / Pause / Resume / Stop run controls.
 class RunControls extends StatefulWidget {
   const RunControls({
     super.key,
     required this.isTracking,
     required this.onStart,
     required this.onStop,
+    this.isPaused = false,
     this.isFinishing = false,
+    this.onPause,
+    this.onResume,
   });
 
   final bool isTracking;
+  final bool isPaused;
   final bool isFinishing;
   final VoidCallback onStart;
   final VoidCallback onStop;
+  final VoidCallback? onPause;
+  final VoidCallback? onResume;
 
   @override
   State<RunControls> createState() => _RunControlsState();
@@ -44,13 +48,14 @@ class _RunControlsState extends State<RunControls>
   @override
   void didUpdateWidget(RunControls oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.isTracking != widget.isTracking) {
+    if (oldWidget.isTracking != widget.isTracking ||
+        oldWidget.isPaused != widget.isPaused) {
       _syncAnimation();
     }
   }
 
   void _syncAnimation() {
-    if (widget.isTracking) {
+    if (widget.isTracking && !widget.isPaused) {
       _glowCtrl.repeat(reverse: true);
     } else {
       _glowCtrl.stop();
@@ -81,28 +86,64 @@ class _RunControlsState extends State<RunControls>
       );
     }
 
-    if (widget.isTracking) {
-      return AnimatedBuilder(
-        animation: _glowAnim,
-        builder: (context, child) => Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.destructive
-                    .withValues(alpha: _glowAnim.value * 0.5),
-                blurRadius: 24 * _glowAnim.value,
-                spreadRadius: 2,
-              ),
-            ],
+    if (widget.isPaused) {
+      return Row(
+        children: [
+          Expanded(
+            child: _buildButton(
+              label: 'Resume',
+              color: AppColors.primary,
+              onPressed: widget.onResume,
+            ),
           ),
-          child: child,
-        ),
-        child: _buildButton(
-          label: 'Stop run',
-          color: AppColors.destructive,
-          onPressed: widget.onStop,
-        ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _buildButton(
+              label: 'Finish',
+              color: AppColors.destructive,
+              onPressed: widget.onStop,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (widget.isTracking) {
+      return Row(
+        children: [
+          Expanded(
+            child: _buildButton(
+              label: 'Pause',
+              color: AppColors.secondary,
+              onPressed: widget.onPause,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: AnimatedBuilder(
+              animation: _glowAnim,
+              builder: (context, child) => Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.destructive
+                          .withValues(alpha: _glowAnim.value * 0.5),
+                      blurRadius: 24 * _glowAnim.value,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: child,
+              ),
+              child: _buildButton(
+                label: 'Stop',
+                color: AppColors.destructive,
+                onPressed: widget.onStop,
+              ),
+            ),
+          ),
+        ],
       );
     }
 
@@ -121,14 +162,14 @@ class _RunControlsState extends State<RunControls>
   }) {
     return SizedBox(
       width: double.infinity,
-      height: 64,
+      height: 52,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+            borderRadius: BorderRadius.circular(AppConstants.chipRadius),
           ),
           elevation: 0,
         ),
@@ -136,9 +177,9 @@ class _RunControlsState extends State<RunControls>
             Text(
               label,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
-              letterSpacing: 0.2,
+                letterSpacing: 0.2,
               ),
             ),
       ),

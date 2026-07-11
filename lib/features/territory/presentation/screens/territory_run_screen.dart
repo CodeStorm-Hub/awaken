@@ -17,10 +17,10 @@ import 'package:awaken/features/territory/presentation/providers/territory_provi
 import 'package:awaken/features/territory/presentation/widgets/capture_result_sheet.dart';
 import 'package:awaken/features/territory/presentation/widgets/run_controls.dart';
 import 'package:awaken/features/territory/presentation/widgets/run_stats_sheet.dart';
+import 'package:awaken/features/territory/presentation/widgets/territory_fog_layer.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_status_overlay.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_polygon_layer.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_vector_tile_layer.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -97,6 +97,19 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       next.whenData((position) {
         if (position == null || !mounted) return;
         ref.read(mapLastKnownPositionProvider.notifier).state = position;
+        // Reveal a small patch around the user the first time we get a fix
+        // so the fog clears at the starting position.
+        if (previous?.valueOrNull == null) {
+          final store = ref.read(exploredCellsStoreProvider);
+          store
+              .revealAround(position.latitude, position.longitude,
+                  radiusCells: 5)
+              .then((_) {
+            if (!mounted) return;
+            // ignore: avoid_manual_providers_as_generated_provider_dependency
+            ref.read(exploredCellsVersionProvider.notifier).state++;
+          });
+        }
         if (!_didAutoCenterFromStream && ref.read(_followMeProvider)) {
           _didAutoCenterFromStream = true;
           _animateTo(
@@ -306,8 +319,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       }
     });
 
-    final isTracking =
-        status == RunSessionStatus.tracking || status == RunSessionStatus.finishing;
+    final isPaused = status == RunSessionStatus.paused;
+    final isTracking = status == RunSessionStatus.tracking ||
+        isPaused ||
+        status == RunSessionStatus.finishing;
     final isFinishing = status == RunSessionStatus.finishing;
 
     return PopScope(
@@ -475,28 +490,69 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
                       onTap: atMinZoom ? null : _zoomOut,
                       enabled: !atMinZoom,
                     ),
-                    const SizedBox(height: 6),
-                    if (kDebugMode)
-                      Text(
-                        'z${mapZoom.toStringAsFixed(1)}',
-                        style: const TextStyle(
-                          color: AppColors.mutedForeground,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
                   ],
                 ),
               ),
             ),
 
+            // ── Grace pause dim + label ───────────────────────────────────
+            if (isPaused)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    child: const Center(
+                      child: Text(
+                        'GRACE',
+                        style: TextStyle(
+                          color: AppColors.foreground,
+                          fontSize: 42,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 6,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
             // ── Stats HUD ─────────────────────────────────────────────────
             if (isTracking)
-              const Positioned(
+              Positioned(
                 left: AppConstants.screenPaddingH,
                 right: 56, // clear the right rail
                 bottom: 110,
-                child: _RunStatsSheetConsumer(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isPaused)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.card.withValues(alpha: 0.92),
+                          borderRadius:
+                              BorderRadius.circular(AppConstants.chipRadius),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: const Text(
+                          'PAUSED · TRAFFIC GRACE',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                    const _RunStatsSheetConsumer(),
+                  ],
+                ),
               ),
 
             // ── Outdoor safety strip ──────────────────────────────────────
@@ -540,13 +596,19 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
             Positioned(
               left: AppConstants.screenPaddingH,
               right: AppConstants.screenPaddingH,
-              bottom: 32,
+              bottom: 12,
               child: SafeArea(
                 top: false,
+                minimum: EdgeInsets.zero,
                 child: RunControls(
-                  isTracking: status == RunSessionStatus.tracking,
+                  isTracking: status == RunSessionStatus.tracking || isPaused,
+                  isPaused: isPaused,
                   isFinishing: isFinishing,
                   onStart: () => _onStartPressed(context),
+                  onPause: () =>
+                      ref.read(activeRunProvider.notifier).pauseRun(),
+                  onResume: () =>
+                      ref.read(activeRunProvider.notifier).resumeRun(),
                   onStop: () =>
                       ref.read(activeRunProvider.notifier).finishRun(),
                 ),
@@ -741,7 +803,9 @@ class _TerritoryMapView extends StatelessWidget {
         _RunTrailGlowLayer(),
         _RunTrailCoreLayer(),
         _RunStartMarkerLayer(),
+        _FogOfWarLayer(),
         _MyLocationMarkerLayer(),
+        _BountyZonesLayer(),
         RichAttributionWidget(
           alignment: AttributionAlignment.bottomRight,
           popupBackgroundColor: AppColors.card,
@@ -752,6 +816,43 @@ class _TerritoryMapView extends StatelessWidget {
             ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+class _FogOfWarLayer extends ConsumerWidget {
+  const _FogOfWarLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(fogOfWarEnabledProvider);
+    ref.watch(exploredCellsVersionProvider);
+    final store = ref.watch(exploredCellsStoreProvider);
+    return TerritoryFogLayer(store: store, enabled: enabled);
+  }
+}
+
+class _BountyZonesLayer extends ConsumerWidget {
+  const _BountyZonesLayer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final zones = ref.watch(bountyZonesProvider).valueOrNull ?? const [];
+    if (zones.isEmpty) return const SizedBox.shrink();
+
+    return PolygonLayer(
+      polygons: [
+        for (final zone in zones)
+          if (zone.ring.length >= 3)
+            Polygon(
+              points: zone.ring
+                  .map((p) => LatLng(p.latitude, p.longitude))
+                  .toList(),
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderColor: AppColors.accent,
+              borderStrokeWidth: 2.5,
+            ),
       ],
     );
   }
@@ -816,6 +917,11 @@ class _RunTrailGlowLayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(activeRunProvider.select((s) => s.status));
+    final isLive = status == RunSessionStatus.tracking ||
+        status == RunSessionStatus.paused;
+    if (!isLive) return const SizedBox.shrink();
+
     final points = ref.watch(activeRunProvider.select((s) => s.points));
     if (points.length < 2) return const SizedBox.shrink();
 
@@ -842,6 +948,11 @@ class _RunTrailCoreLayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(activeRunProvider.select((s) => s.status));
+    final isLive = status == RunSessionStatus.tracking ||
+        status == RunSessionStatus.paused;
+    if (!isLive) return const SizedBox.shrink();
+
     final points = ref.watch(activeRunProvider.select((s) => s.points));
     if (points.length < 2) return const SizedBox.shrink();
 
@@ -895,8 +1006,9 @@ class _MyLocationMarkerLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(activeRunProvider.select((s) => s.status));
-    final isTracking =
-        status == RunSessionStatus.tracking || status == RunSessionStatus.finishing;
+    final isTracking = status == RunSessionStatus.tracking ||
+        status == RunSessionStatus.paused ||
+        status == RunSessionStatus.finishing;
 
     LatLng? point;
     double? heading;
@@ -1245,6 +1357,8 @@ class _RunHeader extends StatelessWidget {
         ('Tracking run', 'Close your loop to claim territory.'),
       RunSessionStatus.tracking =>
         ('Ready to move', 'Start walking or running to draw your path.'),
+      RunSessionStatus.paused =>
+        ('Traffic grace', 'Paused — resume when you can move safely.'),
       RunSessionStatus.finishing =>
         ('Saving run', 'We are finishing your territory check now.'),
       RunSessionStatus.finished =>

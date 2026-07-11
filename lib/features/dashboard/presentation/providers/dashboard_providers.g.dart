@@ -48,7 +48,7 @@ final clockProvider = StreamProvider<DateTime>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ClockRef = StreamProviderRef<DateTime>;
-String _$clockDisplayHash() => r'f3f864057e538034f0d10f511969d1f224724b1f';
+String _$clockDisplayHash() => r'febf263dbf56b94534a548c349bd1b69e4c50f9e';
 
 /// Formatted clock string — only emits when the displayed HH:MM value changes
 /// (once per minute). Downstream widgets that render the clock should watch
@@ -69,9 +69,9 @@ final clockDisplayProvider = StreamProvider<String>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ClockDisplayRef = StreamProviderRef<String>;
-String _$dashboardStatsHash() => r'a019ff665cc7d323687be977da117417b79cd5d6';
+String _$dashboardStatsHash() => r'dc456fb67b9a01bc7f00b915dcc419a8e3913fdb';
 
-/// Dashboard stats — reads from Supabase when signed in, falls back to stubs.
+/// Dashboard stats — cloud when signed in, local SharedPreferences when guest.
 ///
 /// Copied from [dashboardStats].
 @ProviderFor(dashboardStats)

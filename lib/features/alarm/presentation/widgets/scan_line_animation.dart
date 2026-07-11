@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 /// Horizontal gradient line that sweeps top-to-bottom on a 2-second loop.
-/// Wrapped in [RepaintBoundary] — composited on its own GPU layer.
 class ScanLineAnimation extends StatelessWidget {
-  const ScanLineAnimation({super.key});
+  const ScanLineAnimation({super.key, this.accentColor});
+
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
+    final accent = accentColor ?? AppColors.primary;
     return RepaintBoundary(
       child: IgnorePointer(
         child: LayoutBuilder(
@@ -17,7 +19,7 @@ class ScanLineAnimation extends StatelessWidget {
             final height = constraints.maxHeight;
             return Align(
               alignment: Alignment.topCenter,
-              child: const _ScanLine()
+              child: _ScanLine(accent: accent)
                   .animate(onPlay: (c) => c.repeat())
                   .moveY(
                     begin: 0,
@@ -34,7 +36,9 @@ class ScanLineAnimation extends StatelessWidget {
 }
 
 class _ScanLine extends StatelessWidget {
-  const _ScanLine();
+  const _ScanLine({required this.accent});
+
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +48,15 @@ class _ScanLine extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             Colors.transparent,
-            AppColors.primary.withValues(alpha: 0.5),
-            AppColors.primary.withValues(alpha: 0.9),
-            AppColors.primary.withValues(alpha: 0.5),
+            accent.withValues(alpha: 0.5),
+            accent.withValues(alpha: 0.9),
+            accent.withValues(alpha: 0.5),
             Colors.transparent,
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.6),
+            color: accent.withValues(alpha: 0.6),
             blurRadius: AppConstants.glowBlurRadius,
             spreadRadius: 1,
           ),

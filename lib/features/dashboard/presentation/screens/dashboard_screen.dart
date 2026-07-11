@@ -7,31 +7,58 @@ import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
+import 'package:awaken/features/alarm/domain/services/alarm_bailout_service.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_providers.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
+import 'package:awaken/features/alarm/presentation/widgets/squad_sheet.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/armed_alarm_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/digital_clock.dart';
+import 'package:awaken/features/dashboard/presentation/widgets/hud_theme_picker.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/streak_ring.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:awaken/features/territory/presentation/widgets/nemesis_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final applied = await const AlarmBailoutService().applyBailoutPenalties(
+        repository: ref.read(alarmRepositoryProvider),
+      );
+      if (applied > 0) {
+        ref.invalidate(alarmListProvider);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final nextAlarm = ref.watch(nextAlarmProvider);
     final exactAlarmGranted = ref.watch(exactAlarmPermissionProvider);
+    final exactAlarmDismissed = ref.watch(exactAlarmBannerDismissedProvider);
+    final bailoutDismissed = ref.watch(bailoutBannerDismissedProvider);
     final isSignedIn = ref.watch(isSignedInProvider);
     final user = ref.watch(currentUserProvider);
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final size = MediaQuery.sizeOf(context);
+    final showBailoutBanner = (nextAlarm?.penaltyMultiplier ?? 1) > 1 &&
+        !bailoutDismissed;
 
     // Surface a local notification once per dashboard load if any owned
     // territory is within its decay grace period (Product Decision #4).
@@ -91,17 +118,24 @@ class DashboardScreen extends ConsumerWidget {
                   }
                 },
               ),
-              SizedBox(height: size.height * 0.05),
+              if (!isSignedIn) ...[
+                const SizedBox(height: 12),
+                _GuestSyncPrompt(
+                  onSignIn: () => context.push(AppRoutes.auth),
+                ),
+              ],
+              SizedBox(height: size.height * 0.04),
 
               // ── Digital clock ─────────────────────────────────────────
               const Center(child: DigitalClock()),
               const SizedBox(height: 8),
               Center(child: Text(dateStr, style: tt.eyebrow)),
 
-              SizedBox(height: size.height * 0.05),
+              SizedBox(height: size.height * 0.04),
 
               // ── Exact alarm permission warning (Android 12+) ───────────
-              if (exactAlarmGranted.valueOrNull == false)
+              if (exactAlarmGranted.valueOrNull == false &&
+                  !exactAlarmDismissed)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: _ExactAlarmWarningCard(
@@ -110,14 +144,33 @@ class DashboardScreen extends ConsumerWidget {
                       await ExactAlarmPermissionService.openSettings();
                       ref.invalidate(exactAlarmPermissionProvider);
                     },
+                    onDismiss: () {
+                      ref
+                          .read(exactAlarmBannerDismissedProvider.notifier)
+                          .state = true;
+                    },
                   ),
                 ),
 
-              // ── Alarm card ────────────────────────────────────────────
+              if (showBailoutBanner)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _BailoutBanner(
+                    onDismiss: () {
+                      ref.read(bailoutBannerDismissedProvider.notifier).state =
+                          true;
+                    },
+                  ),
+                ),
+
+              // ── Hero: next armed alarm ────────────────────────────────
               if (nextAlarm != null)
                 ArmedAlarmCard(
                   alarmTime: nextAlarm.scheduledTime,
                   requiredReps: nextAlarm.requiredReps,
+                  exerciseMode: nextAlarm.exerciseMode,
+                  exerciseType: nextAlarm.exerciseType,
+                  penaltyMultiplier: nextAlarm.penaltyMultiplier,
                 )
               else
                 _NoAlarmCard(
@@ -125,7 +178,19 @@ class DashboardScreen extends ConsumerWidget {
                   onTap: () => context.push(AppRoutes.alarmSetup),
                 ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+
+              // ── Nemesis card (signed-in only) ─────────────────────────
+              if (isSignedIn)
+                ref.watch(nemesisProvider).whenOrNull(
+                      data: (nemesis) => nemesis != null
+                          ? Padding(
+                              padding: const EdgeInsets.only(bottom: 20),
+                              child: NemesisCard(nemesis: nemesis),
+                            )
+                          : null,
+                    ) ??
+                const SizedBox.shrink(),
 
               // ── Territory capture entry point ──────────────────────────
               _TerritoryCard(
@@ -134,9 +199,11 @@ class DashboardScreen extends ConsumerWidget {
                 onViewDetails: () => context.push(AppRoutes.territoryOverview),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-              // ── Stats row ─────────────────────────────────────────────
+              // ── Secondary stats ───────────────────────────────────────
+              Text('THIS WEEK', style: tt.eyebrow),
+              const SizedBox(height: 10),
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -185,6 +252,21 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              const HudThemePicker(),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => SquadSheet.show(context),
+                child: const Text(
+                  'SQUAD TAXES',
+                  style: TextStyle(
+                    color: AppColors.accent,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
 
@@ -330,10 +412,12 @@ class _ExactAlarmWarningCard extends StatelessWidget {
   const _ExactAlarmWarningCard({
     required this.tt,
     required this.onOpenSettings,
+    required this.onDismiss,
   });
 
   final AwakenTypography tt;
   final VoidCallback onOpenSettings;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -375,6 +459,13 @@ class _ExactAlarmWarningCard extends StatelessWidget {
                   ],
                 ),
               ),
+              IconButton(
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close, size: 18),
+                color: AppColors.mutedForeground,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Dismiss for now',
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -391,6 +482,92 @@ class _ExactAlarmWarningCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BailoutBanner extends StatelessWidget {
+  const _BailoutBanner({required this.onDismiss});
+
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.destructive.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+        border: Border.all(color: AppColors.destructive.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.gavel_rounded, color: AppColors.destructive, size: 18),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Yesterday\'s bailout · tomorrow\'s tax is doubled',
+              style: TextStyle(
+                color: AppColors.mutedForeground,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: onDismiss,
+            icon: const Icon(Icons.close, size: 16),
+            color: AppColors.mutedForeground,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuestSyncPrompt extends StatelessWidget {
+  const _GuestSyncPrompt({required this.onSignIn});
+
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      child: InkWell(
+        onTap: onSignIn,
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.cloud_sync_outlined,
+                  size: 18, color: AppColors.primary),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Sign in to sync streaks & leaderboard',
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  size: 18, color: AppColors.mutedForeground),
+            ],
+          ),
+        ),
       ),
     );
   }

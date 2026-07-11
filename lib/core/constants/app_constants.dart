@@ -16,6 +16,28 @@ abstract final class AppConstants {
   /// Volume ramp-up step when user leaves frame (per penalty tick)
   static const double volumeRampStep = 0.15;
 
+  /// Max tap-counted reps when camera permission is denied (accessibility).
+  /// Further taps require enabling the camera via Settings.
+  static const int accessibilityMaxTapReps = 3;
+
+  /// Unresolved alarm trigger older than this incurs a bailout penalty.
+  static const Duration bailoutWindow = Duration(hours: 2);
+
+  /// Tax reveal stamp duration on active alarm entry.
+  static const Duration taxRevealDuration = Duration(milliseconds: 1200);
+
+  /// Auto-pause run when speed stays near zero for this long.
+  static const Duration runGracePauseDelay = Duration(seconds: 8);
+
+  /// Speed (m/s) at or below which grace pause may arm.
+  static const double runGracePauseSpeedMps = 0.4;
+
+  /// Explored fog cell size (~70 m).
+  static const double fogCellDegrees = 0.00065;
+
+  /// Leaderboard "Around you" window half-width (ranks myRank±N).
+  static const int leaderboardNeighborhoodRadius = 5;
+
   // ── Layout ────────────────────────────────────────────────────────
   static const double screenPaddingH = 20.0;
   static const double screenPaddingV = 24.0;

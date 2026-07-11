@@ -28,7 +28,7 @@ final territoryRepositoryProvider = Provider<TerritoryRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef TerritoryRepositoryRef = ProviderRef<TerritoryRepository>;
-String _$territoryListHash() => r'c22be22bf6f2548d9982f219944ee81319187cbb';
+String _$territoryListHash() => r'e984f48bc36c15fda346f948c63c5d0c4f4ad203';
 
 /// Live view of the shared map — every player's territory, updated via
 /// Supabase Realtime whenever any capture/steal/decay touches the table.
@@ -107,7 +107,7 @@ final territoryMapStyleProvider = FutureProvider<Style>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef TerritoryMapStyleRef = FutureProviderRef<Style>;
-String _$myLocationHash() => r'c4487b70092cc53d88347655d9060452f9571e8e';
+String _$myLocationHash() => r'4a8354c52ccc931bafed4cce76f21e9103d28cd6';
 
 /// Continuous "blue dot" GPS feed for the map's live-position marker.
 ///
@@ -127,7 +127,7 @@ final myLocationProvider = AutoDisposeStreamProvider<Position?>.internal(
 // ignore: unused_element
 typedef MyLocationRef = AutoDisposeStreamProviderRef<Position?>;
 String _$leaderboardModeNotifierHash() =>
-    r'2a71ea9ee9efc592497f6ac99c93277935f4d9ba';
+    r'1ed5920c6c4cfd974b181b70c10a99d1ff640b9d';
 
 /// Defaults to "Nearby" per the product decision.
 ///
@@ -149,7 +149,7 @@ final leaderboardModeNotifierProvider =
 
 typedef _$LeaderboardModeNotifier = AutoDisposeNotifier<LeaderboardMode>;
 String _$leaderboardWindowNotifierHash() =>
-    r'6c3ecbbe4441420463b7c9c16000a36bb56ab727';
+    r'932581e77b9be62aee9840c06c03f3c69f7d5459';
 
 /// Defaults to all-time (current ownership).
 ///
@@ -171,7 +171,7 @@ final leaderboardWindowNotifierProvider =
 
 typedef _$LeaderboardWindowNotifier = AutoDisposeNotifier<LeaderboardWindow>;
 String _$viewerLocationNotifierHash() =>
-    r'59820c2606dcb75843e0d8b434ede84e019778cd';
+    r'913c432fa2b93dbbc294beafff168f21525b8aac';
 
 /// The viewer's current position, used only to scope the "Nearby" leaderboard.
 ///
@@ -193,7 +193,7 @@ final viewerLocationNotifierProvider =
 
 typedef _$ViewerLocationNotifier = AutoDisposeNotifier<GeoPointEntity?>;
 String _$territoryMapReadyNotifierHash() =>
-    r'78e6549bd6d71929252f5db78dee746614341fbe';
+    r'c99e68c5a854e40477b9e7fc0d64df80ddec2b6b';
 
 /// Set to `true` the first time [TerritoryRunScreen] mounts.
 ///
@@ -212,7 +212,7 @@ final territoryMapReadyNotifierProvider =
 
 typedef _$TerritoryMapReadyNotifier = AutoDisposeNotifier<bool>;
 String _$mapLastKnownPositionNotifierHash() =>
-    r'c56d218fea7cfdf52de920c55348b914136a5bb7';
+    r'ca8bcd1b6084e20fdb9cd7878e2deca297de10fe';
 
 /// Last known GPS fix for the idle map marker.
 ///
@@ -233,7 +233,7 @@ final mapLastKnownPositionNotifierProvider =
     );
 
 typedef _$MapLastKnownPositionNotifier = AutoDisposeNotifier<Position?>;
-String _$mapEngineNotifierHash() => r'f94be632b4c3ba48083c157caa52e6b0eb892b42';
+String _$mapEngineNotifierHash() => r'a0a7d4ef2f0f130b84efd00d98f37701cc71466c';
 
 /// See also [MapEngineNotifier].
 @ProviderFor(MapEngineNotifier)
@@ -250,7 +250,7 @@ final mapEngineNotifierProvider =
 
 typedef _$MapEngineNotifier = AutoDisposeNotifier<MapEngine>;
 String _$territoryMapFocusNotifierHash() =>
-    r'16d41326a66237d433dca27357b4321442f150ce';
+    r'db22237a7596fec3789201ac0b5261354a6e5fc5';
 
 /// Set by the leaderboard's "tap to locate" action.
 ///

@@ -14,6 +14,7 @@ class PoseOverlayPainter extends CustomPainter {
     required this.rotation,
     required this.isSquatting,
     this.isFrontCamera = true,
+    this.accentColor,
   });
 
   final Pose pose;
@@ -21,6 +22,7 @@ class PoseOverlayPainter extends CustomPainter {
   final InputImageRotation rotation;
   final bool isSquatting;
   final bool isFrontCamera;
+  final Color? accentColor;
 
   // Skeleton connections — only stable full-body landmarks
   static const _connections = <(PoseLandmarkType, PoseLandmarkType)>[
@@ -42,7 +44,8 @@ class PoseOverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final lineColor = isSquatting ? AppColors.success : AppColors.primary;
+    final lineColor =
+        isSquatting ? AppColors.success : (accentColor ?? AppColors.primary);
 
     final glowPaint = Paint()
       ..color = lineColor.withValues(alpha: 0.35)
@@ -135,5 +138,7 @@ class PoseOverlayPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(PoseOverlayPainter old) =>
-      old.pose != pose || old.isSquatting != isSquatting;
+      old.pose != pose ||
+      old.isSquatting != isSquatting ||
+      old.accentColor != accentColor;
 }

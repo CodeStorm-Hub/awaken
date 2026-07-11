@@ -12,13 +12,14 @@ class SessionSyncService {
   final SupabaseSessionRepository remote;
 
   Future<void> flushPendingSessions() async {
-    final pending = await queue.peek();
+    final pending = await queue.peekDue();
     for (final session in pending) {
       try {
         await remote.recordSession(session);
         await queue.remove(PendingSessionQueue.keyFor(session));
       } catch (_) {
-        // Leave in queue for the next flush attempt.
+        // Leave in queue with exponential backoff for the next flush.
+        await queue.markAttemptFailed(session);
       }
     }
   }

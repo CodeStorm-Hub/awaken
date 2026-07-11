@@ -1,3 +1,4 @@
+import 'package:awaken/features/alarm/domain/entities/alarm_exercise_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -7,17 +8,16 @@ part 'alarm_providers.g.dart';
 enum RepFeedback { neutral, success, failure }
 
 /// Resets session-scoped alarm state when entering [ActiveAlarmScreen].
-///
-/// Intentionally does not touch [activeRunProvider] — a territory run may
-/// still be in progress under the shell when an alarm overlay opens.
 void resetAlarmSession(WidgetRef ref) {
   ref.read(repCountProvider.notifier).setCount(0);
   ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
   ref.read(outOfFrameProvider.notifier).setOutOfFrame(false);
+  ref.read(squatDepthRatioProvider.notifier).setRatio(0);
+  ref.read(accessibilitySessionProvider.notifier).setUsed(false);
+  ref.read(exerciseCueProvider.notifier).setCue(null);
   ref.read(sessionStartTimeProvider.notifier).setStartTime(DateTime.now());
 }
 
-/// Current rep count during an active alarm session.
 @riverpod
 class RepCount extends _$RepCount {
   @override
@@ -26,11 +26,6 @@ class RepCount extends _$RepCount {
   void setCount(int value) => state = value;
 }
 
-/// Visual feedback state — drives the border glow colour on the camera HUD.
-/// Resets to neutral after a short delay (handled in the screen widget).
-///
-/// Class is [RepFeedbackNotifier] because enum [RepFeedback] blocks the usual
-/// `repFeedbackProvider` codegen name; alias below preserves the public API.
 @riverpod
 class RepFeedbackNotifier extends _$RepFeedbackNotifier {
   @override
@@ -39,11 +34,8 @@ class RepFeedbackNotifier extends _$RepFeedbackNotifier {
   void setFeedback(RepFeedback value) => state = value;
 }
 
-/// Legacy public name — see [RepFeedbackNotifier].
 final repFeedbackProvider = repFeedbackNotifierProvider;
 
-/// Total reps required for the current alarm (injected at alarm trigger time).
-/// Kept alive across the alarm → success flow (not session-local like rep count).
 @Riverpod(keepAlive: true)
 class RequiredReps extends _$RequiredReps {
   @override
@@ -52,7 +44,22 @@ class RequiredReps extends _$RequiredReps {
   void setRequired(int value) => state = value;
 }
 
-/// Whether the out-of-frame penalty is currently active.
+@Riverpod(keepAlive: true)
+class ActiveExerciseType extends _$ActiveExerciseType {
+  @override
+  AlarmExerciseType build() => AlarmExerciseType.squats;
+
+  void setType(AlarmExerciseType value) => state = value;
+}
+
+@Riverpod(keepAlive: true)
+class ActivePenaltyMultiplier extends _$ActivePenaltyMultiplier {
+  @override
+  int build() => 1;
+
+  void setMultiplier(int value) => state = value;
+}
+
 @riverpod
 class OutOfFrame extends _$OutOfFrame {
   @override
@@ -61,8 +68,6 @@ class OutOfFrame extends _$OutOfFrame {
   void setOutOfFrame(bool value) => state = value;
 }
 
-/// When the current alarm session started — set in ActiveAlarmScreen.initState.
-/// Used to compute duration_seconds when recording the session to Supabase.
 @riverpod
 class SessionStartTime extends _$SessionStartTime {
   @override
@@ -70,3 +75,29 @@ class SessionStartTime extends _$SessionStartTime {
 
   void setStartTime(DateTime? value) => state = value;
 }
+
+@riverpod
+class SquatDepthRatio extends _$SquatDepthRatio {
+  @override
+  double build() => 0;
+
+  void setRatio(double value) => state = value;
+}
+
+@riverpod
+class ExerciseCue extends _$ExerciseCue {
+  @override
+  String? build() => null;
+
+  void setCue(String? value) => state = value;
+}
+
+@Riverpod(keepAlive: true)
+class AccessibilitySession extends _$AccessibilitySession {
+  @override
+  bool build() => false;
+
+  void setUsed(bool value) => state = value;
+}
+
+final bailoutBannerDismissedProvider = StateProvider<bool>((ref) => false);

@@ -5,6 +5,7 @@ import 'package:awaken/core/services/exact_alarm_permission_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
+import 'package:awaken/features/alarm/domain/entities/alarm_exercise_type.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,8 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
   int _reps = 10;
   String _label = '';
   bool _saving = false;
+  AlarmExerciseMode _exerciseMode = AlarmExerciseMode.fixed;
+  AlarmExerciseType _exerciseType = AlarmExerciseType.squats;
 
   /// Safe leave — onboarding uses [GoRouter.go], so there may be nothing to pop.
   void _leave() {
@@ -88,6 +91,53 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
                   setState(() => _reps = (_reps + 5).clamp(5, 50));
                 },
               ).animate().fadeIn(delay: 140.ms, duration: 300.ms),
+
+              const SizedBox(height: 32),
+
+              Text('EXERCISE', style: tt.eyebrow),
+              const SizedBox(height: 12),
+              SegmentedButton<AlarmExerciseMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: AlarmExerciseMode.fixed,
+                    label: Text('Fixed'),
+                  ),
+                  ButtonSegment(
+                    value: AlarmExerciseMode.roulette,
+                    label: Text('Roulette'),
+                  ),
+                ],
+                selected: {_exerciseMode},
+                onSelectionChanged: (s) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _exerciseMode = s.first);
+                },
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _exerciseMode == AlarmExerciseMode.roulette
+                    ? 'Roulette picks at wake. No negotiating.'
+                    : 'Camera verifies every rep.',
+                style: tt.statLabel.copyWith(fontSize: 12),
+              ),
+              if (_exerciseMode == AlarmExerciseMode.fixed) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final type in AlarmExerciseTypeX.implemented)
+                      ChoiceChip(
+                        label: Text(type.label),
+                        selected: _exerciseType == type,
+                        onSelected: (_) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _exerciseType = type);
+                        },
+                      ),
+                  ],
+                ),
+              ],
 
               const SizedBox(height: 32),
 
@@ -187,6 +237,10 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
         requiredReps: _reps,
         isActive: true,
         label: _label.isEmpty ? null : _label.trim(),
+        exerciseMode: _exerciseMode,
+        exerciseType: _exerciseMode == AlarmExerciseMode.roulette
+            ? null
+            : _exerciseType,
       );
 
       await ref.read(alarmListProvider.notifier).addAlarm(alarm);

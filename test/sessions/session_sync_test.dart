@@ -103,6 +103,29 @@ void main() {
     expect(await queue.peek(), hasLength(1));
   });
 
+  test('flushPendingSessions skips sessions still in backoff window', () async {
+    final remote = FakeRemoteSessionRepository();
+    final session = sampleSession();
+
+    await queue.enqueue(session);
+    await queue.markAttemptFailed(session, now: DateTime.now());
+
+    final syncService = SessionSyncService(
+      queue: queue,
+      remote: remote,
+    );
+
+    await syncService.flushPendingSessions();
+
+    expect(remote.recorded, isEmpty);
+    expect(await queue.peek(), hasLength(1));
+
+    final dueLater = await queue.peekDue(
+      now: DateTime.now().add(const Duration(hours: 1)),
+    );
+    expect(dueLater, hasLength(1));
+  });
+
   test('offline to online flow syncs after remote recovery', () async {
     final remote = FakeRemoteSessionRepository(failNext: 1);
     final repository = CompositeSessionRepository(

@@ -3,9 +3,13 @@ import 'package:awaken/features/auth/presentation/providers/auth_providers.dart'
 import 'package:awaken/features/dashboard/domain/entities/dashboard_stats_entity.dart';
 import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
 import 'package:awaken/features/sessions/presentation/providers/session_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'dashboard_providers.g.dart';
+
+/// Session-scoped dismiss for the exact-alarm permission banner.
+final exactAlarmBannerDismissedProvider = StateProvider<bool>((ref) => false);
 
 /// Android exact-alarm permission state.
 ///

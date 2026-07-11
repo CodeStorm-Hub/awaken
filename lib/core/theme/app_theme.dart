@@ -1,5 +1,6 @@
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
+import 'package:awaken/core/theme/hud_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -169,7 +170,12 @@ abstract final class AppTheme {
         },
       ),
 
-      extensions: <ThemeExtension<dynamic>>[AppTypography.extension],
+      extensions: <ThemeExtension<dynamic>>[
+        AppTypography.extension,
+        // Default HUD theme (cyan). AwakenApp overrides this at runtime when the
+        // user has selected a different unlocked theme.
+        HudTheme.cyan,
+      ],
     );
   }
 }

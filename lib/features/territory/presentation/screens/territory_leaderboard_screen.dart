@@ -211,19 +211,28 @@ class _TerritoryLeaderboardScreenState
     }
 
     final top = entries.take(3).toList();
-    final rest = entries.length > 3 ? entries.skip(3).toList() : const <LeaderboardEntryEntity>[];
+    final rest = entries.length > 3
+        ? entries.skip(3).toList()
+        : const <LeaderboardEntryEntity>[];
     final maxArea = entries.first.totalAreaSqMeters;
 
     String? climbHint;
+    List<LeaderboardEntryEntity> neighborhood = const [];
     if (viewerUserId != null) {
       final myIndex = entries.indexWhere((e) => e.userId == viewerUserId);
-      if (myIndex > 0) {
-        final me = entries[myIndex];
-        final above = entries[myIndex - 1];
-        final delta = above.totalAreaSqMeters - me.totalAreaSqMeters;
-        if (delta > 0) {
-          climbHint =
-              'Claim ${(delta / 1e6).toStringAsFixed(3)} km² more to pass ${above.displayName ?? 'rank ${above.rank}'}';
+      if (myIndex >= 0) {
+        const radius = AppConstants.leaderboardNeighborhoodRadius;
+        final start = (myIndex - radius).clamp(0, entries.length);
+        final end = (myIndex + radius + 1).clamp(0, entries.length);
+        neighborhood = entries.sublist(start, end);
+        if (myIndex > 0) {
+          final me = entries[myIndex];
+          final above = entries[myIndex - 1];
+          final delta = above.totalAreaSqMeters - me.totalAreaSqMeters;
+          if (delta > 0) {
+            climbHint =
+                'Claim ${(delta / 1e6).toStringAsFixed(3)} km² more to pass ${above.displayName ?? 'rank ${above.rank}'}';
+          }
         }
       }
     }
@@ -239,6 +248,22 @@ class _TerritoryLeaderboardScreenState
             if (climbHint != null) ...[
               const SizedBox(height: 14),
               LeaderboardClimbHint(text: climbHint),
+            ],
+            if (neighborhood.isNotEmpty) ...[
+              const SizedBox(height: 18),
+              const LeaderboardSectionLabel('AROUND YOU'),
+              const SizedBox(height: 10),
+              ...neighborhood.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: LeaderboardRankRow(
+                    entry: entry,
+                    highlight: entry.userId == viewerUserId,
+                    maxAreaSqMeters: maxArea,
+                    onTap: () => _onEntryTap(entry),
+                  ),
+                ),
+              ),
             ],
             if (rest.isNotEmpty) ...[
               const SizedBox(height: 18),

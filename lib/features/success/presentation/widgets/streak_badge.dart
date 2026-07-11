@@ -3,22 +3,28 @@ import 'package:awaken/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-/// "Streak +1" pop-in badge.
-/// Animates with a scale overshoot (easeOutBack) + fade-in on first build.
+/// Streak badge with optional previous→current delta (e.g. "4 → 5").
 class StreakBadge extends StatelessWidget {
-  const StreakBadge({super.key, required this.streak});
+  const StreakBadge({
+    super.key,
+    required this.streak,
+    this.previousStreak,
+  });
 
   final int streak;
+  final int? previousStreak;
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
+    final showDelta =
+        previousStreak != null && previousStreak! >= 0 && previousStreak! < streak;
+    final streakLabel = showDelta ? '$previousStreak → $streak' : '$streak';
 
     return RepaintBoundary(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Glowing checkmark circle
           Container(
             width: 80,
             height: 80,
@@ -54,14 +60,14 @@ class StreakBadge extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Streak counter
           Text.rich(
             TextSpan(
-              style: tt.hudRepCounter.copyWith(fontSize: 56),
-              children: const [
-                TextSpan(
+              style: tt.hudRepCounter.copyWith(fontSize: 48),
+              children: [
+                TextSpan(text: streakLabel),
+                const TextSpan(
                   text: ' 🔥',
-                  style: TextStyle(color: AppColors.success),
+                  style: TextStyle(color: AppColors.success, fontSize: 36),
                 ),
               ],
             ),

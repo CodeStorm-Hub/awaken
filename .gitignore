@@ -33,6 +33,10 @@ coverage/
 # Exclude the example env file so a template remains in source control
 !.env.example
 
+# Firebase / FCM service-account keys (never commit)
+**/firebase-adminsdk*.json
+**/service-account*.json
+
 # -----------------------------------------------------------------------------
 # Platform Specifics
 # -----------------------------------------------------------------------------

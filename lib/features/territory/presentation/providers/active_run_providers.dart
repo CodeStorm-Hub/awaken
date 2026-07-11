@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/features/territory/data/datasources/pending_capture_queue.dart';
+import 'package:awaken/features/territory/domain/entities/bounty_zone_entity.dart';
 import 'package:awaken/features/territory/domain/entities/capture_result_entity.dart';
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
 import 'package:awaken/features/territory/domain/entities/loop_segment_entity.dart';
 import 'package:awaken/features/territory/domain/entities/run_track_entity.dart';
+import 'package:awaken/features/territory/domain/services/bounty_capture_service.dart';
+import 'package:awaken/features/territory/domain/services/explored_cells_sync_service.dart';
 import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 import 'package:awaken/features/territory/domain/services/gps_kalman_filter.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
@@ -17,9 +20,18 @@ import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-enum RunSessionStatus { idle, requestingPermission, tracking, finishing, finished, error }
+enum RunSessionStatus {
+  idle,
+  requestingPermission,
+  tracking,
+  paused,
+  finishing,
+  finished,
+  error,
+}
 
 /// Coarse bucketing of `Position.accuracy` (meters) for the run HUD's GPS
 /// quality chip. Thresholds are typical of consumer GPS/GNSS fixes, not tied
@@ -124,6 +136,8 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   DateTime? _startTime;
   bool _sawSustainedOverSpeed = false;
   LoopClosureTracker? _loopTracker;
+  DateTime? _stationarySince;
+  Duration _pausedAccumulated = Duration.zero;
 
   @override
   ActiveRunState build() {
@@ -151,13 +165,22 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     _sawSustainedOverSpeed = false;
     _loopTracker = LoopClosureTracker();
     _startTime = clock.now();
+    _pausedAccumulated = Duration.zero;
+    _stationarySince = null;
     ref.read(territoryRunGpsKeepAliveProvider.notifier).state = true;
     ref.read(runOwnsHighAccuracyGpsProvider.notifier).state = true;
     state = const ActiveRunState(status: RunSessionStatus.tracking);
 
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_startTime == null) return;
-      state = state.copyWith(elapsed: clock.now().difference(_startTime!));
+      if (state.status == RunSessionStatus.paused) {
+        _pausedAccumulated += const Duration(seconds: 1);
+        return;
+      }
+      if (state.status != RunSessionStatus.tracking) return;
+      state = state.copyWith(
+        elapsed: clock.now().difference(_startTime!) - _pausedAccumulated,
+      );
     });
 
     _positionSubscription = Geolocator.getPositionStream(
@@ -206,7 +229,42 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   }
 
   void _onPosition(Position position) {
-    if (state.status != RunSessionStatus.tracking) return;
+    if (state.status != RunSessionStatus.tracking &&
+        state.status != RunSessionStatus.paused) {
+      return;
+    }
+
+    final speed = position.speed.isNaN ? 0.0 : position.speed;
+    final candidate = GeoPointEntity(
+      latitude: position.latitude,
+      longitude: position.longitude,
+      timestamp: position.timestamp,
+    );
+    final last = state.points.isEmpty ? null : state.points.last;
+    final movedMeters = last == null
+        ? double.infinity
+        : GeoUtils.haversineMeters(last, candidate);
+    // Prefer displacement over GPS speed — many devices report speed 0 on
+    // walking fixes, which would false-trigger traffic grace.
+    const stationaryRadiusMeters = 2.5;
+    final looksStationary = movedMeters <= stationaryRadiusMeters &&
+        speed <= AppConstants.runGracePauseSpeedMps;
+
+    if (state.status == RunSessionStatus.tracking && looksStationary) {
+      _stationarySince ??= clock.now();
+      if (clock.now().difference(_stationarySince!) >=
+          AppConstants.runGracePauseDelay) {
+        pauseRun(auto: true);
+        return;
+      }
+    } else if (!looksStationary) {
+      _stationarySince = null;
+    }
+
+    if (state.status == RunSessionStatus.paused) {
+      if (looksStationary) return;
+      resumeRun();
+    }
 
     final (smoothedLat, smoothedLng) = _kalmanFilter.filter(
       position.latitude,
@@ -250,6 +308,18 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     );
   }
 
+  void pauseRun({bool auto = false}) {
+    if (state.status != RunSessionStatus.tracking) return;
+    _stationarySince = null;
+    state = state.copyWith(status: RunSessionStatus.paused);
+  }
+
+  void resumeRun() {
+    if (state.status != RunSessionStatus.paused) return;
+    _stationarySince = null;
+    state = state.copyWith(status: RunSessionStatus.tracking);
+  }
+
   /// Stops tracking, classifies the run, records it, and — if valid loop
   /// segments were detected — calls capture RPC for each. Always persists the
   /// run (closed or not) per Story #2's "counts as a normal workout" rule.
@@ -257,9 +327,10 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     _positionSubscription?.cancel();
     _tickTimer?.cancel();
     ref.read(runOwnsHighAccuracyGpsProvider.notifier).state = false;
-    if (state.status != RunSessionStatus.tracking) return;
-
-    state = state.copyWith(status: RunSessionStatus.finishing);
+    if (state.status != RunSessionStatus.tracking &&
+        state.status != RunSessionStatus.paused) {
+      return;
+    }
 
     final rawPoints = state.points;
     final simplifiedFullPath = rawPoints.length < 3
@@ -315,12 +386,42 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
               ? RunOutcome.invalidatedTooSmall
               : RunOutcome.loopNotClosed;
         } else {
+          final zones =
+              await ref.read(bountyZonesProvider.future).catchError(
+                    (_) => const <BountyZoneEntity>[],
+                  );
+          final bounty = BountyCaptureService.evaluate(
+            loops: [
+              for (final segment in loopSegments) segment.points,
+            ],
+            zones: zones,
+          );
           sessionCaptureResult = SessionCaptureResultEntity(
             captures: captureResults,
             loopsCaptured: captureResults.length,
             loopsAttempted: loopSegments.length,
             loopsRejectedTooSmall: rejectedTooSmall,
+            bountyMultiplier: bounty?.multiplier ?? 1.0,
+            bountyLabel: bounty?.label,
           );
+          if (bounty != null) {
+            try {
+              await SharedPreferences.getInstance().then((prefs) async {
+                await prefs.setString(
+                  'awaken_last_bounty_badge',
+                  '${bounty.label}|${bounty.multiplier}|${DateTime.now().toIso8601String()}',
+                );
+              });
+              final userId = Supabase.instance.client.auth.currentUser?.id;
+              if (userId != null) {
+                await Supabase.instance.client.from('bounty_claims').insert({
+                  'user_id': userId,
+                  'label': bounty.label,
+                  'multiplier': bounty.multiplier,
+                });
+              }
+            } on Object catch (_) {}
+          }
         }
       }
 
@@ -339,6 +440,18 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
         outcome: outcome,
       );
       await repo.recordRun(run);
+
+      // Chart fog grid from this run's path (best-effort; never block finish).
+      unawaited(() async {
+        try {
+          final fogStore = ref.read(exploredCellsStoreProvider);
+          await fogStore.revealPath(simplifiedFullPath);
+          ref.read(exploredCellsVersionProvider.notifier).state++;
+          await ExploredCellsSyncService.push(fogStore);
+        } on Object catch (_) {
+          // Fog is best-effort.
+        }
+      }());
 
       state = state.copyWith(
         status: RunSessionStatus.finished,

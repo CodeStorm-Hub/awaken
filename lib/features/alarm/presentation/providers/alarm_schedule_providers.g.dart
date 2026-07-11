@@ -44,7 +44,7 @@ final nextAlarmProvider = Provider<AlarmEntity?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef NextAlarmRef = ProviderRef<AlarmEntity?>;
-String _$alarmListHash() => r'576c6b3e1fa2b67f9f651b5d6641e15eabf58c2b';
+String _$alarmListHash() => r'dcbfe23a1c74c2450c1654db1b1b9632cfa9fa09';
 
 /// See also [AlarmList].
 @ProviderFor(AlarmList)

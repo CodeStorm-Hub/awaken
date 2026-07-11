@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:awaken/core/constants/app_constants.dart';
@@ -13,10 +14,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Rich, non-auto-dismissing result surface shown after a run claims (or
-/// steals) territory — replaces the plain `_ResultBanner` for successful
-/// captures specifically, since a claim/steal is the feature's core payoff
-/// moment and deserves more than five seconds of small text.
-class CaptureResultSheet extends StatelessWidget {
+/// steals) territory — opens with a cinematic flyover, then reveals stats.
+class CaptureResultSheet extends StatefulWidget {
   const CaptureResultSheet({
     super.key,
     required this.sessionCaptureResult,
@@ -43,10 +42,112 @@ class CaptureResultSheet extends StatelessWidget {
   }
 
   @override
+  State<CaptureResultSheet> createState() => _CaptureResultSheetState();
+}
+
+class _CaptureResultSheetState extends State<CaptureResultSheet>
+    with TickerProviderStateMixin {
+  late final MapController _mapController;
+  late final AnimationController _fillCtrl;
+  late final AnimationController _revealCtrl;
+  bool _showStats = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+    _fillCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    );
+    _revealCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _runFlyover());
+  }
+
+  Future<void> _runFlyover() async {
+    if (!mounted || widget.runPoints.length < 3) {
+      setState(() => _showStats = true);
+      _revealCtrl.forward();
+      return;
+    }
+
+    final latLngPoints = widget.runPoints
+        .map((p) => LatLng(p.latitude, p.longitude))
+        .toList();
+    final bounds = LatLngBounds.fromPoints(latLngPoints);
+
+    try {
+      // Start high / wide — "approach from altitude".
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(72),
+        ),
+      );
+    } catch (_) {
+      // Map may not be ready yet — continue to pulse/stats.
+    }
+
+    if (!mounted) return;
+    unawaited(_fillCtrl.forward());
+
+    final mid = bounds.center;
+    final wideZoom = _mapController.camera.zoom;
+    final diveZoom = (wideZoom + 1.15).clamp(
+      AppConstants.territoryMapMinZoom,
+      AppConstants.territoryMapMaxZoom,
+    );
+    final cruiseZoom = (wideZoom + 0.55).clamp(
+      AppConstants.territoryMapMinZoom,
+      AppConstants.territoryMapMaxZoom,
+    );
+
+    // Waypoints along the claim path for a longer cinematic beat.
+    final n = latLngPoints.length;
+    final legs = <LatLng>[
+      latLngPoints[0],
+      latLngPoints[n ~/ 4],
+      latLngPoints[n ~/ 2],
+      latLngPoints[(3 * n) ~/ 4],
+      mid,
+    ];
+
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+    // Dive in.
+    _mapController.move(legs[0], diveZoom);
+    await Future<void>.delayed(const Duration(milliseconds: 480));
+    if (!mounted) return;
+    for (var i = 1; i < legs.length - 1; i++) {
+      _mapController.move(legs[i], cruiseZoom);
+      await Future<void>.delayed(const Duration(milliseconds: 420));
+      if (!mounted) return;
+    }
+    // Pull back to framed claim.
+    _mapController.move(mid, wideZoom);
+    await Future<void>.delayed(const Duration(milliseconds: 520));
+    if (!mounted) return;
+
+    setState(() => _showStats = true);
+    await _revealCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _fillCtrl.dispose();
+    _revealCtrl.dispose();
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final stole = sessionCaptureResult.stoleFromRival;
+    final stole = widget.sessionCaptureResult.stoleFromRival;
     final accent = stole ? AppColors.destructive : AppColors.success;
-    final loopCount = sessionCaptureResult.loopsCaptured;
+    final loopCount = widget.sessionCaptureResult.loopsCaptured;
     final title = stole
         ? 'Territory stolen!'
         : loopCount > 1
@@ -78,120 +179,204 @@ class CaptureResultSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Icon(
-                  stole ? Icons.flash_on_rounded : Icons.flag_rounded,
-                  color: accent,
-                  size: 36,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: AppColors.foreground,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 22,
-                    shadows: [Shadow(color: accent, blurRadius: 18)],
-                  ),
-                ),
-                if (stole) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    sessionCaptureResult.totalRivalsAffected == 1
-                        ? 'Cut into 1 rival territory'
-                        : 'Cut into ${sessionCaptureResult.totalRivalsAffected} rival territories',
-                    style: const TextStyle(
-                      color: AppColors.mutedForeground,
-                      fontSize: 13,
-                    ),
-                  ),
-                ] else if (sessionCaptureResult.hasPartialFailure) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '${sessionCaptureResult.loopsRejectedTooSmall} loop(s) too small to claim',
-                    style: const TextStyle(
-                      color: AppColors.mutedForeground,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                if (runPoints.length >= 3)
+                const SizedBox(height: 16),
+                if (widget.runPoints.length >= 3)
                   ClipRRect(
                     borderRadius:
                         BorderRadius.circular(AppConstants.borderRadius),
                     child: SizedBox(
-                      height: 160,
+                      height: _showStats ? 160 : 240,
                       width: double.infinity,
-                      child: _CaptureMinimap(
-                        points: runPoints,
-                        accent: accent,
+                      child: AnimatedBuilder(
+                        animation: _fillCtrl,
+                        builder: (context, _) {
+                          final t = Curves.easeInOutCubic.transform(
+                            _fillCtrl.value,
+                          );
+                          // Fake 3D: pitch + scale as the camera "dives".
+                          final dive = t < 0.45
+                              ? (t / 0.45)
+                              : (1.0 - ((t - 0.45) / 0.55) * 0.4);
+                          final peak = t < 0.55
+                              ? (t / 0.55)
+                              : (1.0 - ((t - 0.55) / 0.45) * 0.35);
+                          return Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.identity()
+                              ..setEntry(3, 2, 0.0014)
+                              ..rotateX(-0.18 * dive),
+                            child: Transform.scale(
+                              scale: 1.0 + dive * 0.08,
+                              child: _CaptureFlyoverMap(
+                              controller: _mapController,
+                              points: widget.runPoints,
+                              accent: accent,
+                              fillAlpha: 0.12 + peak * 0.38,
+                              trailProgress: t,
+                            ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatBlock(
-                        label: loopCount > 1 ? 'Claimed (total)' : 'Claimed',
-                        value:
-                            '${sessionCaptureResult.totalClaimedAreaSqMeters.toStringAsFixed(0)} m²',
-                        valueColor: accent,
-                      ),
-                    ),
-                    Expanded(
-                      child: _StatBlock(
-                        label: 'Total owned',
-                        value:
-                            '${sessionCaptureResult.totalOwnedAreaSqMeters.toStringAsFixed(0)} m²',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _shareResult(context),
-                        icon: const Icon(Icons.ios_share_rounded, size: 18),
-                        label: const Text('Share'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.foreground,
-                          side: const BorderSide(color: AppColors.border),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppConstants.chipRadius,
+                if (_showStats) ...[
+                  SizeTransition(
+                    sizeFactor: _revealCtrl,
+                    child: FadeTransition(
+                      opacity: _revealCtrl,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 16),
+                          Icon(
+                            stole
+                                ? Icons.flash_on_rounded
+                                : Icons.flag_rounded,
+                            color: accent,
+                            size: 36,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: AppColors.foreground,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 22,
+                              shadows: [Shadow(color: accent, blurRadius: 18)],
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          context.push(AppRoutes.leaderboard);
-                        },
-                        icon: const Icon(Icons.leaderboard_rounded, size: 18),
-                        label: const Text('Leaderboard'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accent,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppConstants.chipRadius,
+                          if (stole) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.sessionCaptureResult.totalRivalsAffected ==
+                                      1
+                                  ? 'Cut into 1 rival territory'
+                                  : 'Cut into ${widget.sessionCaptureResult.totalRivalsAffected} rival territories',
+                              style: const TextStyle(
+                                color: AppColors.mutedForeground,
+                                fontSize: 13,
+                              ),
                             ),
+                          ] else if (widget
+                              .sessionCaptureResult.hasPartialFailure) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '${widget.sessionCaptureResult.loopsRejectedTooSmall} loop(s) too small to claim',
+                              style: const TextStyle(
+                                color: AppColors.mutedForeground,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                          if (widget.sessionCaptureResult.hitBounty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.chipRadius,
+                                ),
+                                border: Border.all(color: AppColors.accent),
+                              ),
+                              child: Text(
+                                'BOUNTY · ${widget.sessionCaptureResult.bountyLabel} · ${widget.sessionCaptureResult.bountyMultiplier.toStringAsFixed(1)}×',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: AppColors.accent,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatBlock(
+                                  label: loopCount > 1
+                                      ? 'Claimed (total)'
+                                      : 'Claimed',
+                                  value:
+                                      '${widget.sessionCaptureResult.totalClaimedAreaSqMeters.toStringAsFixed(0)} m²',
+                                  valueColor: accent,
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatBlock(
+                                  label: 'Total owned',
+                                  value:
+                                      '${widget.sessionCaptureResult.totalOwnedAreaSqMeters.toStringAsFixed(0)} m²',
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _shareResult(context),
+                                  icon: const Icon(
+                                    Icons.ios_share_rounded,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Share'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.foreground,
+                                    side: const BorderSide(
+                                      color: AppColors.border,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppConstants.chipRadius,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    context.push(AppRoutes.leaderboard);
+                                  },
+                                  icon: const Icon(
+                                    Icons.leaderboard_rounded,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Leaderboard'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: accent,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppConstants.chipRadius,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -201,10 +386,11 @@ class CaptureResultSheet extends StatelessWidget {
   }
 
   void _shareResult(BuildContext context) {
-    final area = sessionCaptureResult.totalClaimedAreaSqMeters.toStringAsFixed(0);
-    final text = sessionCaptureResult.stoleFromRival
-        ? 'I just stole $area m² of territory on Awaken! 🏃⚔️'
-        : 'I just claimed $area m² of territory on Awaken! 🏃🚩';
+    final area = widget.sessionCaptureResult.totalClaimedAreaSqMeters
+        .toStringAsFixed(0);
+    final text = widget.sessionCaptureResult.stoleFromRival
+        ? 'I just stole $area m² of territory on Awaken!'
+        : 'I just claimed $area m² of territory on Awaken!';
     SharePlus.instance.share(ShareParams(text: text));
   }
 }
@@ -244,25 +430,37 @@ class _StatBlock extends StatelessWidget {
   }
 }
 
-/// Small, non-interactive map thumbnail zoomed to the just-completed loop.
-/// Reuses the same branded vector basemap as the run screen rather than a
-/// static image export, so it stays visually consistent and needs no extra
-/// image-rendering dependency.
-class _CaptureMinimap extends StatelessWidget {
-  const _CaptureMinimap({required this.points, required this.accent});
+class _CaptureFlyoverMap extends StatelessWidget {
+  const _CaptureFlyoverMap({
+    required this.controller,
+    required this.points,
+    required this.accent,
+    required this.fillAlpha,
+    this.trailProgress = 1,
+  });
 
+  final MapController controller;
   final List<GeoPointEntity> points;
   final Color accent;
+  final double fillAlpha;
+  final double trailProgress;
 
   @override
   Widget build(BuildContext context) {
     final latLngPoints =
         points.map((p) => LatLng(p.latitude, p.longitude)).toList();
     final bounds = LatLngBounds.fromPoints(latLngPoints);
+    final trailEnd =
+        (latLngPoints.length * trailProgress.clamp(0.0, 1.0)).ceil().clamp(
+              2,
+              latLngPoints.length,
+            );
+    final trail = latLngPoints.sublist(0, trailEnd);
 
     return IgnorePointer(
       child: FlutterMap(
         key: territoryCaptureMinimapKey,
+        mapController: controller,
         options: MapOptions(
           backgroundColor: AppColors.background,
           initialCameraFit: CameraFit.bounds(
@@ -281,9 +479,18 @@ class _CaptureMinimap extends StatelessWidget {
             polygons: [
               Polygon(
                 points: latLngPoints,
-                color: accent.withValues(alpha: 0.22),
+                color: accent.withValues(alpha: fillAlpha),
                 borderColor: accent,
                 borderStrokeWidth: 3,
+              ),
+            ],
+          ),
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: trail,
+                color: accent.withValues(alpha: 0.9),
+                strokeWidth: 3.5,
               ),
             ],
           ),

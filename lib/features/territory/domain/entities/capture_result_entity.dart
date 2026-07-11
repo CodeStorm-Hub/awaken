@@ -27,12 +27,18 @@ class SessionCaptureResultEntity {
     required this.loopsCaptured,
     required this.loopsAttempted,
     required this.loopsRejectedTooSmall,
+    this.bountyMultiplier = 1.0,
+    this.bountyLabel,
   });
 
   final List<CaptureResultEntity> captures;
   final int loopsCaptured;
   final int loopsAttempted;
   final int loopsRejectedTooSmall;
+
+  /// >1 when a bounty zone was enclosed by a captured loop.
+  final double bountyMultiplier;
+  final String? bountyLabel;
 
   double get totalClaimedAreaSqMeters =>
       captures.fold(0.0, (sum, c) => sum + c.claimedAreaSqMeters);
@@ -47,4 +53,6 @@ class SessionCaptureResultEntity {
 
   bool get hasPartialFailure =>
       loopsRejectedTooSmall > 0 && loopsCaptured > 0;
+
+  bool get hitBounty => bountyMultiplier > 1.0 && bountyLabel != null;
 }

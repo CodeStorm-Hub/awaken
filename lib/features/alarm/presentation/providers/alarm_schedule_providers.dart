@@ -66,7 +66,7 @@ class AlarmList extends _$AlarmList {
   }
 
   Future<void> markCompleted(AlarmEntity alarm) async {
-    final updated = alarm.copyWith(isActive: false);
+    final updated = alarm.copyWith(isActive: false, penaltyMultiplier: 1);
     final repo = ref.read(alarmRepositoryProvider);
     await repo.saveAlarm(updated);
     try {

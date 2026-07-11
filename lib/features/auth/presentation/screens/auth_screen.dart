@@ -85,9 +85,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           if (currentUser == null) {
             // Email confirmation is likely enabled
             setState(() {
-              _error = 'Sign up successful! Please check your email to confirm registration.';
+              _error =
+                  'Sign up successful! Please check your email to confirm registration.';
               _loading = false;
             });
+          } else {
+            setState(() => _loading = false);
+            context.go(AppRoutes.dashboard);
           }
         }
       } else {

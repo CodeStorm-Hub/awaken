@@ -5,14 +5,16 @@ import 'package:flutter/material.dart';
 /// Joint positions are normalized (0.0–1.0) representing a squatting pose.
 /// Phase 4: replace [_staticJoints] with live ML Kit PoseLandmark data.
 class SkeletonWireframe extends StatelessWidget {
-  const SkeletonWireframe({super.key});
+  const SkeletonWireframe({super.key, this.accentColor});
+
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: IgnorePointer(
         child: CustomPaint(
-          painter: _SkeletonPainter(),
+          painter: _SkeletonPainter(accent: accentColor ?? AppColors.primary),
           child: const SizedBox.expand(),
         ),
       ),
@@ -21,6 +23,10 @@ class SkeletonWireframe extends StatelessWidget {
 }
 
 class _SkeletonPainter extends CustomPainter {
+  _SkeletonPainter({required this.accent});
+
+  final Color accent;
+
   // Normalized joint positions (x, y) in a partial squat
   static const Map<String, Offset> _joints = {
     'head': Offset(0.50, 0.10),
@@ -64,23 +70,23 @@ class _SkeletonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final glowLinePaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.25)
+      ..color = accent.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
     final sharpLinePaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.75)
+      ..color = accent.withValues(alpha: 0.75)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
     final jointGlowPaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.3)
+      ..color = accent.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
 
-    final jointSolidPaint = Paint()..color = AppColors.primary;
+    final jointSolidPaint = Paint()..color = accent;
 
     // ── Lines ──────────────────────────────────────────────────────
     for (final (from, to) in _connections) {
@@ -100,5 +106,5 @@ class _SkeletonPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SkeletonPainter old) => false;
+  bool shouldRepaint(_SkeletonPainter old) => old.accent != accent;
 }

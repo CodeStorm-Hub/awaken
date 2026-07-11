@@ -67,6 +67,15 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
     return List.unmodifiable(_cachedTerritories!);
   }
 
+  /// Removes guest-owned territories after a successful cloud migration.
+  Future<void> clearOwnedLocalTerritories() async {
+    await _ensureLoaded();
+    _cachedTerritories!.removeWhere(
+      (t) => t.userId == _currentUserId || t.isOwnedByCurrentUser,
+    );
+    await _save();
+  }
+
   @override
   Stream<List<TerritoryEntity>> watchTerritories() {
     Timer.run(() async {

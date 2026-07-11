@@ -2,15 +2,19 @@ import 'dart:async';
 
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
+import 'package:awaken/features/territory/data/datasources/explored_cells_store.dart';
 import 'package:awaken/features/territory/data/datasources/pending_capture_queue.dart';
 import 'package:awaken/features/territory/data/datasources/territory_supabase_datasource.dart';
 import 'package:awaken/features/territory/data/repositories/territory_local_repository_impl.dart';
 import 'package:awaken/features/territory/data/repositories/territory_supabase_repository_impl.dart';
+import 'package:awaken/features/territory/domain/entities/bounty_zone_entity.dart';
 import 'package:awaken/features/territory/domain/entities/decay_warning_entity.dart';
 import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart';
 import 'package:awaken/features/territory/domain/entities/leaderboard_entry_entity.dart';
+import 'package:awaken/features/territory/domain/entities/nemesis_entity.dart';
 import 'package:awaken/features/territory/domain/entities/territory_entity.dart';
 import 'package:awaken/features/territory/domain/repositories/territory_repository.dart';
+import 'package:awaken/features/territory/domain/services/explored_cells_sync_service.dart';
 import 'package:awaken/features/territory/domain/services/location_fix_service.dart';
 import 'package:awaken/features/territory/domain/services/location_permission_helper.dart';
 import 'package:awaken/features/territory/presentation/widgets/territory_map_style.dart';
@@ -19,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vector_map_tiles/vector_map_tiles.dart' show Style;
 
 part 'territory_providers.g.dart';
@@ -257,6 +262,24 @@ class MapEngineNotifier extends _$MapEngineNotifier {
 
 final mapEngineProvider = mapEngineNotifierProvider;
 
+/// Fog-of-war toggle (default on). Persisted for the session via StateProvider.
+final fogOfWarEnabledProvider = StateProvider<bool>((ref) => true);
+
+/// Shared explored-cell store for fog mask + path reveal.
+final exploredCellsStoreProvider = Provider<ExploredCellsStore>((ref) {
+  final store = ExploredCellsStore();
+  // Bump the version counter after load so the fog layer rebuilds once the
+  // persisted cells are in memory.
+  store.load().then((_) {
+    // ignore: avoid_manual_providers_as_generated_provider_dependency
+    ref.read(exploredCellsVersionProvider.notifier).state++;
+  });
+  return store;
+});
+
+/// Bumped whenever explored cells change so fog layers rebuild.
+final exploredCellsVersionProvider = StateProvider<int>((ref) => 0);
+
 /// Set by the leaderboard's "tap to locate" action.
 @riverpod
 class TerritoryMapFocusNotifier extends _$TerritoryMapFocusNotifier {
@@ -291,17 +314,67 @@ final captureSyncOnSignInProvider = Provider<void>((ref) {
       if (state.session == null) return;
       const queue = PendingCaptureQueue();
       final pending = await queue.peek();
-      if (pending.isEmpty) return;
-
-      final repo = ref.read(territoryRepositoryProvider);
-      for (final item in pending) {
-        try {
-          await repo.captureTerritory(item.points);
-          await queue.remove(item.id);
-        } catch (e) {
-          debugPrint('[CaptureQueue] sign-in flush failed for ${item.id}: $e');
+      if (pending.isNotEmpty) {
+        final repo = ref.read(territoryRepositoryProvider);
+        for (final item in pending) {
+          try {
+            await repo.captureTerritory(item.points);
+            await queue.remove(item.id);
+          } catch (e) {
+            debugPrint('[CaptureQueue] sign-in flush failed for ${item.id}: $e');
+          }
         }
+      }
+
+      // Merge cloud fog cells into the local store.
+      try {
+        final store = ref.read(exploredCellsStoreProvider);
+        await ExploredCellsSyncService.pullInto(store);
+        await ExploredCellsSyncService.push(store);
+        ref.read(exploredCellsVersionProvider.notifier).state++;
+      } catch (e) {
+        debugPrint('[FogSync] sign-in merge failed: $e');
       }
     });
   });
+});
+
+/// Active bounty zones — calls the `list_active_bounty_zones` RPC and parses
+/// the GeoJSON polygon rings. Returns an empty list when the call fails so
+/// the map layer degrades gracefully.
+final bountyZonesProvider = FutureProvider<List<BountyZoneEntity>>((ref) async {
+  final signedIn = ref.watch(isSignedInProvider);
+  if (!signedIn) return const [];
+
+  try {
+    final rows = await Supabase.instance.client
+        .rpc<List<dynamic>>('list_active_bounty_zones');
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>)
+          BountyZoneEntity.fromRpc(row),
+    ];
+  } catch (e) {
+    debugPrint('[bountyZonesProvider] RPC failed: $e');
+    return const [];
+  }
+});
+
+/// The current user's nemesis — the rival with the most mutual territory
+/// disputes. Returns null when the user has no nemesis yet or is not signed in.
+final nemesisProvider = FutureProvider<NemesisEntity?>((ref) async {
+  final signedIn = ref.watch(isSignedInProvider);
+  if (!signedIn) return null;
+
+  try {
+    final rows = await Supabase.instance.client
+        .rpc<List<dynamic>>('get_nemesis');
+    if (rows.isEmpty) return null;
+    final first = rows.first;
+    if (first is! Map<String, dynamic>) return null;
+    return NemesisEntity.fromRpc(first);
+  } catch (e) {
+    debugPrint('[nemesisProvider] RPC failed: $e');
+    return null;
+  }
 });

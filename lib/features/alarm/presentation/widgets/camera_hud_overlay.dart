@@ -1,3 +1,4 @@
+import 'package:awaken/core/theme/hud_theme.dart';
 import 'package:awaken/features/alarm/presentation/widgets/pose_overlay_painter.dart';
 import 'package:awaken/features/alarm/presentation/widgets/scan_line_animation.dart';
 import 'package:awaken/features/alarm/presentation/widgets/skeleton_wireframe.dart';
@@ -6,12 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 /// Full-screen HUD compositing camera + pose overlay + scan line.
-///
-/// Layer order (bottom → top):
-///   1. Camera preview (black box while initialising / no permission)
-///   2. Radial vignette
-///   3. Live pose skeleton (or static wireframe when ML Kit hasn't fired yet)
-///   4. Scan line animation
 class CameraHudOverlay extends StatelessWidget {
   const CameraHudOverlay({
     super.key,
@@ -32,13 +27,12 @@ class CameraHudOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hud = Theme.of(context).extension<HudTheme>() ?? HudTheme.cyan;
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ── Layer 1: Camera or black placeholder ──────────────────────
         _CameraLayer(controller: cameraController),
-
-        // ── Layer 2: Vignette ─────────────────────────────────────────
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: RadialGradient(
@@ -51,8 +45,15 @@ class CameraHudOverlay extends StatelessWidget {
             ),
           ),
         ),
-
-        // ── Layer 3: Live skeleton or static fallback ─────────────────
+        // Theme-tinted edge vignette
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: hud.primary.withValues(alpha: 0.18),
+              width: 2,
+            ),
+          ),
+        ),
         if (pose != null && imageSize != null && rotation != null)
           RepaintBoundary(
             child: CustomPaint(
@@ -63,20 +64,19 @@ class CameraHudOverlay extends StatelessWidget {
                 rotation: rotation!,
                 isSquatting: isSquatting,
                 isFrontCamera: isFrontCamera,
+                accentColor: hud.primary,
               ),
             ),
           )
         else
-          const SkeletonWireframe(),
-
-        // ── Layer 4: Scan line ────────────────────────────────────────
-        const RepaintBoundary(child: ScanLineAnimation()),
+          SkeletonWireframe(accentColor: hud.primary),
+        RepaintBoundary(
+          child: ScanLineAnimation(accentColor: hud.primary),
+        ),
       ],
     );
   }
 }
-
-// ── Private camera layer ────────────────────────────────────────────────────
 
 class _CameraLayer extends StatelessWidget {
   const _CameraLayer({required this.controller});
@@ -89,8 +89,6 @@ class _CameraLayer extends StatelessWidget {
       return const ColoredBox(color: Colors.black);
     }
 
-    // Cover-fill by treating previewSize in portrait terms.
-    // previewSize is reported in sensor-native (landscape) orientation so swap w/h.
     final preview = controller!.value.previewSize;
     if (preview == null) return CameraPreview(controller!);
 
@@ -98,7 +96,7 @@ class _CameraLayer extends StatelessWidget {
       child: FittedBox(
         fit: BoxFit.cover,
         child: SizedBox(
-          width: preview.height, // swapped: sensor orientation is landscape
+          width: preview.height,
           height: preview.width,
           child: CameraPreview(controller!),
         ),

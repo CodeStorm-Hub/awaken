@@ -22,6 +22,10 @@ class TerritoryOverviewScreen extends ConsumerWidget {
     final hud = Theme.of(context).extension<AwakenTypography>()!;
     final territoriesAsync = ref.watch(territoryListProvider);
     final decayWarningsAsync = ref.watch(decayWarningsProvider);
+    final fogEnabled = ref.watch(fogOfWarEnabledProvider);
+    ref.watch(exploredCellsVersionProvider);
+    final store = ref.watch(exploredCellsStoreProvider);
+    final exploredEmpty = store.isEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -31,6 +35,31 @@ class TerritoryOverviewScreen extends ConsumerWidget {
         title: Text('MY TERRITORY', style: hud.eyebrow),
         centerTitle: true,
         actions: [
+          // Fog-of-war toggle
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: TextButton(
+              onPressed: () {
+                ref.read(fogOfWarEnabledProvider.notifier).state = !fogEnabled;
+              },
+              style: TextButton.styleFrom(
+                foregroundColor:
+                    fogEnabled ? AppColors.primary : AppColors.mutedForeground,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                fogEnabled ? 'FOG ON' : 'FOG OFF',
+                style: hud.eyebrow.copyWith(
+                  fontSize: 10,
+                  color: fogEnabled
+                      ? AppColors.primary
+                      : AppColors.mutedForeground,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded,
                 color: AppColors.mutedForeground, size: 20),
@@ -62,6 +91,42 @@ class TerritoryOverviewScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
+            // ── Fog empty-state hint ───────────────────────────────────
+            if (fogEnabled && exploredEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.borderRadius),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.cloud_outlined,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Run to chart the grid.',
+                          style: hud.statLabel.copyWith(
+                            fontSize: 13,
+                            color: AppColors.mutedForeground,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Text('DECAY RISK', style: hud.eyebrow),
             const SizedBox(height: 4),
             const Text(

@@ -2,8 +2,12 @@ import 'dart:async';
 
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
+import 'package:awaken/core/services/turf_hit_realtime_service.dart';
 import 'package:awaken/core/theme/app_theme.dart';
 import 'package:awaken/core/theme/app_typography.dart';
+import 'package:awaken/features/alarm/domain/services/alarm_bailout_service.dart';
+import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
+import 'package:awaken/features/dashboard/presentation/providers/hud_theme_providers.dart';
 import 'package:awaken/features/sessions/presentation/providers/session_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
@@ -38,7 +42,17 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
       unawaited(
         ref.read(activeRunProvider.notifier).flushPendingCaptures(),
       );
+      unawaited(_applyBailouts());
       unawaited(_navigatePendingAlarmRoute());
+    }
+  }
+
+  Future<void> _applyBailouts() async {
+    final applied = await const AlarmBailoutService().applyBailoutPenalties(
+      repository: ref.read(alarmRepositoryProvider),
+    );
+    if (applied > 0) {
+      ref.invalidate(alarmListProvider);
     }
   }
 
@@ -52,8 +66,10 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
   Widget build(BuildContext context) {
     ref.watch(sessionSyncOnSignInProvider);
     ref.watch(captureSyncOnSignInProvider);
+    ref.watch(turfHitRealtimeProvider);
 
     final router = ref.watch(appRouterProvider);
+    final hudTheme = ref.watch(activeHudThemeProvider);
 
     return MaterialApp.router(
       title: 'Awaken',
@@ -62,9 +78,13 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
       // Forced dark — no light theme, no system override
       themeMode: ThemeMode.dark,
       darkTheme: AppTheme.dark.copyWith(
-        // Inject AwakenTypography so every descendant can call:
-        // Theme.of(context).extension<AwakenTypography>()!
-        extensions: <ThemeExtension<dynamic>>[AppTypography.extension],
+        // Inject AwakenTypography and the active HudTheme so every descendant
+        // can call:  Theme.of(context).extension<AwakenTypography>()!
+        //            Theme.of(context).extension<HudTheme>()!
+        extensions: <ThemeExtension<dynamic>>[
+          AppTypography.extension,
+          hudTheme,
+        ],
       ),
 
       routerConfig: router,

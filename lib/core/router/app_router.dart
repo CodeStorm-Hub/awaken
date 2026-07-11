@@ -240,8 +240,9 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
     }
 
     final status = ref.read(activeRunProvider).status;
-    final isTracking =
-        status == RunSessionStatus.tracking || status == RunSessionStatus.finishing;
+    final isTracking = status == RunSessionStatus.tracking ||
+        status == RunSessionStatus.paused ||
+        status == RunSessionStatus.finishing;
     if (isTracking) {
       final discard = await _confirmDiscardRun(context);
       if (!discard || !context.mounted) return;

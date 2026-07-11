@@ -4,7 +4,9 @@ import 'package:awaken/app.dart';
 import 'package:awaken/core/constants/supabase_config.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/alarm_notification_service.dart';
+import 'package:awaken/core/services/fcm_push_service.dart';
 import 'package:awaken/core/services/territory_decay_notification_service.dart';
+import 'package:awaken/core/services/turf_hit_notification_service.dart';
 import 'package:awaken/core/utils/expected_async_cancellation.dart';
 import 'package:awaken/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:flutter/material.dart';
@@ -97,4 +99,6 @@ void main() async {
 ///   notification channel; not needed until the dashboard surfaces decay warnings.
 Future<void> _deferNonCriticalStartup() async {
   await TerritoryDecayNotificationService.initialize();
+  await TurfHitNotificationService.initialize();
+  await FcmPushService.initialize();
 }

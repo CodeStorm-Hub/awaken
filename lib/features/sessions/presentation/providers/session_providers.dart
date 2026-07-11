@@ -7,6 +7,7 @@ import 'package:awaken/features/sessions/data/repositories/supabase_session_repo
 import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
 import 'package:awaken/features/sessions/domain/repositories/session_repository.dart';
 import 'package:awaken/features/sessions/domain/services/session_sync_service.dart';
+import 'package:awaken/features/territory/domain/services/territory_cloud_migration.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final pendingSessionQueueProvider = Provider<PendingSessionQueue>((ref) {
@@ -48,6 +49,10 @@ final sessionSyncOnSignInProvider = Provider<void>((ref) {
 
       try {
         await const AlarmCloudMigration().migrateLocalAlarmsToCloud();
+      } catch (_) {}
+
+      try {
+        await TerritoryCloudMigration().migrateLocalTerritoriesToCloud();
       } catch (_) {}
 
       final local = ref.read(localSessionRepositoryProvider);

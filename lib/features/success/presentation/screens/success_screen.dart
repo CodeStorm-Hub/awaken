@@ -3,6 +3,7 @@ import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
+import 'package:awaken/features/alarm/domain/services/alarm_bailout_service.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_providers.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
@@ -28,6 +29,8 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   late final int _repsCompleted;
   late final int _durationSeconds;
   late final int _caloriesBurned;
+  late final bool _usedAccessibilityMode;
+  late final int _streakBefore;
   bool _sessionRecorded = false;
   bool _isSaving = true;
 
@@ -35,6 +38,9 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   void initState() {
     super.initState();
     _repsCompleted = ref.read(repCountProvider);
+    _usedAccessibilityMode = ref.read(accessibilitySessionProvider);
+    _streakBefore =
+        ref.read(dashboardStatsProvider).valueOrNull?.currentStreak ?? 0;
     final startTime = ref.read(sessionStartTimeProvider);
     _durationSeconds =
         startTime != null ? DateTime.now().difference(startTime).inSeconds : 0;
@@ -66,6 +72,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
 
       if (widget.alarm != null) {
         await ref.read(alarmListProvider.notifier).markCompleted(widget.alarm!);
+        await const AlarmBailoutService().resolveForAlarm(widget.alarm!.id);
       }
 
       ref.invalidate(dashboardStatsProvider);
@@ -81,6 +88,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
     ref.read(repCountProvider.notifier).setCount(0);
     ref.read(repFeedbackProvider.notifier).setFeedback(RepFeedback.neutral);
     ref.read(sessionStartTimeProvider.notifier).setStartTime(null);
+    ref.read(accessibilitySessionProvider.notifier).setUsed(false);
     context.go(AppRoutes.dashboard);
   }
 
@@ -110,7 +118,22 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               if (_isSaving)
                 const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))
               else
-                StreakBadge(streak: currentStreak),
+                StreakBadge(
+                  streak: currentStreak,
+                  previousStreak: _streakBefore,
+                ),
+
+              if (_usedAccessibilityMode && !_isSaving) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Some reps were counted in accessibility mode',
+                  textAlign: TextAlign.center,
+                  style: tt.statLabel.copyWith(
+                    color: AppColors.mutedForeground,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 48),
 
