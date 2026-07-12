@@ -5,6 +5,7 @@ import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_prov
 import 'package:awaken/features/alarm/presentation/screens/active_alarm_screen.dart';
 import 'package:awaken/features/alarm/presentation/screens/alarm_setup_screen.dart';
 import 'package:awaken/features/auth/presentation/screens/auth_screen.dart';
+import 'package:awaken/features/auth/presentation/screens/profile_screen.dart';
 import 'package:awaken/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:awaken/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:awaken/features/success/presentation/screens/success_screen.dart';
@@ -27,6 +28,7 @@ abstract final class AppRoutes {
   static const String territoryOverview = '/territory/overview';
   static const String leaderboard = '/leaderboard';
   static const String auth = '/auth';
+  static const String profile = '/profile';
   static const String activeAlarm = '/alarm/active';
   static const String alarmSetup = '/alarm/setup';
   static const String success = '/alarm/success';
@@ -90,6 +92,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => AuthScreen(
           onSkip: () => navigatorKey.currentContext?.go(AppRoutes.dashboard),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: AppRoutes.activeAlarm,

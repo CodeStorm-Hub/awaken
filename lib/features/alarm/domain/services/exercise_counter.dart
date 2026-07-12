@@ -28,3 +28,23 @@ abstract class ExerciseCounter {
 
   void reset();
 }
+
+/// Exponential Moving Average filter to smooth micro-jitter of raw coordinates or metrics.
+class DoubleEMAFilter {
+  DoubleEMAFilter({required this.alpha});
+  final double alpha;
+  double? _currentValue;
+
+  double filter(double newValue) {
+    if (_currentValue == null) {
+      _currentValue = newValue;
+    } else {
+      _currentValue = (_currentValue! * (1.0 - alpha)) + (newValue * alpha);
+    }
+    return _currentValue!;
+  }
+
+  void reset() {
+    _currentValue = null;
+  }
+}

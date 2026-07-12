@@ -92,31 +92,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               _Header(
                 isSignedIn: isSignedIn,
                 displayName: user?.displayName,
+                avatarUrl: user?.avatarUrl,
                 onAddAlarm: () => context.push(AppRoutes.alarmSetup),
-                onSignIn: () => context.push(AppRoutes.auth),
-                onSignOut: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      backgroundColor: AppColors.card,
-                      title: const Text('Sign Out'),
-                      content: const Text('Are you sure you want to sign out? Your local data will be safe, but you won\'t be able to sync alarms.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel', style: TextStyle(color: AppColors.mutedForeground)),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Sign Out', style: TextStyle(color: AppColors.destructive)),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    ref.read(authRepositoryProvider).signOut();
-                  }
-                },
+                onProfileTap: () => context.push(AppRoutes.profile),
               ),
               if (!isSignedIn) ...[
                 const SizedBox(height: 12),
@@ -321,87 +299,118 @@ class _Header extends StatelessWidget {
   const _Header({
     required this.isSignedIn,
     required this.displayName,
+    required this.avatarUrl,
     required this.onAddAlarm,
-    required this.onSignIn,
-    required this.onSignOut,
+    required this.onProfileTap,
   });
 
   final bool isSignedIn;
   final String? displayName;
+  final String? avatarUrl;
   final VoidCallback onAddAlarm;
-  final VoidCallback onSignIn;
-  final VoidCallback onSignOut;
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'AWAKEN',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.primary,
-                    letterSpacing: 4,
+        Expanded(
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: onProfileTap,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSignedIn
+                          ? AppColors.primary.withValues(alpha: 0.5)
+                          : AppColors.border,
+                      width: 1.5,
+                    ),
+                    boxShadow: isSignedIn
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            )
+                          ]
+                        : null,
                   ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              isSignedIn
-                  ? 'Good morning${displayName != null ? ', ${displayName!.split(' ').first}' : ''}'
-                  : 'Good morning',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+                  child: ClipOval(
+                    child: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                        ? Image.network(
+                            avatarUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.person_rounded,
+                              size: 20,
+                              color: AppColors.mutedForeground,
+                            ),
+                          )
+                        : Icon(
+                            isSignedIn
+                                ? Icons.person_rounded
+                                : Icons.person_outline_rounded,
+                            size: 20,
+                            color: isSignedIn
+                                ? AppColors.primary
+                                : AppColors.mutedForeground,
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AWAKEN',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: AppColors.primary,
+                            letterSpacing: 4,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isSignedIn
+                          ? 'Good morning${displayName != null ? ', ${displayName!.split(' ').first}' : ''}'
+                          : 'Good morning',
+                      style: Theme.of(context).textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        Row(
-          children: [
-            // Add alarm
-            GestureDetector(
-              onTap: onAddAlarm,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.add_alarm_rounded,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
+        const SizedBox(width: 16),
+        // Add alarm
+        GestureDetector(
+          onTap: onAddAlarm,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.4),
               ),
             ),
-            const SizedBox(width: 8),
-            // Auth button
-            GestureDetector(
-              onTap: isSignedIn ? onSignOut : onSignIn,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Icon(
-                  isSignedIn
-                      ? Icons.account_circle_rounded
-                      : Icons.login_rounded,
-                  size: 18,
-                  color: isSignedIn
-                      ? AppColors.success
-                      : AppColors.mutedForeground,
-                ),
-              ),
+            child: const Icon(
+              Icons.add_alarm_rounded,
+              size: 18,
+              color: AppColors.primary,
             ),
-          ],
+          ),
         ),
       ],
     );

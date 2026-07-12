@@ -27,17 +27,27 @@ void main() {
         ankle: (200, 300),
       );
 
-      expect(service.processPose(standing).repCompleted, isFalse);
+      for (var i = 0; i < 15; i++) {
+        service.processPose(standing);
+      }
       expect(service.isInSquat, isFalse);
 
-      final squatDown = service.processPose(deepSquat);
+      SquatProcessResult squatDown = const SquatProcessResult();
+      for (var i = 0; i < 15; i++) {
+        squatDown = service.processPose(deepSquat);
+      }
       expect(squatDown.repCompleted, isFalse);
       expect(service.isInSquat, isTrue);
       expect(squatDown.depthRatio, isNotNull);
       expect(squatDown.depthRatio!, greaterThanOrEqualTo(0.6));
 
-      final completed = service.processPose(standing);
-      expect(completed.repCompleted, isTrue);
+      SquatProcessResult completed = const SquatProcessResult();
+      bool repCompletedAny = false;
+      for (var i = 0; i < 15; i++) {
+        completed = service.processPose(standing);
+        if (completed.repCompleted) repCompletedAny = true;
+      }
+      expect(repCompletedAny, isTrue);
       expect(completed.badForm, isFalse);
       expect(service.isInSquat, isFalse);
     });
@@ -54,16 +64,26 @@ void main() {
         ankle: (200, 300),
       );
 
-      service.processPose(standing);
-      final squatDown = service.processPose(shallowSquat);
+      for (var i = 0; i < 15; i++) {
+        service.processPose(standing);
+      }
+      SquatProcessResult squatDown = const SquatProcessResult();
+      for (var i = 0; i < 15; i++) {
+        squatDown = service.processPose(shallowSquat);
+      }
       expect(squatDown.repCompleted, isFalse);
       expect(service.isInSquat, isTrue);
       expect(squatDown.depthRatio, isNotNull);
       expect(squatDown.depthRatio!, lessThan(0.6));
 
-      final rejected = service.processPose(standing);
+      SquatProcessResult rejected = const SquatProcessResult();
+      bool badFormAny = false;
+      for (var i = 0; i < 15; i++) {
+        rejected = service.processPose(standing);
+        if (rejected.badForm) badFormAny = true;
+      }
       expect(rejected.repCompleted, isFalse);
-      expect(rejected.badForm, isTrue);
+      expect(badFormAny, isTrue);
       expect(service.isInSquat, isFalse);
     });
 
@@ -79,13 +99,23 @@ void main() {
         ankle: (200, 300),
       );
 
-      service.processPose(standing);
-      final squatDown = service.processPose(deepSquat);
+      for (var i = 0; i < 15; i++) {
+        service.processPose(standing);
+      }
+      SquatProcessResult squatDown = const SquatProcessResult();
+      for (var i = 0; i < 15; i++) {
+        squatDown = service.processPose(deepSquat);
+      }
       expect(squatDown.hasPose, isTrue);
       expect(service.isInSquat, isTrue);
 
-      final completed = service.processPose(standing);
-      expect(completed.repCompleted, isTrue);
+      SquatProcessResult completed = const SquatProcessResult();
+      bool repCompletedAny = false;
+      for (var i = 0; i < 15; i++) {
+        completed = service.processPose(standing);
+        if (completed.repCompleted) repCompletedAny = true;
+      }
+      expect(repCompletedAny, isTrue);
       expect(completed.hasPose, isTrue);
     });
 
@@ -121,12 +151,21 @@ void main() {
         ankle: (200, 300),
       );
 
-      service.processPose(standing);
-      service.processPose(deepSquat);
+      for (var i = 0; i < 15; i++) {
+        service.processPose(standing);
+      }
+      for (var i = 0; i < 15; i++) {
+        service.processPose(deepSquat);
+      }
       expect(service.isInSquat, isTrue);
 
-      final completed = service.processPose(standing);
-      expect(completed.repCompleted, isTrue);
+      SquatProcessResult completed = const SquatProcessResult();
+      bool repCompletedAny = false;
+      for (var i = 0; i < 15; i++) {
+        completed = service.processPose(standing);
+        if (completed.repCompleted) repCompletedAny = true;
+      }
+      expect(repCompletedAny, isTrue);
       expect(completed.hasPose, isTrue);
     });
 
@@ -142,8 +181,12 @@ void main() {
         ankle: (200, 300),
       );
 
-      service.processPose(standing);
-      service.processPose(deepSquat);
+      for (var i = 0; i < 15; i++) {
+        service.processPose(standing);
+      }
+      for (var i = 0; i < 15; i++) {
+        service.processPose(deepSquat);
+      }
 
       final standingRightOnly = Pose(
         landmarks: {
@@ -168,11 +211,23 @@ void main() {
             z: 0,
             likelihood: 0.99,
           ),
+          PoseLandmarkType.rightShoulder: PoseLandmark(
+            type: PoseLandmarkType.rightShoulder,
+            x: 200,
+            y: 20,
+            z: 0,
+            likelihood: 0.99,
+          ),
         },
       );
 
-      final completed = service.processPose(standingRightOnly);
-      expect(completed.repCompleted, isTrue);
+      SquatProcessResult completed = const SquatProcessResult();
+      bool repCompletedAny = false;
+      for (var i = 0; i < 15; i++) {
+        completed = service.processPose(standingRightOnly);
+        if (completed.repCompleted) repCompletedAny = true;
+      }
+      expect(repCompletedAny, isTrue);
       expect(completed.hasPose, isTrue);
     });
 
@@ -183,8 +238,14 @@ void main() {
         ankle: (200, 320),
       );
 
-      final first = service.processPose(standing);
-      final second = service.processPose(standing);
+      SquatProcessResult first = const SquatProcessResult();
+      for (var i = 0; i < 15; i++) {
+        first = service.processPose(standing);
+      }
+      SquatProcessResult second = const SquatProcessResult();
+      for (var i = 0; i < 15; i++) {
+        second = service.processPose(standing);
+      }
 
       expect(first.repCompleted, isFalse);
       expect(second.repCompleted, isFalse);
@@ -203,10 +264,17 @@ void main() {
         ankle: (200, 300),
       );
 
-      service.processPose(standing);
-      service.processPose(deepSquat);
+      for (var i = 0; i < 15; i++) {
+        service.processPose(standing);
+      }
+      for (var i = 0; i < 15; i++) {
+        service.processPose(deepSquat);
+      }
 
-      final stillSquatting = service.processPose(deepSquat);
+      SquatProcessResult stillSquatting = const SquatProcessResult();
+      for (var i = 0; i < 15; i++) {
+        stillSquatting = service.processPose(deepSquat);
+      }
       expect(stillSquatting.repCompleted, isFalse);
       expect(stillSquatting.badForm, isFalse);
       expect(service.isInSquat, isTrue);
@@ -224,8 +292,12 @@ void main() {
         ankle: (200, 300),
       );
 
-      service.processPose(standing);
-      service.processPose(deepSquat);
+      for (var i = 0; i < 15; i++) {
+        service.processPose(standing);
+      }
+      for (var i = 0; i < 15; i++) {
+        service.processPose(deepSquat);
+      }
       expect(service.isInSquat, isTrue);
 
       service.reset();
@@ -233,7 +305,10 @@ void main() {
 
       _calibrate(service, standing);
 
-      final afterReset = service.processPose(standing);
+      SquatProcessResult afterReset = const SquatProcessResult();
+      for (var i = 0; i < 15; i++) {
+        afterReset = service.processPose(standing);
+      }
       expect(afterReset.repCompleted, isFalse);
       expect(afterReset.badForm, isFalse);
       expect(service.isInSquat, isFalse);
@@ -271,6 +346,8 @@ Pose _pose({
       PoseLandmarkType.rightKnee: landmark(PoseLandmarkType.rightKnee, knee),
       PoseLandmarkType.leftAnkle: landmark(PoseLandmarkType.leftAnkle, ankle),
       PoseLandmarkType.rightAnkle: landmark(PoseLandmarkType.rightAnkle, ankle),
+      PoseLandmarkType.leftShoulder: landmark(PoseLandmarkType.leftShoulder, (hip.$1, hip.$2 - 60)),
+      PoseLandmarkType.rightShoulder: landmark(PoseLandmarkType.rightShoulder, (hip.$1, hip.$2 - 60)),
     },
   );
 }
@@ -296,6 +373,7 @@ Pose _leftLegPose({
       PoseLandmarkType.leftHip: landmark(PoseLandmarkType.leftHip, hip),
       PoseLandmarkType.leftKnee: landmark(PoseLandmarkType.leftKnee, knee),
       PoseLandmarkType.leftAnkle: landmark(PoseLandmarkType.leftAnkle, ankle),
+      PoseLandmarkType.leftShoulder: landmark(PoseLandmarkType.leftShoulder, (hip.$1, hip.$2 - 60)),
     },
   );
 }
@@ -321,6 +399,7 @@ Pose _rightLegPose({
       PoseLandmarkType.rightHip: landmark(PoseLandmarkType.rightHip, hip),
       PoseLandmarkType.rightKnee: landmark(PoseLandmarkType.rightKnee, knee),
       PoseLandmarkType.rightAnkle: landmark(PoseLandmarkType.rightAnkle, ankle),
+      PoseLandmarkType.rightShoulder: landmark(PoseLandmarkType.rightShoulder, (hip.$1, hip.$2 - 60)),
     },
   );
 }

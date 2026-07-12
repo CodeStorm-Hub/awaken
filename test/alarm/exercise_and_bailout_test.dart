@@ -2,6 +2,7 @@ import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_exercise_type.dart';
 import 'package:awaken/features/alarm/domain/repositories/alarm_repository.dart';
 import 'package:awaken/features/alarm/domain/services/alarm_bailout_service.dart';
+import 'package:awaken/features/alarm/domain/services/exercise_counter.dart';
 import 'package:awaken/features/alarm/domain/services/exercise_counter_router.dart';
 import 'package:awaken/features/alarm/domain/services/high_knees_counter_service.dart';
 import 'package:awaken/features/alarm/domain/services/jumping_jack_counter_service.dart';
@@ -107,9 +108,17 @@ void main() {
       counter.processPose(up());
     }
     expect(counter.isCalibrated, isTrue);
-    counter.processPose(down());
-    final done = counter.processPose(up());
-    expect(done.repCompleted, isTrue);
+    for (var i = 0; i < 15; i++) {
+      counter.processPose(down());
+    }
+    bool repCompleted = false;
+    for (var i = 0; i < 15; i++) {
+      final res = counter.processPose(up());
+      if (res.repCompleted) {
+        repCompleted = true;
+      }
+    }
+    expect(repCompleted, isTrue);
   });
 
   test('jumping jack counter completes open-close cycle', () {
@@ -137,9 +146,17 @@ void main() {
       counter.processPose(closed());
     }
     expect(counter.isCalibrated, isTrue);
-    counter.processPose(open());
-    final done = counter.processPose(closed());
-    expect(done.repCompleted, isTrue);
+    for (var i = 0; i < 15; i++) {
+      counter.processPose(open());
+    }
+    bool repCompleted = false;
+    for (var i = 0; i < 15; i++) {
+      final res = counter.processPose(closed());
+      if (res.repCompleted) {
+        repCompleted = true;
+      }
+    }
+    expect(repCompleted, isTrue);
   });
 
   test('high-knees counter completes a lift cycle', () {
@@ -161,8 +178,16 @@ void main() {
       counter.processPose(stand());
     }
     expect(counter.isCalibrated, isTrue);
-    counter.processPose(leftUp());
-    final done = counter.processPose(stand());
-    expect(done.repCompleted, isTrue);
+    for (var i = 0; i < 15; i++) {
+      counter.processPose(leftUp());
+    }
+    bool repCompleted = false;
+    for (var i = 0; i < 15; i++) {
+      final res = counter.processPose(stand());
+      if (res.repCompleted) {
+        repCompleted = true;
+      }
+    }
+    expect(repCompleted, isTrue);
   });
 }

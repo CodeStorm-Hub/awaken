@@ -345,6 +345,9 @@ final captureSyncOnSignInProvider = Provider<void>((ref) {
 /// Defaults on; toggled from the Territory map right-rail control.
 final bountyZonesVisibleProvider = StateProvider<bool>((ref) => true);
 
+/// Whether the compact bounty zones legend/hint card has been dismissed by the user.
+final bountyZonesHintDismissedProvider = StateProvider<bool>((ref) => false);
+
 /// Active bounty zones — calls the `list_active_bounty_zones` RPC and parses
 /// the GeoJSON polygon rings. Returns an empty list when the call fails so
 /// the map layer degrades gracefully.

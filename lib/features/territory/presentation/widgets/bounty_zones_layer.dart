@@ -179,6 +179,9 @@ class BountyZonesLegendCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(bountyZonesHintDismissedProvider)) {
+      return const SizedBox.shrink();
+    }
     if (!ref.watch(bountyZonesVisibleProvider)) {
       return const SizedBox.shrink();
     }
@@ -227,16 +230,16 @@ class BountyZonesLegendCard extends ConsumerWidget {
                   ),
                 ),
                 Tooltip(
-                  message: 'Hide bounty zones',
+                  message: 'Dismiss hint',
                   child: InkWell(
                     onTap: () =>
-                        ref.read(bountyZonesVisibleProvider.notifier).state =
-                            false,
+                        ref.read(bountyZonesHintDismissedProvider.notifier).state =
+                            true,
                     borderRadius: BorderRadius.circular(16),
                     child: const Padding(
                       padding: EdgeInsets.all(4),
                       child: Icon(
-                        Icons.visibility_off_rounded,
+                        Icons.close_rounded,
                         size: 18,
                         color: AppColors.mutedForeground,
                       ),

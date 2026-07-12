@@ -14,6 +14,8 @@ class PushUpCounterService implements ExerciseCounter {
   int _calibrationFrames = 0;
   static const int requiredCalibrationFrames = 6;
 
+  final DoubleEMAFilter _elbowFilter = DoubleEMAFilter(alpha: 0.35);
+
   @override
   bool get isCalibrated => _isCalibrated;
 
@@ -25,14 +27,47 @@ class PushUpCounterService implements ExerciseCounter {
     _phase = _PushPhase.up;
     _isCalibrated = false;
     _calibrationFrames = 0;
+    _elbowFilter.reset();
   }
 
   @override
   ExerciseProcessResult processPose(Pose pose) {
-    final elbow = _combinedElbowAngle(pose);
-    if (elbow == null) {
-      return const ExerciseProcessResult(hasPose: false, cue: 'FULL BODY IN FRAME');
+    // Check joint presence and confidence specifically for shoulders, elbows, wrists
+    final ls = pose.landmarks[PoseLandmarkType.leftShoulder];
+    final rs = pose.landmarks[PoseLandmarkType.rightShoulder];
+    final le = pose.landmarks[PoseLandmarkType.leftElbow];
+    final re = pose.landmarks[PoseLandmarkType.rightElbow];
+    final lw = pose.landmarks[PoseLandmarkType.leftWrist];
+    final rw = pose.landmarks[PoseLandmarkType.rightWrist];
+
+    final hasUpperBody = ls != null &&
+        rs != null &&
+        le != null &&
+        re != null &&
+        lw != null &&
+        rw != null &&
+        ls.likelihood >= minConfidence &&
+        rs.likelihood >= minConfidence &&
+        le.likelihood >= minConfidence &&
+        re.likelihood >= minConfidence &&
+        lw.likelihood >= minConfidence &&
+        rw.likelihood >= minConfidence;
+
+    if (!hasUpperBody) {
+      return const ExerciseProcessResult(
+        hasPose: false,
+        cue: 'STEP BACK — UPPER BODY IN FRAME',
+      );
     }
+
+    final rawElbow = _combinedElbowAngle(pose);
+    if (rawElbow == null) {
+      return const ExerciseProcessResult(
+        hasPose: false,
+        cue: 'STEP BACK — UPPER BODY IN FRAME',
+      );
+    }
+    final elbow = _elbowFilter.filter(rawElbow);
 
     if (!_isCalibrated) {
       if (elbow >= upElbowDeg) {

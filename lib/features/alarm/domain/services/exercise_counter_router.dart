@@ -32,11 +32,12 @@ class SquatExerciseCounter implements ExerciseCounter {
       badForm: result.badForm,
       depthRatio: result.depthRatio,
       hasPose: result.hasPose,
-      cue: result.badForm
-          ? 'GO LOWER / KEEP SHOULDERS LEVEL'
-          : result.repCompleted
-              ? 'PERFECT REP'
-              : null,
+      cue: result.cue ??
+          (result.badForm
+              ? 'GO LOWER / KEEP SHOULDERS LEVEL'
+              : result.repCompleted
+                  ? 'PERFECT REP'
+                  : null),
     );
   }
 }

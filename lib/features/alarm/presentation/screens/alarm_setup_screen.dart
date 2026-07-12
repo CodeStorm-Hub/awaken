@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AlarmSetupScreen extends ConsumerStatefulWidget {
   const AlarmSetupScreen({super.key});
@@ -169,12 +170,33 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
       context: context,
       initialTime: _time,
       helpText: 'SELECT ALARM TIME',
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          materialTapTargetSize: MaterialTapTargetSize.padded,
-        ),
-        child: child!,
-      ),
+      builder: (context, child) {
+        final mediaQueryData = MediaQuery.of(context);
+        final baseTheme = Theme.of(context);
+        final hourMinuteStyle = GoogleFonts.spaceGrotesk(
+          fontSize: 56,
+          fontWeight: FontWeight.w700,
+          height: 1.05,
+        );
+
+        return Theme(
+          data: baseTheme.copyWith(
+            materialTapTargetSize: MaterialTapTargetSize.padded,
+            timePickerTheme: baseTheme.timePickerTheme.copyWith(
+              hourMinuteTextStyle: hourMinuteStyle,
+            ),
+            textTheme: baseTheme.textTheme.copyWith(
+              displayMedium: hourMinuteStyle,
+            ),
+          ),
+          child: MediaQuery(
+            data: mediaQueryData.copyWith(
+              textScaler: TextScaler.noScaling,
+            ),
+            child: child!,
+          ),
+        );
+      },
     );
     if (picked != null) {
       setState(() => _time = picked);

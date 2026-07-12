@@ -12,6 +12,8 @@ class JumpingJackCounterService implements ExerciseCounter {
   double? _standingAnkleGap;
   static const int requiredCalibrationFrames = 6;
 
+  final DoubleEMAFilter _gapFilter = DoubleEMAFilter(alpha: 0.35);
+
   @override
   bool get isCalibrated => _isCalibrated;
 
@@ -24,22 +26,59 @@ class JumpingJackCounterService implements ExerciseCounter {
     _isCalibrated = false;
     _calibrationFrames = 0;
     _standingAnkleGap = null;
+    _gapFilter.reset();
   }
 
   @override
   ExerciseProcessResult processPose(Pose pose) {
+    // Check joint presence and confidence specifically for ankles, wrists, nose, hips
+    final lw = pose.landmarks[PoseLandmarkType.leftWrist];
+    final rw = pose.landmarks[PoseLandmarkType.rightWrist];
+    final la = pose.landmarks[PoseLandmarkType.leftAnkle];
+    final ra = pose.landmarks[PoseLandmarkType.rightAnkle];
+    final lh = pose.landmarks[PoseLandmarkType.leftHip];
+    final rh = pose.landmarks[PoseLandmarkType.rightHip];
+    final nose = pose.landmarks[PoseLandmarkType.nose];
+
+    final hasAnkles = la != null && ra != null && la.likelihood >= minConfidence && ra.likelihood >= minConfidence;
+    final hasOthers = lw != null &&
+        rw != null &&
+        lh != null &&
+        rh != null &&
+        nose != null &&
+        lw.likelihood >= minConfidence &&
+        rw.likelihood >= minConfidence &&
+        lh.likelihood >= minConfidence &&
+        rh.likelihood >= minConfidence &&
+        nose.likelihood >= minConfidence;
+
+    if (!hasAnkles) {
+      return const ExerciseProcessResult(
+        hasPose: false,
+        cue: 'STEP BACK — FEET OUT OF FRAME',
+      );
+    }
+    if (!hasOthers) {
+      return const ExerciseProcessResult(
+        hasPose: false,
+        cue: 'STEP BACK — FULL BODY IN FRAME',
+      );
+    }
+
     final metrics = _metrics(pose);
     if (metrics == null) {
       return const ExerciseProcessResult(
         hasPose: false,
-        cue: 'FULL BODY IN FRAME',
+        cue: 'STEP BACK — FULL BODY IN FRAME',
       );
     }
 
+    final filteredGap = _gapFilter.filter(metrics.ankleGap);
+
     if (!_isCalibrated) {
-      if (!metrics.armsUp && metrics.ankleGap > 0) {
+      if (!metrics.armsUp && filteredGap > 0) {
         _calibrationFrames++;
-        _standingAnkleGap = metrics.ankleGap;
+        _standingAnkleGap = filteredGap;
         if (_calibrationFrames >= requiredCalibrationFrames) {
           _isCalibrated = true;
         }
@@ -52,8 +91,8 @@ class JumpingJackCounterService implements ExerciseCounter {
       );
     }
 
-    final baseGap = _standingAnkleGap ?? metrics.ankleGap;
-    final feetOut = baseGap > 0 && metrics.ankleGap >= baseGap * feetOutRatio;
+    final baseGap = _standingAnkleGap ?? filteredGap;
+    final feetOut = baseGap > 0 && filteredGap >= baseGap * feetOutRatio;
 
     switch (_phase) {
       case _JackPhase.closed:
