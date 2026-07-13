@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "230513820686-dvgdso7035jcvq4jhbu4n1bvrpudqr7v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.awaken",
+            "certificate_hash": "1ba8506c8bf503447cb46f31660994484f5c7440"
+          }
+        },
+        {
           "client_id": "230513820686-ua1prkedtbtceb4d39e2kqg5m23q7te8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -37,6 +45,13 @@
             {
               "client_id": "230513820686-ku2co5m68332qjv7t0cgbe5vk8nlvrea.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "230513820686-640n9b4ieo9aaraqpj9gs1ajs4e5bp97.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.awaken"
+              }
             }
           ]
         }
