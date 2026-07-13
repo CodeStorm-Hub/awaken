@@ -56,6 +56,22 @@ class _SquadSheetState extends ConsumerState<SquadSheet> {
     }
   }
 
+  Future<void> _nudge(String squadId) async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    final sent = await nudgeSquad(squadId: squadId);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _message = sent == 0
+          ? 'No mates to nudge yet — share your invite code.'
+          : 'Nudge sent to $sent mate${sent == 1 ? '' : 's'}. No one sleeps in.';
+    });
+    if (sent > 0) HapticFeedback.mediumImpact();
+  }
+
   Future<void> _join() async {
     final code = _codeCtrl.text.trim();
     if (code.isEmpty) return;
@@ -131,6 +147,28 @@ class _SquadSheetState extends ConsumerState<SquadSheet> {
                   height: 1.4,
                 ),
               ),
+              if (squadId != null) ...[
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: _busy ? null : () => _nudge(squadId),
+                  icon: const Icon(Icons.notifications_active_rounded,
+                      size: 18),
+                  label: const Text('NUDGE THE SQUAD'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.black,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Mates see it on their dashboard — a reminder the squad is watching.',
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
               if (squadId == null) ...[
                 const SizedBox(height: 20),
                 TextField(

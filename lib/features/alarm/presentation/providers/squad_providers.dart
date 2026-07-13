@@ -137,6 +137,72 @@ Future<void> upsertSquadAlarmProgress({
   }
 }
 
+// ── Squad nudges ──────────────────────────────────────────────────────────────
+
+/// Count of unseen nudges addressed to the current user. Drives the
+/// dashboard "your squad nudged you" banner.
+final unseenSquadNudgeCountProvider = FutureProvider<int>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return 0;
+
+  try {
+    final rows = await Supabase.instance.client
+        .from('squad_nudges')
+        .select('id')
+        .eq('to_user', user.id)
+        .eq('seen', false) as List<dynamic>;
+    return rows.length;
+  } catch (e) {
+    debugPrint('[SquadProviders] unseen nudges fetch failed: $e');
+    return 0;
+  }
+});
+
+/// Sends a nudge to every squad mate (one row per recipient).
+/// Returns the number of mates nudged, or 0 on failure.
+Future<int> nudgeSquad({required String squadId}) async {
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return 0;
+
+  try {
+    final rows = await Supabase.instance.client
+        .from('squad_members')
+        .select('user_id')
+        .eq('squad_id', squadId) as List<dynamic>;
+    final mates = rows
+        .map((r) => (r as Map<String, dynamic>)['user_id'] as String?)
+        .whereType<String>()
+        .where((id) => id != userId)
+        .toList();
+    if (mates.isEmpty) return 0;
+
+    await Supabase.instance.client.from('squad_nudges').insert([
+      for (final mate in mates)
+        {'squad_id': squadId, 'from_user': userId, 'to_user': mate},
+    ]);
+    return mates.length;
+  } catch (e) {
+    debugPrint('[SquadProviders] nudgeSquad failed: $e');
+    return 0;
+  }
+}
+
+/// Marks every unseen nudge addressed to the current user as seen.
+Future<void> markSquadNudgesSeen() async {
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return;
+
+  try {
+    await Supabase.instance.client
+        .from('squad_nudges')
+        .update({'seen': true})
+        .eq('to_user', userId)
+        .eq('seen', false);
+  } catch (e) {
+    debugPrint('[SquadProviders] markSquadNudgesSeen failed: $e');
+  }
+}
+
 // ── Squad management stubs ────────────────────────────────────────────────────
 
 /// Creates a new squad and adds the current user as its first member.

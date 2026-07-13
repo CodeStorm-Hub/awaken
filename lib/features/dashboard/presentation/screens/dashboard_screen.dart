@@ -10,6 +10,7 @@ import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/services/alarm_bailout_service.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_providers.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
+import 'package:awaken/features/alarm/presentation/providers/squad_providers.dart';
 import 'package:awaken/features/alarm/presentation/widgets/squad_sheet.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
@@ -143,9 +144,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: _BailoutBanner(
+                    multiplier: nextAlarm?.penaltyMultiplier ?? 2,
                     onDismiss: () {
                       ref.read(bailoutBannerDismissedProvider.notifier).state =
                           true;
+                    },
+                  ),
+                ),
+
+              // ── Squad nudge inbox ─────────────────────────────────────
+              if (isSignedIn &&
+                  (ref.watch(unseenSquadNudgeCountProvider).valueOrNull ?? 0) >
+                      0)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _SquadNudgeBanner(
+                    onDismiss: () async {
+                      await markSquadNudgesSeen();
+                      ref.invalidate(unseenSquadNudgeCountProvider);
                     },
                   ),
                 ),
@@ -224,7 +240,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 12),
 
               // ── Rep trend (last 4 weeks) ──────────────────────────────
-              if (stats != null && stats.repsTrend.isNotEmpty)
+              // Hidden until there is at least one rep on record — an
+              // all-zero chart is noise for a brand-new user.
+              if (stats != null && stats.repsTrend.any((v) => v > 0))
                 WeekTrendCard(repsTrend: stats.repsTrend),
 
               const SizedBox(height: 24),
@@ -522,8 +540,9 @@ class _ExactAlarmWarningCard extends StatelessWidget {
 }
 
 class _BailoutBanner extends StatelessWidget {
-  const _BailoutBanner({required this.onDismiss});
+  const _BailoutBanner({required this.multiplier, required this.onDismiss});
 
+  final int multiplier;
   final VoidCallback onDismiss;
 
   @override
@@ -590,6 +609,26 @@ class _BailoutBanner extends StatelessWidget {
             Text(
               'WAKE UP TAX — DOUBLED',
               style: tt.eyebrow.copyWith(color: AppColors.destructive),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.destructive.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+                border: Border.all(
+                  color: AppColors.destructive.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Text(
+                'ACTIVE · NEXT TAX ×$multiplier',
+                style: const TextStyle(
+                  color: AppColors.destructive,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             _ExplainerRow(
@@ -672,6 +711,49 @@ class _ExplainerRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SquadNudgeBanner extends StatelessWidget {
+  const _SquadNudgeBanner({required this.onDismiss});
+
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_active_rounded,
+              color: AppColors.accent, size: 18),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Your squad nudged you — show up for the next tax.',
+              style: TextStyle(
+                color: AppColors.mutedForeground,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: onDismiss,
+            icon: const Icon(Icons.close, size: 16),
+            color: AppColors.mutedForeground,
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Got it',
+          ),
+        ],
+      ),
     );
   }
 }
