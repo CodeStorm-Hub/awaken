@@ -9,7 +9,12 @@ class PushUpCounterService implements ExerciseCounter {
   static const double upElbowDeg = 150.0;
   static const double minConfidence = 0.5;
 
+  /// Elbow angle below which a descent is considered started (for shallow-rep
+  /// detection) without yet reaching [downElbowDeg].
+  static const double descentStartDeg = 130.0;
+
   _PushPhase _phase = _PushPhase.up;
+  bool _descending = false;
   bool _isCalibrated = false;
   int _calibrationFrames = 0;
   static const int requiredCalibrationFrames = 6;
@@ -25,6 +30,7 @@ class PushUpCounterService implements ExerciseCounter {
   @override
   void reset() {
     _phase = _PushPhase.up;
+    _descending = false;
     _isCalibrated = false;
     _calibrationFrames = 0;
     _elbowFilter.reset();
@@ -88,18 +94,31 @@ class PushUpCounterService implements ExerciseCounter {
       case _PushPhase.up:
         if (elbow <= downElbowDeg) {
           _phase = _PushPhase.down;
+          _descending = false;
           return const ExerciseProcessResult(
             hasPose: true,
             depthRatio: 1.0,
             cue: 'PRESS UP',
           );
         }
-        if (elbow > downElbowDeg && elbow < upElbowDeg - 20) {
+        // A dip that starts but returns to full extension without reaching
+        // [downElbowDeg] is one shallow rep — flag it once at the top, not
+        // on every mid-descent frame.
+        if (elbow < descentStartDeg) {
+          _descending = true;
+          return const ExerciseProcessResult(
+            hasPose: true,
+            depthRatio: 0.3,
+            cue: 'DROP LOWER',
+          );
+        }
+        if (_descending && elbow >= upElbowDeg) {
+          _descending = false;
           return const ExerciseProcessResult(
             hasPose: true,
             badForm: true,
             depthRatio: 0.3,
-            cue: 'DROP LOWER',
+            cue: 'TOO SHALLOW — CHEST TO FLOOR',
           );
         }
         return const ExerciseProcessResult(

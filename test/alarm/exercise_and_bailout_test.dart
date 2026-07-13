@@ -158,6 +158,126 @@ void main() {
     expect(repCompleted, isTrue);
   });
 
+  test('push-up descent does not flash bad form; shallow rep flags once', () {
+    final counter = PushUpCounterService();
+    Pose atElbowExtended() => _pose({
+          PoseLandmarkType.leftShoulder: const Offset(0, 0),
+          PoseLandmarkType.leftElbow: const Offset(0, 50),
+          PoseLandmarkType.leftWrist: const Offset(0, 100),
+          PoseLandmarkType.rightShoulder: const Offset(100, 0),
+          PoseLandmarkType.rightElbow: const Offset(100, 50),
+          PoseLandmarkType.rightWrist: const Offset(100, 100),
+        });
+    // ~110° elbow — a dip that starts but never reaches the 90° depth gate.
+    Pose atShallowDip() => _pose({
+          PoseLandmarkType.leftShoulder: const Offset(0, 0),
+          PoseLandmarkType.leftElbow: const Offset(0, 50),
+          PoseLandmarkType.leftWrist: const Offset(47, 67),
+          PoseLandmarkType.rightShoulder: const Offset(100, 0),
+          PoseLandmarkType.rightElbow: const Offset(100, 50),
+          PoseLandmarkType.rightWrist: const Offset(53, 67),
+        });
+
+    for (var i = 0; i < 8; i++) {
+      counter.processPose(atElbowExtended());
+    }
+    expect(counter.isCalibrated, isTrue);
+
+    // Mid-descent frames must never be flagged as bad form.
+    for (var i = 0; i < 10; i++) {
+      final res = counter.processPose(atShallowDip());
+      expect(res.badForm, isFalse, reason: 'frame $i flagged during descent');
+      expect(res.repCompleted, isFalse);
+    }
+
+    // Returning to extension without reaching depth = one bad-form flag.
+    var badFormCount = 0;
+    for (var i = 0; i < 15; i++) {
+      final res = counter.processPose(atElbowExtended());
+      if (res.badForm) badFormCount++;
+      expect(res.repCompleted, isFalse);
+    }
+    expect(badFormCount, 1);
+  });
+
+  test('jumping jack transient arm/feet asynchrony is not bad form', () {
+    final counter = JumpingJackCounterService();
+    Pose closed() => _pose({
+          PoseLandmarkType.nose: const Offset(50, 10),
+          PoseLandmarkType.leftWrist: const Offset(30, 80),
+          PoseLandmarkType.rightWrist: const Offset(70, 80),
+          PoseLandmarkType.leftHip: const Offset(40, 100),
+          PoseLandmarkType.rightHip: const Offset(60, 100),
+          PoseLandmarkType.leftAnkle: const Offset(42, 180),
+          PoseLandmarkType.rightAnkle: const Offset(58, 180),
+        });
+    // Arms already up, feet not yet out — the normal mid-jump state.
+    Pose armsFirst() => _pose({
+          PoseLandmarkType.nose: const Offset(50, 10),
+          PoseLandmarkType.leftWrist: const Offset(20, 5),
+          PoseLandmarkType.rightWrist: const Offset(80, 5),
+          PoseLandmarkType.leftHip: const Offset(40, 100),
+          PoseLandmarkType.rightHip: const Offset(60, 100),
+          PoseLandmarkType.leftAnkle: const Offset(42, 180),
+          PoseLandmarkType.rightAnkle: const Offset(58, 180),
+        });
+
+    for (var i = 0; i < 8; i++) {
+      counter.processPose(closed());
+    }
+    expect(counter.isCalibrated, isTrue);
+
+    for (var i = 0; i < 5; i++) {
+      final res = counter.processPose(armsFirst());
+      expect(res.badForm, isFalse, reason: 'transient frame $i flagged');
+    }
+  });
+
+  test('high-knees plant requires clear hysteresis before next rep', () {
+    final counter = HighKneesCounterService();
+    Pose stand() => _pose({
+          PoseLandmarkType.leftHip: const Offset(40, 100),
+          PoseLandmarkType.rightHip: const Offset(60, 100),
+          PoseLandmarkType.leftKnee: const Offset(40, 140),
+          PoseLandmarkType.rightKnee: const Offset(60, 140),
+        });
+    Pose leftUp() => _pose({
+          PoseLandmarkType.leftHip: const Offset(40, 100),
+          PoseLandmarkType.rightHip: const Offset(60, 100),
+          PoseLandmarkType.leftKnee: const Offset(40, 70),
+          PoseLandmarkType.rightKnee: const Offset(60, 140),
+        });
+    // Knee hovering mid-way (~30% of thigh below hip) — not planted.
+    Pose leftHover() => _pose({
+          PoseLandmarkType.leftHip: const Offset(40, 100),
+          PoseLandmarkType.rightHip: const Offset(60, 100),
+          PoseLandmarkType.leftKnee: const Offset(40, 112),
+          PoseLandmarkType.rightKnee: const Offset(60, 140),
+        });
+
+    for (var i = 0; i < 8; i++) {
+      counter.processPose(stand());
+    }
+    expect(counter.isCalibrated, isTrue);
+
+    for (var i = 0; i < 15; i++) {
+      counter.processPose(leftUp());
+    }
+    expect(counter.isInActivePhase, isTrue);
+
+    // Hovering near hip height must not complete the rep.
+    for (var i = 0; i < 15; i++) {
+      final res = counter.processPose(leftHover());
+      expect(res.repCompleted, isFalse, reason: 'hover frame $i counted');
+    }
+
+    bool repCompleted = false;
+    for (var i = 0; i < 15; i++) {
+      if (counter.processPose(stand()).repCompleted) repCompleted = true;
+    }
+    expect(repCompleted, isTrue);
+  });
+
   test('high-knees counter completes a lift cycle', () {
     final counter = HighKneesCounterService();
     Pose stand() => _pose({

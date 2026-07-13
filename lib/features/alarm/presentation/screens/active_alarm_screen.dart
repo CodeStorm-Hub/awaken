@@ -34,7 +34,8 @@ class ActiveAlarmScreen extends ConsumerStatefulWidget {
   ConsumerState<ActiveAlarmScreen> createState() => _ActiveAlarmScreenState();
 }
 
-class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
+class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
+    with WidgetsBindingObserver {
   late final AlarmPosePipeline _pipeline;
   late final ExerciseCounterRouter _exerciseRouter;
   Timer? _outOfFramePenaltyTimer;
@@ -49,6 +50,7 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _router = ref.read(appRouterProvider);
 
     final alarm = widget.alarm;
@@ -105,8 +107,25 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen> {
     setState(() => _cameraReady = _pipeline.isReady.value);
   }
 
+  /// Release the camera while backgrounded and re-open it on return —
+  /// holding the camera in the background breaks it on many Android devices.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        unawaited(_pipeline.pauseForLifecycle());
+      case AppLifecycleState.resumed:
+        unawaited(_pipeline.resumeAfterLifecycle());
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _outOfFramePenaltyTimer?.cancel();
     _pipeline.permissionDenied.removeListener(_onPermissionChanged);
     _pipeline.isReady.removeListener(_onReadyChanged);

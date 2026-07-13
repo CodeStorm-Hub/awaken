@@ -106,8 +106,10 @@ class PoseOverlayPainter extends CustomPainter {
       // Image was captured landscape; rotated 90° CW to appear portrait on screen
       case InputImageRotation.rotation90deg:
         // After 90° CW: new_x = y, new_y = imageWidth - x
-        final sx = y / iH * screen.width;
+        double sx = y / iH * screen.width;
         final sy = (iW - x) / iW * screen.height;
+        // Front camera preview is mirrored
+        if (isFrontCamera) sx = screen.width - sx;
         return Offset(sx, sy);
 
       // Image was captured landscape; rotated 270° CW (=90° CCW) to appear portrait
@@ -120,8 +122,10 @@ class PoseOverlayPainter extends CustomPainter {
         return Offset(sx, sy);
 
       case InputImageRotation.rotation180deg:
+        double fx = (iW - x) / iW * screen.width;
+        if (isFrontCamera) fx = screen.width - fx;
         return Offset(
-          (iW - x) / iW * screen.width,
+          fx,
           (iH - y) / iH * screen.height,
         );
 

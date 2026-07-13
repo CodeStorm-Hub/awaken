@@ -54,10 +54,12 @@ class AlarmPosePipeline {
   final ValueNotifier<bool> isReady = ValueNotifier(false);
 
   CameraController? _cameraController;
+  CameraDescription? _camera;
   bool _isFrontCamera = true;
   int _sensorOrientation = 0;
   bool _isDetecting = false;
   bool _disposed = false;
+  bool _pausedByLifecycle = false;
   DateTime _lastDetectionTime = DateTime.fromMillisecondsSinceEpoch(0);
   InputImageRotation? _imageRotation;
 
@@ -73,52 +75,96 @@ class AlarmPosePipeline {
 
   Future<void> start() async {
     final status = await Permission.camera.request();
+    if (_disposed) return;
     if (!status.isGranted) {
       permissionDenied.value = true;
       return;
     }
 
     final cameras = await availableCameras();
+    if (_disposed) return;
     if (cameras.isEmpty) {
       permissionDenied.value = true;
       return;
     }
 
-    final camera = cameras.firstWhere(
+    _camera = cameras.firstWhere(
       (c) => c.lensDirection == CameraLensDirection.front,
       orElse: () => cameras.first,
     );
-    _isFrontCamera = camera.lensDirection == CameraLensDirection.front;
-    _sensorOrientation = camera.sensorOrientation;
+    _isFrontCamera = _camera!.lensDirection == CameraLensDirection.front;
+    _sensorOrientation = _camera!.sensorOrientation;
 
-    _cameraController = CameraController(
+    await _openCamera();
+  }
+
+  Future<void> _openCamera() async {
+    final camera = _camera;
+    if (camera == null || _disposed) return;
+
+    final controller = CameraController(
       camera,
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup:
           Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
     );
+    _cameraController = controller;
 
     try {
-      await _cameraController!.initialize();
+      await controller.initialize();
+    } on CameraException catch (e) {
+      debugPrint('[Camera] Init failed: ${e.code} ${e.description}');
+      permissionDenied.value = true;
+      return;
     } catch (e) {
       debugPrint('[Camera] Init failed: $e');
       permissionDenied.value = true;
       return;
     }
 
-    if (_disposed) {
-      await _cameraController!.dispose();
-      _cameraController = null;
+    if (_disposed || _pausedByLifecycle) {
+      await controller.dispose();
+      if (identical(_cameraController, controller)) _cameraController = null;
       return;
     }
 
     isReady.value = true;
-    await _cameraController!.startImageStream(_onCameraImage);
+    await controller.startImageStream(_onCameraImage);
+  }
+
+  /// Releases the camera when the app leaves the foreground (camera plugin
+  /// lifecycle guidance) — call from `AppLifecycleState.inactive`/`paused`.
+  Future<void> pauseForLifecycle() async {
+    if (_disposed || _pausedByLifecycle) return;
+    _pausedByLifecycle = true;
+    isReady.value = false;
+    await _teardownCamera();
+  }
+
+  /// Re-opens the camera after [pauseForLifecycle] — call from
+  /// `AppLifecycleState.resumed`.
+  Future<void> resumeAfterLifecycle() async {
+    if (_disposed || !_pausedByLifecycle) return;
+    _pausedByLifecycle = false;
+    if (permissionDenied.value) return;
+    await _openCamera();
+  }
+
+  Future<void> _teardownCamera() async {
+    final controller = _cameraController;
+    _cameraController = null;
+    if (controller == null) return;
+    try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+    } catch (_) {}
+    await controller.dispose();
   }
 
   void _onCameraImage(CameraImage image) {
-    if (_isDetecting || _disposed) return;
+    if (_isDetecting || _disposed || _pausedByLifecycle) return;
 
     final now = DateTime.now();
     if (now.difference(_lastDetectionTime).inMilliseconds < 66) return;
@@ -132,8 +178,16 @@ class AlarmPosePipeline {
     final inputImage = _buildInputImage(image);
     if (inputImage == null) return;
 
-    final poses = await _poseDetector.processImage(inputImage);
-    if (_disposed) return;
+    final List<Pose> poses;
+    try {
+      poses = await _poseDetector.processImage(inputImage);
+    } catch (e) {
+      // A frame can fail (detector closing mid-frame, malformed buffer) —
+      // skip it rather than crash the alarm flow.
+      debugPrint('[PoseDetector] Frame failed: $e');
+      return;
+    }
+    if (_disposed || _pausedByLifecycle) return;
 
     final pose = poses.isNotEmpty ? poses.first : null;
     poseFrame.value = PoseFrame(
@@ -170,19 +224,20 @@ class AlarmPosePipeline {
     final format = InputImageFormatValue.fromRawValue(image.format.raw as int);
     if (format == null) return null;
 
-    if (image.planes.length > 1) {
-      final buffer = WriteBuffer();
-      for (final plane in image.planes) {
-        buffer.putUint8List(plane.bytes);
-      }
-      final bytes = buffer.done().buffer.asUint8List();
+    // Android delivers a single NV21 plane when ImageFormatGroup.nv21 is
+    // honored; some devices/implementations fall back to 3-plane YUV_420_888,
+    // which must be interleaved into NV21 (respecting row/pixel strides)
+    // before ML Kit can read it.
+    if (image.planes.length == 3) {
+      final bytes = _yuv420ToNv21(image);
+      if (bytes == null) return null;
       return InputImage.fromBytes(
         bytes: bytes,
         metadata: InputImageMetadata(
           size: Size(image.width.toDouble(), image.height.toDouble()),
           rotation: rotation,
           format: InputImageFormat.nv21,
-          bytesPerRow: image.planes.first.bytesPerRow,
+          bytesPerRow: image.width,
         ),
       );
     }
@@ -199,13 +254,45 @@ class AlarmPosePipeline {
     );
   }
 
+  /// Converts 3-plane YUV_420_888 to NV21 (Y plane followed by interleaved
+  /// V/U), honoring each plane's row and pixel strides.
+  Uint8List? _yuv420ToNv21(CameraImage image) {
+    final width = image.width;
+    final height = image.height;
+    final yPlane = image.planes[0];
+    final uPlane = image.planes[1];
+    final vPlane = image.planes[2];
+
+    final chromaWidth = width ~/ 2;
+    final chromaHeight = height ~/ 2;
+    final out = Uint8List(width * height + 2 * chromaWidth * chromaHeight);
+
+    var offset = 0;
+    for (var row = 0; row < height; row++) {
+      final src = row * yPlane.bytesPerRow;
+      if (src + width > yPlane.bytes.length) return null;
+      out.setRange(offset, offset + width, yPlane.bytes, src);
+      offset += width;
+    }
+
+    final uvRowStride = uPlane.bytesPerRow;
+    final uvPixelStride = uPlane.bytesPerPixel ?? 1;
+    for (var row = 0; row < chromaHeight; row++) {
+      for (var col = 0; col < chromaWidth; col++) {
+        final uvIndex = row * uvRowStride + col * uvPixelStride;
+        if (uvIndex >= uPlane.bytes.length || uvIndex >= vPlane.bytes.length) {
+          return null;
+        }
+        out[offset++] = vPlane.bytes[uvIndex];
+        out[offset++] = uPlane.bytes[uvIndex];
+      }
+    }
+    return out;
+  }
+
   Future<void> dispose() async {
     _disposed = true;
-    try {
-      await _cameraController?.stopImageStream();
-    } catch (_) {}
-    await _cameraController?.dispose();
-    _cameraController = null;
+    await _teardownCamera();
     await _poseDetector.close();
     poseFrame.dispose();
     permissionDenied.dispose();

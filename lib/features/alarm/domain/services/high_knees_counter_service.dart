@@ -2,14 +2,26 @@ import 'package:awaken/features/alarm/domain/services/exercise_counter.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 /// High-knees FSM: alternating knee lift above hip height.
+///
+/// Thresholds are normalized by the standing hip-to-knee distance captured
+/// during calibration, so detection is independent of camera resolution and
+/// how far the user stands from the phone.
 class HighKneesCounterService implements ExerciseCounter {
   static const double minConfidence = 0.5;
-  static const double liftRatio = 0.12;
+
+  /// Knee counts as lifted when it rises to within this fraction of thigh
+  /// length below hip level (0 = knee exactly at hip height).
+  static const double liftFraction = 0.15;
+
+  /// Knee counts as planted again once it drops below this fraction of thigh
+  /// length under the hip — hysteresis so jitter can't double-count.
+  static const double plantFraction = 0.6;
 
   _KneePhase _phase = _KneePhase.neutral;
   bool _expectLeft = true;
   bool _isCalibrated = false;
   int _calibrationFrames = 0;
+  double _standingThigh = 0;
   static const int requiredCalibrationFrames = 6;
 
   final DoubleEMAFilter _leftDiffFilter = DoubleEMAFilter(alpha: 0.35);
@@ -27,6 +39,7 @@ class HighKneesCounterService implements ExerciseCounter {
     _expectLeft = true;
     _isCalibrated = false;
     _calibrationFrames = 0;
+    _standingThigh = 0;
     _leftDiffFilter.reset();
     _rightDiffFilter.reset();
   }
@@ -55,18 +68,18 @@ class HighKneesCounterService implements ExerciseCounter {
       );
     }
 
-    final metrics = _metrics(pose);
-    if (metrics == null) {
-      return const ExerciseProcessResult(
-        hasPose: false,
-        cue: 'STEP BACK — HIPS & KNEES IN FRAME',
-      );
-    }
+    // Vertical hip→knee displacement per side; image Y grows downward, so
+    // standing gives a negative diff of about one thigh length.
+    final leftDiff = _leftDiffFilter.filter(lh.y - lk.y);
+    final rightDiff = _rightDiffFilter.filter(rh.y - rk.y);
 
     if (!_isCalibrated) {
-      if (!metrics.leftUp && !metrics.rightUp) {
+      final bothDown = leftDiff < 0 && rightDiff < 0;
+      if (bothDown) {
         _calibrationFrames++;
-        if (_calibrationFrames >= requiredCalibrationFrames) {
+        _standingThigh = (-leftDiff + -rightDiff) / 2;
+        if (_calibrationFrames >= requiredCalibrationFrames &&
+            _standingThigh > 1) {
           _isCalibrated = true;
         }
       } else {
@@ -78,9 +91,16 @@ class HighKneesCounterService implements ExerciseCounter {
       );
     }
 
+    final liftThreshold = -liftFraction * _standingThigh;
+    final plantThreshold = -plantFraction * _standingThigh;
+    final leftUp = leftDiff >= liftThreshold;
+    final rightUp = rightDiff >= liftThreshold;
+    final leftDown = leftDiff <= plantThreshold;
+    final rightDown = rightDiff <= plantThreshold;
+
     switch (_phase) {
       case _KneePhase.neutral:
-        final up = _expectLeft ? metrics.leftUp : metrics.rightUp;
+        final up = _expectLeft ? leftUp : rightUp;
         if (up) {
           _phase = _KneePhase.lifted;
           return ExerciseProcessResult(
@@ -96,8 +116,8 @@ class HighKneesCounterService implements ExerciseCounter {
         );
 
       case _KneePhase.lifted:
-        final stillUp = _expectLeft ? metrics.leftUp : metrics.rightUp;
-        if (!stillUp) {
+        final planted = _expectLeft ? leftDown : rightDown;
+        if (planted) {
           _phase = _KneePhase.neutral;
           _expectLeft = !_expectLeft;
           return const ExerciseProcessResult(
@@ -113,30 +133,6 @@ class HighKneesCounterService implements ExerciseCounter {
           cue: 'PLANT AND SWITCH',
         );
     }
-  }
-
-  ({bool leftUp, bool rightUp})? _metrics(Pose pose) {
-    final lh = pose.landmarks[PoseLandmarkType.leftHip];
-    final rh = pose.landmarks[PoseLandmarkType.rightHip];
-    final lk = pose.landmarks[PoseLandmarkType.leftKnee];
-    final rk = pose.landmarks[PoseLandmarkType.rightKnee];
-    if ([lh, rh, lk, rk].any((l) => l == null)) return null;
-    if ([lh!, rh!, lk!, rk!]
-        .any((l) => l.likelihood < minConfidence)) {
-      return null;
-    }
-
-    final hipSpan = (lh.y - rh.y).abs() + 40;
-    final threshold = hipSpan * liftRatio;
-    
-    // Smooth the hip-knee vertical displacement
-    final leftDiff = _leftDiffFilter.filter(lh.y - lk.y);
-    final rightDiff = _rightDiffFilter.filter(rh.y - rk.y);
-
-    // Image Y grows downward — knee "up" when above (smaller y than) hip.
-    final leftUp = leftDiff > threshold;
-    final rightUp = rightDiff > threshold;
-    return (leftUp: leftUp, rightUp: rightUp);
   }
 }
 
