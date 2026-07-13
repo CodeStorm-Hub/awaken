@@ -31,6 +31,10 @@ class FakeRemoteSessionRepository extends SupabaseSessionRepository {
   @override
   Future<({int current, int best})> streakStats(String userId) async =>
       (current: 0, best: 0);
+
+  @override
+  Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4}) async =>
+      List.filled(weeks, 0);
 }
 
 void main() {

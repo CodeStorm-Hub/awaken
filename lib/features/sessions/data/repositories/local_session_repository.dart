@@ -59,6 +59,20 @@ class LocalSessionRepository implements SessionRepository {
   }
 
   @override
+  Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4}) async {
+    final sessions = await _getSessions();
+    final now = DateTime.now();
+    final buckets = List<int>.filled(weeks, 0);
+    for (final s in sessions) {
+      if (s.userId != userId) continue;
+      final ageDays = now.difference(s.completedAt).inDays;
+      if (ageDays < 0 || ageDays >= weeks * 7) continue;
+      buckets[weeks - 1 - ageDays ~/ 7] += s.repsCompleted;
+    }
+    return buckets;
+  }
+
+  @override
   Future<({int current, int best})> streakStats(String userId) async {
     final sessions = await _getSessions();
     final days = sessions

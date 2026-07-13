@@ -18,6 +18,7 @@ import 'package:awaken/features/dashboard/presentation/widgets/digital_clock.dar
 import 'package:awaken/features/dashboard/presentation/widgets/hud_theme_picker.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/streak_ring.dart';
+import 'package:awaken/features/dashboard/presentation/widgets/week_trend_card.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
 import 'package:awaken/features/territory/presentation/widgets/nemesis_card.dart';
 import 'package:flutter/foundation.dart';
@@ -33,6 +34,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _moreExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +56,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final exactAlarmGranted = ref.watch(exactAlarmPermissionProvider);
     final exactAlarmDismissed = ref.watch(exactAlarmBannerDismissedProvider);
     final bailoutDismissed = ref.watch(bailoutBannerDismissedProvider);
+    final guestSyncDismissed = ref.watch(guestSyncPromptDismissedProvider);
     final isSignedIn = ref.watch(isSignedInProvider);
     final user = ref.watch(currentUserProvider);
     final tt = Theme.of(context).extension<AwakenTypography>()!;
@@ -96,10 +100,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 onAddAlarm: () => context.push(AppRoutes.alarmSetup),
                 onProfileTap: () => context.push(AppRoutes.profile),
               ),
-              if (!isSignedIn) ...[
+              if (!isSignedIn && !guestSyncDismissed) ...[
                 const SizedBox(height: 12),
                 _GuestSyncPrompt(
                   onSignIn: () => context.push(AppRoutes.auth),
+                  onDismiss: () {
+                    ref
+                        .read(guestSyncPromptDismissedProvider.notifier)
+                        .state = true;
+                  },
                 ),
               ],
               SizedBox(height: size.height * 0.04),
@@ -158,27 +167,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Nemesis card (signed-in only) ─────────────────────────
-              if (isSignedIn)
-                ref.watch(nemesisProvider).whenOrNull(
-                      data: (nemesis) => nemesis != null
-                          ? Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: NemesisCard(nemesis: nemesis),
-                            )
-                          : null,
-                    ) ??
-                const SizedBox.shrink(),
-
-              // ── Territory capture entry point ──────────────────────────
-              _TerritoryCard(
-                tt: tt,
-                onTap: () => context.go(AppRoutes.territory),
-                onViewDetails: () => context.push(AppRoutes.territoryOverview),
-              ),
-
-              const SizedBox(height: 20),
-
               // ── Secondary stats ───────────────────────────────────────
               Text('THIS WEEK', style: tt.eyebrow),
               const SizedBox(height: 10),
@@ -233,26 +221,63 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-              const HudThemePicker(),
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => SquadSheet.show(context),
-                child: const Text(
-                  'SQUAD TAXES',
-                  style: TextStyle(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
+
+              // ── Rep trend (last 4 weeks) ──────────────────────────────
+              if (stats != null && stats.repsTrend.isNotEmpty)
+                WeekTrendCard(repsTrend: stats.repsTrend),
 
               const SizedBox(height: 24),
 
               // ── Alarm list (swipe-to-delete) ──────────────────────────
               _AlarmList(
                   alarms: ref.watch(alarmListProvider).valueOrNull ?? []),
+
+              const SizedBox(height: 24),
+
+              // ── More: territory, rivals, customization ────────────────
+              _MoreToggle(
+                expanded: _moreExpanded,
+                onTap: () {
+                  setState(() => _moreExpanded = !_moreExpanded);
+                },
+              ),
+              if (_moreExpanded) ...[
+                const SizedBox(height: 12),
+
+                if (isSignedIn)
+                  ref.watch(nemesisProvider).whenOrNull(
+                        data: (nemesis) => nemesis != null
+                            ? Padding(
+                                padding: const EdgeInsets.only(bottom: 20),
+                                child: NemesisCard(nemesis: nemesis),
+                              )
+                            : null,
+                      ) ??
+                  const SizedBox.shrink(),
+
+                _TerritoryCard(
+                  tt: tt,
+                  onTap: () => context.go(AppRoutes.territory),
+                  onViewDetails: () =>
+                      context.push(AppRoutes.territoryOverview),
+                ),
+
+                const SizedBox(height: 16),
+                const HudThemePicker(),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => SquadSheet.show(context),
+                  child: const Text(
+                    'SQUAD TAXES',
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 12),
 
@@ -503,44 +528,159 @@ class _BailoutBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.destructive.withValues(alpha: 0.1),
+    return Material(
+      color: AppColors.destructive.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      child: InkWell(
+        onTap: () => _showExplainer(context),
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        border: Border.all(color: AppColors.destructive.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.gavel_rounded, color: AppColors.destructive, size: 18),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Yesterday\'s bailout · tomorrow\'s tax is doubled',
-              style: TextStyle(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+            border:
+                Border.all(color: AppColors.destructive.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.gavel_rounded,
+                  color: AppColors.destructive, size: 18),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Yesterday\'s bailout · tomorrow\'s tax is doubled',
+                  style: TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const Icon(Icons.info_outline_rounded,
+                  color: AppColors.mutedForeground, size: 16),
+              IconButton(
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close, size: 16),
                 color: AppColors.mutedForeground,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Dismiss for now',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showExplainer(BuildContext context) {
+    final tt = Theme.of(context).extension<AwakenTypography>()!;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'WAKE UP TAX — DOUBLED',
+              style: tt.eyebrow.copyWith(color: AppColors.destructive),
+            ),
+            const SizedBox(height: 20),
+            _ExplainerRow(
+              icon: Icons.snooze_rounded,
+              title: 'What happened',
+              body: 'An alarm went unfinished for '
+                  '${AppConstants.bailoutWindow.inHours}+ hours — that\'s a '
+                  'bailout. A squadmate\'s bailout counts too; squads share '
+                  'the pain.',
+            ),
+            const SizedBox(height: 16),
+            const _ExplainerRow(
+              icon: Icons.gavel_rounded,
+              title: 'The penalty',
+              body: 'Your next wake-up tax is doubled. It never stacks '
+                  'higher than 2×.',
+            ),
+            const SizedBox(height: 16),
+            const _ExplainerRow(
+              icon: Icons.check_circle_outline_rounded,
+              title: 'How to clear it',
+              body: 'Complete the doubled tax and you\'re back to normal — '
+                  'no lingering debt.',
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('GOT IT'),
               ),
             ),
-          ),
-          IconButton(
-            onPressed: onDismiss,
-            icon: const Icon(Icons.close, size: 16),
-            color: AppColors.mutedForeground,
-            visualDensity: VisualDensity.compact,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
+class _ExplainerRow extends StatelessWidget {
+  const _ExplainerRow({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: AppColors.primary, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.foreground,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                body,
+                style: const TextStyle(
+                  color: AppColors.mutedForeground,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _GuestSyncPrompt extends StatelessWidget {
-  const _GuestSyncPrompt({required this.onSignIn});
+  const _GuestSyncPrompt({required this.onSignIn, required this.onDismiss});
 
   final VoidCallback onSignIn;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -552,17 +692,17 @@ class _GuestSyncPrompt extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppConstants.borderRadius),
             border: Border.all(color: AppColors.border),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.cloud_sync_outlined,
+              const Icon(Icons.cloud_sync_outlined,
                   size: 18, color: AppColors.primary),
-              SizedBox(width: 10),
-              Expanded(
+              const SizedBox(width: 10),
+              const Expanded(
                 child: Text(
                   'Sign in to sync streaks & leaderboard',
                   style: TextStyle(
@@ -572,10 +712,59 @@ class _GuestSyncPrompt extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right,
-                  size: 18, color: AppColors.mutedForeground),
+              IconButton(
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close, size: 16),
+                color: AppColors.mutedForeground,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Dismiss for now',
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreToggle extends StatelessWidget {
+  const _MoreToggle({required this.expanded, required this.onTap});
+
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).extension<AwakenTypography>()!;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Text(
+              expanded ? 'LESS' : 'TERRITORY, RIVALS & MORE',
+              style: tt.eyebrow.copyWith(color: AppColors.accent),
+            ),
+            const SizedBox(width: 6),
+            AnimatedRotation(
+              turns: expanded ? 0.5 : 0,
+              duration: AppConstants.shortAnim,
+              child: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: AppColors.accent,
+              ),
+            ),
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: 12),
+                child: Divider(color: AppColors.border, height: 1),
+              ),
+            ),
+          ],
         ),
       ),
     );

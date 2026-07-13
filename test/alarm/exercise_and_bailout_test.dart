@@ -2,7 +2,6 @@ import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_exercise_type.dart';
 import 'package:awaken/features/alarm/domain/repositories/alarm_repository.dart';
 import 'package:awaken/features/alarm/domain/services/alarm_bailout_service.dart';
-import 'package:awaken/features/alarm/domain/services/exercise_counter.dart';
 import 'package:awaken/features/alarm/domain/services/exercise_counter_router.dart';
 import 'package:awaken/features/alarm/domain/services/high_knees_counter_service.dart';
 import 'package:awaken/features/alarm/domain/services/jumping_jack_counter_service.dart';

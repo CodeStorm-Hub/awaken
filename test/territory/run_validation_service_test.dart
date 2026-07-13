@@ -179,7 +179,9 @@ void main() {
         RunValidationService.classify(
           points: loop,
           distanceMeters: 240,
-          duration: const Duration(seconds: 119),
+          // Derived from the constant — it differs between debug (45s) and
+          // prod (2m) builds, so a hardcoded duration is wrong in one mode.
+          duration: AppConstants.minRunDuration - const Duration(seconds: 1),
           wasInvalidatedBySpeed: false,
         ),
         equals(RunOutcome.invalidatedTooShort),

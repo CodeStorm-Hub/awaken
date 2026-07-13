@@ -386,7 +386,7 @@ void main() {
       expect(simplified.length, equals(3));
     });
 
-    test('15. F3: Simplified vertices are used for database capture.', () {
+    test('15. F3: Densified (not RDP-simplified) vertices are used for database capture.', () {
       fakeAsync((async) {
         final container = ProviderContainer(
           overrides: [territoryRepositoryProvider.overrideWithValue(fakeTerritoryRepository)],
@@ -419,10 +419,20 @@ void main() {
         notifier.finishRun();
         async.flushMicrotasks();
 
-        // Verify captured loops match simplified coordinates
+        // Capture must NOT RDP-simplify — the server anti-cheat rejects
+        // segments longer than 80 m, so the path is densified instead
+        // (see finishRun in active_run_providers.dart). Assert that contract:
+        // more vertices than the RDP result, and no gap wider than 70 m.
         final simplified = RdpSimplifier.simplify(pts, 3.0);
         final userTerritory = fakeTerritoryRepository.territories.firstWhere((t) => t.userId == 'user-1');
-        expect(userTerritory.polygons.first.length, equals(simplified.length));
+        final captured = userTerritory.polygons.first;
+        expect(captured.length, greaterThan(simplified.length));
+        for (var i = 1; i < captured.length; i++) {
+          expect(
+            GeoUtils.haversineMeters(captured[i - 1], captured[i]),
+            lessThanOrEqualTo(70.0),
+          );
+        }
       });
     });
 
@@ -517,7 +527,7 @@ void main() {
       });
     });
 
-    test('18. F4: Closed loop but too short duration (<2m) is classified as `invalidatedTooShort`.', () {
+    test('18. F4: Closed loop but duration below minimum is classified as `invalidatedTooShort`.', () {
       final baseTime = DateTime.now();
       final loop = createRectangleLoop(
         startLat: 40.7128,
@@ -530,7 +540,8 @@ void main() {
       final outcome = RunValidationService.classify(
         points: loop,
         distanceMeters: GeoUtils.pathDistanceMeters(loop),
-        duration: const Duration(seconds: 80),
+        // Derived from the constant — 45s in debug builds, 2m in prod.
+        duration: AppConstants.minRunDuration ~/ 2,
         wasInvalidatedBySpeed: false,
       );
       expect(outcome, equals(RunOutcome.invalidatedTooShort));
@@ -892,6 +903,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('AWAKEN'), findsOneWidget);
 
+      // Territory card lives in the collapsed "More" dashboard section.
+      await tester.ensureVisible(find.text('TERRITORY, RIVALS & MORE'));
+      await tester.tap(find.text('TERRITORY, RIVALS & MORE'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Run a loop, claim territory'));
       await tester.tap(find.text('Run a loop, claim territory'));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
@@ -1135,13 +1152,14 @@ void main() {
       expect(outcome, equals(RunOutcome.territoryClaimed));
     });
 
-    test('54. F4: Run duration of exactly 119 seconds is invalid.', () {
+    test('54. F4: Run duration one second below the minimum is invalid.', () {
       final baseTime = DateTime.now();
       final loop = createRectangleLoop(startLat: 40.7128, startLng: -74.0060, widthMeters: 60, heightMeters: 60, startTime: baseTime, interval: const Duration(seconds: 29));
       final outcome = RunValidationService.classify(
         points: loop,
         distanceMeters: 240,
-        duration: const Duration(seconds: 119),
+        // Boundary derived from the constant — 45s in debug builds, 2m in prod.
+        duration: AppConstants.minRunDuration - const Duration(seconds: 1),
         wasInvalidatedBySpeed: false,
       );
       expect(outcome, equals(RunOutcome.invalidatedTooShort));
@@ -1970,6 +1988,10 @@ class FakeSessionRepository implements SessionRepository {
   @override
   Future<({int current, int best})> streakStats(String userId) async =>
       (current: 0, best: 0);
+
+  @override
+  Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4}) async =>
+      List.filled(weeks, 0);
 }
 
 final DateTime _epoch = DateTime.fromMillisecondsSinceEpoch(0);

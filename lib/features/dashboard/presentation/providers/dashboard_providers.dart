@@ -11,6 +11,9 @@ part 'dashboard_providers.g.dart';
 /// Session-scoped dismiss for the exact-alarm permission banner.
 final exactAlarmBannerDismissedProvider = StateProvider<bool>((ref) => false);
 
+/// Session-scoped dismiss for the guest "sign in to sync" prompt.
+final guestSyncPromptDismissedProvider = StateProvider<bool>((ref) => false);
+
 /// Android exact-alarm permission state.
 ///
 /// `null` when not applicable (iOS / desktop). `false` when Android and the
@@ -59,24 +62,11 @@ Future<DashboardStatsEntity> dashboardStats(DashboardStatsRef ref) async {
   final user = ref.watch(currentUserProvider);
   final sessionRepo = ref.read(sessionRepositoryProvider);
 
-  if (user == null) {
-    const guestId = SessionEntity.localGuestUserId;
-    final streak = await sessionRepo.streakStats(guestId);
-    final weeklyReps = await sessionRepo.weeklyReps(guestId);
-    final monthlyCalories = await sessionRepo.monthlyCalories(guestId);
-    return DashboardStatsEntity(
-      currentStreak: streak.current,
-      bestStreak: streak.best,
-      weeklyReps: weeklyReps,
-      monthlyCalories: monthlyCalories,
-      nextAlarm: DateTime.now().add(const Duration(hours: 8)),
-      nextAlarmReps: 10,
-    );
-  }
-
-  final streak = await sessionRepo.streakStats(user.id);
-  final weeklyReps = await sessionRepo.weeklyReps(user.id);
-  final monthlyCalories = await sessionRepo.monthlyCalories(user.id);
+  final userId = user?.id ?? SessionEntity.localGuestUserId;
+  final streak = await sessionRepo.streakStats(userId);
+  final weeklyReps = await sessionRepo.weeklyReps(userId);
+  final monthlyCalories = await sessionRepo.monthlyCalories(userId);
+  final repsTrend = await sessionRepo.weeklyRepsTrend(userId);
 
   return DashboardStatsEntity(
     currentStreak: streak.current,
@@ -85,6 +75,7 @@ Future<DashboardStatsEntity> dashboardStats(DashboardStatsRef ref) async {
     monthlyCalories: monthlyCalories,
     nextAlarm: DateTime.now().add(const Duration(hours: 8)),
     nextAlarmReps: 10,
+    repsTrend: repsTrend,
   );
 }
 

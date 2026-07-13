@@ -47,6 +47,28 @@ class SupabaseSessionRepository implements SessionRepository {
   }
 
   @override
+  Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4}) async {
+    final now = DateTime.now();
+    final since =
+        now.subtract(Duration(days: weeks * 7)).toUtc().toIso8601String();
+    final data = await _client
+        .from('sessions')
+        .select('reps_completed, completed_at')
+        .eq('user_id', userId)
+        .gte('completed_at', since);
+
+    final buckets = List<int>.filled(weeks, 0);
+    for (final row in data as List) {
+      final r = row as Map<String, dynamic>;
+      final completedAt = DateTime.parse(r['completed_at'] as String).toLocal();
+      final ageDays = now.difference(completedAt).inDays;
+      if (ageDays < 0 || ageDays >= weeks * 7) continue;
+      buckets[weeks - 1 - ageDays ~/ 7] += r['reps_completed'] as int;
+    }
+    return buckets;
+  }
+
+  @override
   Future<({int current, int best})> streakStats(String userId) async {
     final row = await _client
         .from('streaks')

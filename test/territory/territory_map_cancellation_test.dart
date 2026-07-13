@@ -157,6 +157,12 @@ void main() {
 
         expect(find.text('AWAKEN'), findsOneWidget);
 
+        // Territory card lives in the collapsed "More" dashboard section.
+        await tester.ensureVisible(find.text('TERRITORY, RIVALS & MORE'));
+        await tester.tap(find.text('TERRITORY, RIVALS & MORE'));
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(find.text('Run a loop, claim territory'));
         await tester.tap(find.text('Run a loop, claim territory'));
         await tester.pump();
         await tester.pump(const Duration(seconds: 2));
@@ -221,6 +227,12 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        // Territory card lives in the collapsed "More" dashboard section.
+        await tester.ensureVisible(find.text('TERRITORY, RIVALS & MORE'));
+        await tester.tap(find.text('TERRITORY, RIVALS & MORE'));
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(find.text('Run a loop, claim territory'));
         await tester.tap(find.text('Run a loop, claim territory'));
         await tester.pump();
         await tester.pump(const Duration(seconds: 2));
@@ -283,4 +295,8 @@ class FakeSessionRepository implements SessionRepository {
   @override
   Future<({int current, int best})> streakStats(String userId) async =>
       (current: 0, best: 0);
+
+  @override
+  Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4}) async =>
+      List.filled(weeks, 0);
 }

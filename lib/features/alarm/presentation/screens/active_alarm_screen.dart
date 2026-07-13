@@ -494,8 +494,8 @@ class _AccessibilityModeBanner extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               capped
-                  ? 'Tap limit reached ($maxTapReps). Enable the camera to finish verified squats.'
-                  : 'Camera is off. Tap up to $maxTapReps times to count reps, or enable the camera for verified squats.',
+                  ? 'That\'s all $maxTapReps assist taps used — turn on the camera to finish with verified squats.'
+                  : 'Camera is off. You have $maxTapReps assist taps to keep moving — or enable the camera for verified reps.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppColors.mutedForeground,

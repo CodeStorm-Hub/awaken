@@ -54,4 +54,13 @@ class CompositeSessionRepository implements SessionRepository {
       return await local.streakStats(userId);
     }
   }
+
+  @override
+  Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4}) async {
+    try {
+      return await remote.weeklyRepsTrend(userId, weeks: weeks);
+    } catch (_) {
+      return await local.weeklyRepsTrend(userId, weeks: weeks);
+    }
+  }
 }

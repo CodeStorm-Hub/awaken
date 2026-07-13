@@ -1,10 +1,10 @@
+import 'package:awaken/core/theme/app_theme.dart';
 import 'package:awaken/features/auth/domain/entities/app_user.dart';
 import 'package:awaken/features/auth/domain/repositories/auth_repository.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/auth/presentation/screens/profile_screen.dart';
 import 'package:awaken/features/dashboard/domain/entities/dashboard_stats_entity.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
-import 'package:awaken/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

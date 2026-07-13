@@ -10,12 +10,17 @@ class DashboardStatsEntity {
     required this.monthlyCalories,
     required this.nextAlarm,
     required this.nextAlarmReps,
+    this.repsTrend = const [],
   });
 
   final int currentStreak;
   final int bestStreak;
   final int weeklyReps;
   final int monthlyCalories;
+
+  /// Reps per week over recent weeks, oldest first; last entry is the
+  /// current (partial) week. Empty when trend data hasn't loaded.
+  final List<int> repsTrend;
 
   /// The next scheduled alarm time, null if no alarm is set
   final DateTime? nextAlarm;
@@ -44,7 +49,8 @@ class DashboardStatsEntity {
           weeklyReps == other.weeklyReps &&
           monthlyCalories == other.monthlyCalories &&
           nextAlarm == other.nextAlarm &&
-          nextAlarmReps == other.nextAlarmReps;
+          nextAlarmReps == other.nextAlarmReps &&
+          listEquals(repsTrend, other.repsTrend);
 
   @override
   int get hashCode => Object.hash(
@@ -54,5 +60,6 @@ class DashboardStatsEntity {
         monthlyCalories,
         nextAlarm,
         nextAlarmReps,
+        Object.hashAll(repsTrend),
       );
 }

@@ -645,53 +645,28 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
   // ── Interaction handlers ───────────────────────────────────────────────────
 
+  /// Starts immediately — never block a runner who is already outside and
+  /// moving with a sign-in decision. Guests get a non-blocking nudge instead;
+  /// the run saves locally either way.
   void _onStartPressed(BuildContext context) {
-    if (!ref.read(isSignedInProvider)) {
-      _promptSignIn(context);
-      return;
-    }
     ref.read(_followMeProvider.notifier).state = true;
     ref.read(activeRunProvider.notifier).startRun();
-  }
 
-  Future<void> _promptSignIn(BuildContext context) async {
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-        ),
-        title: const Text(
-          'Sign in to sync this run',
-          style: TextStyle(color: AppColors.foreground),
-        ),
-        content: const Text(
-          'Sign in to sync your territory to the cloud and show up on the global leaderboard. Continue offline to save this run only on this device.',
-          style: TextStyle(color: AppColors.mutedForeground),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop('cancel'),
-            child: const Text('Cancel'),
+    if (!ref.read(isSignedInProvider)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Offline run — saved to this device. Sign in to sync and rank.',
           ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop('offline'),
-            child: const Text('Continue offline'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Sign in',
+            onPressed: () {
+              if (context.mounted) context.push(AppRoutes.auth);
+            },
           ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop('signin'),
-            child: const Text('Sign in'),
-          ),
-        ],
-      ),
-    );
-    if (!context.mounted) return;
-    if (result == 'signin') {
-      context.push(AppRoutes.auth);
-    } else if (result == 'offline') {
-      ref.read(_followMeProvider.notifier).state = true;
-      ref.read(activeRunProvider.notifier).startRun();
+        ),
+      );
     }
   }
 
@@ -733,12 +708,29 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       return;
     }
 
+    // Fewer than ~12 fixes/min over a 1-minute-plus run means the GPS kept
+    // dropping out — tell the runner it was signal, not their effort.
+    final elapsed = state.result?.duration ?? state.elapsed;
+    final trackedPoints = state.result?.points ?? state.points;
+    final patchyGps =
+        elapsed.inMinutes >= 1 && trackedPoints.length < elapsed.inMinutes * 12;
+
     final message = switch (outcome) {
-      RunOutcome.loopNotClosed => 'Loop didn\'t close — saved as a workout.',
+      RunOutcome.loopNotClosed when patchyGps =>
+        'GPS kept dropping — we saved everything we tracked as a workout, '
+            'but couldn\'t confirm the loop. A clear sky view helps.',
+      RunOutcome.loopNotClosed =>
+        'Loop didn\'t close — saved as a workout. Finish back where you '
+            'started to claim territory.',
       RunOutcome.invalidatedSpeedCap =>
-        'Run too fast to count as territory.',
-      RunOutcome.invalidatedTooSmall => 'Loop too small to claim territory.',
-      RunOutcome.invalidatedTooShort => 'Run too short to count.',
+        'Over the speed cap — saved as a workout, not territory. Keep it at '
+            'running pace to claim.',
+      RunOutcome.invalidatedTooSmall =>
+        'Saved as a workout — the loop was too small to claim. Circle a '
+            'bigger block next time.',
+      RunOutcome.invalidatedTooShort =>
+        'Saved as a workout — a little more time and distance and it counts '
+            'as territory.',
       RunOutcome.territoryClaimed || null => 'Run saved.',
     };
 
@@ -746,7 +738,7 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
     _resultMessageTimer?.cancel();
     setState(() => _resultMessage = message);
-    _resultMessageTimer = Timer(const Duration(seconds: 5), () {
+    _resultMessageTimer = Timer(const Duration(seconds: 7), () {
       if (mounted) setState(() => _resultMessage = null);
     });
 

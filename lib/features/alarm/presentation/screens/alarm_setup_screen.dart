@@ -14,6 +14,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AlarmSetupScreen extends ConsumerStatefulWidget {
   const AlarmSetupScreen({super.key});
@@ -209,6 +210,8 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
 
     try {
       await AlarmNotificationService.requestPermissions();
+      await _ensureCameraPermission();
+      if (!mounted) return;
 
       if (ExactAlarmPermissionService.isAndroid &&
           !await ExactAlarmPermissionService.isGranted()) {
@@ -230,7 +233,8 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
             messenger.showSnackBar(
               const SnackBar(
                 content: Text(
-                  'Exact alarm permission still denied — your alarm may not fire on time.',
+                  "Without this permission, Awaken can't guarantee your alarm "
+                  'fires — even an armed alarm may stay silent.',
                 ),
                 backgroundColor: AppColors.destructive,
               ),
@@ -282,6 +286,59 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
         );
       }
     }
+  }
+
+  /// Requests camera access at arm-time rather than leaving it to fire when
+  /// the alarm is already ringing — the worst possible moment for a native
+  /// permission dialog. Non-blocking: denial falls back to tap-to-count.
+  Future<void> _ensureCameraPermission() async {
+    final status = await Permission.camera.status;
+    if (status.isGranted) return;
+
+    if (!mounted) return;
+    final proceed = await _showCameraPermissionDialog();
+    if (!proceed) return;
+
+    final result = await Permission.camera.request();
+    if (!result.isGranted && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Camera denied — you can still arm the alarm, but reps will need '
+            'to be tapped instead of camera-verified.',
+          ),
+          backgroundColor: AppColors.destructive,
+        ),
+      );
+    }
+  }
+
+  Future<bool> _showCameraPermissionDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Allow camera access'),
+        content: const Text(
+          'Awaken verifies your squats on-device with the camera so the '
+          "alarm can't be faked. We're asking now so wake-up morning is "
+          'friction-free.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Not now',
+              style: TextStyle(color: AppColors.mutedForeground),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    ).then((value) => value ?? false);
   }
 
   Future<_ExactAlarmDialogAction> _showExactAlarmPermissionDialog() {

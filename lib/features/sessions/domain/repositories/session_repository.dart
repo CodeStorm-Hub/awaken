@@ -11,4 +11,8 @@ abstract class SessionRepository {
 
   /// Consecutive calendar-day streak ending today (or yesterday if none today).
   Future<({int current, int best})> streakStats(String userId);
+
+  /// Reps summed per 7-day bucket over the last [weeks] weeks, oldest first.
+  /// The final element is the current (possibly partial) week.
+  Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4});
 }
