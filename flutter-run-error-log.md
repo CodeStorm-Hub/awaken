@@ -1,733 +1,232 @@
-PS J:\GitHub\awaken> flutter run --dart-define-from-file=.env   
-Launching lib\main.dart on sdk gphone16k x86 64 in debug mode...
-WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): camera_android_camerax, flutter_timezone, wakelock_plus
-Future versions of Flutter will fail to build if your app uses plugins that apply KGP.
+Running Gradle task 'assembleDebug'...                             19.5s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...          43.4s
+I/FlutterActivityAndFragmentDelegate(23369): If you are attempting to set --enable-dart-profiling via Intent extras to launch a Flutter component outside of using the Flutter CLI, note that support for setting engine flags on Android via Intent will soon be dropped; see https://github.com/flutter/flutter/issues/180686 for more information on this breaking change. To migrate, set --enable-dart-profiling or any other flags specified via Intent extras on the command line instead or see https://github.com/flutter/flutter/blob/main/docs/engine/Flutter-Android-Engine-Flags.md for alternative methods.
+D/FlutterJNI(23369): Beginning load of flutter...
+D/FlutterJNI(23369): flutter (null) was loaded normally!
+I/flutter (23369): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+I/flutter (23369): [IMPORTANT:flutter/shell/platform/android/android_context_gl_impeller.cc(104)] Using the Impeller rendering backend (OpenGLES).
+D/FlutterGeolocator(23369): Attaching Geolocator to activity
+D/FlutterRenderer(23369): Width is zero. 0,0
+D/FlutterRenderer(23369): Width is zero. 0,0
+D/FlutterJNI(23369): Sending viewport metrics to the engine.
+I/SurfaceView(23369): 244178581 surfaceChanged -- format=4 w=1080 h=2358
+I/SurfaceView@e8dde95(23369): surfaceChanged (1080,2358) 1 #8 io.flutter.embedding.android.FlutterSurfaceView{e8dde95 V.E...... ......ID 0,0-1080,2358}
+I/SurfaceView(23369): 244178581 surfaceRedrawNeeded
+V/SurfaceView@e8dde95(23369): Layout: x=0 y=0 w=1080 h=2358, frame=Rect(0, 0 - 1080, 2358)
+D/FlutterGeolocator(23369): Creating service.
+D/FlutterGeolocator(23369): Binding to location service.
+D/OpenGLRenderer(23369): HWUI - treat SMPTE_170M as sRGB
+I/flutter (23369): supabase.supabase_flutter: INFO: ***** Supabase init completed ***** 
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.awaken/com.example.awaken.MainActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.awaken/com.example.awaken.MainActivity
+D/FlutterGeolocator(23369): Geolocator foreground service connected
+D/FlutterGeolocator(23369): Initializing Geolocator services
+D/FlutterGeolocator(23369): Flutter engine connected. Connected engine count 1
+D/FlutterJNI(23369): Sending viewport metrics to the engine.
+D/FlutterJNI(23369): Sending viewport metrics to the engine.
+I/BLASTBufferQueue_Java(23369): update, w= 1080 h= 2400 mName = ViewRootImpl@d61098b[MainActivity] mNativeObject= 0xb4000078db322e90 sc.mNativeObject= 0xb4000078eb336410 format= -3 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3017 android.view.ViewRootImpl.relayoutWindow:10131 android.view.ViewRootImpl.performTraversals:4110 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 android.view.Choreographer$CallbackRecord.run:1689 
+I/ViewRootImpl@d61098b[MainActivity](23369): Relayout returned: old=(0,0,1080,2400) new=(0,0,1080,2400) relayoutAsync=false req=(1080,2400)0 dur=3 res=0x401 s={true 0xb4000079fb35c4a0} ch=false seqId=0
+D/FlutterJNI(23369): Sending viewport metrics to the engine.
+D/FlutterJNI(23369): Sending viewport metrics to the engine.
+I/SurfaceView(23369): 244178581 Changes: creating=false format=false size=true visible=false alpha=false hint=false visible=false left=false top=false z=false attached=true lifecycleStrategy=false
+I/SurfaceView@e8dde95(23369): 244178581 Cur surface: Surface(name=null)/@0x4cdfbe5
+I/BLASTBufferQueue_Java(23369): update, w= 1080 h= 2400 mName = null mNativeObject= 0xb4000078db3237f0 sc.mNativeObject= 0xb4000078eb32d950 format= 4 caller= android.view.SurfaceView.setBufferSize:1438 android.view.SurfaceView.performSurfaceTransaction:994 android.view.SurfaceView.updateSurface:1210 android.view.SurfaceView.setFrame:559 android.view.View.layout:25765 android.widget.FrameLayout.layoutChildren:332 
+I/SurfaceView@e8dde95(23369): pST: sr = Rect(0, 0 - 1080, 2400) sw = 1080 sh = 2400
+D/SurfaceView@e8dde95(23369): 244178581 performSurfaceTransaction RenderWorker position = [0, 0, 1080, 2400] surfaceSize = 1080x2400
+I/SurfaceView@e8dde95(23369): updateSurface: mVisible = true mSurface.isValid() = true
+I/SurfaceView@e8dde95(23369): updateSurface: mSurfaceCreated = true surfaceChanged = false visibleChanged = false
+I/SurfaceView(23369): 244178581 surfaceChanged -- format=4 w=1080 h=2400
+I/SurfaceView@e8dde95(23369): surfaceChanged (1080,2400) 1 #5 io.flutter.embedding.android.FlutterSurfaceView{e8dde95 V.E...... ......ID 0,0-1080,2400}
+I/SurfaceView(23369): 244178581 surfaceRedrawNeeded
+V/SurfaceView@e8dde95(23369): Layout: x=0 y=0 w=1080 h=2400, frame=Rect(0, 0 - 1080, 2400)
+D/ViewRootImpl@d61098b[MainActivity](23369): reportNextDraw android.view.ViewRootImpl.performTraversals:4718 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 android.view.Choreographer$CallbackRecord.run:1689 android.view.Choreographer$CallbackRecord.run:1698 
+Syncing files to device SM A528B...                                211ms
 
-Please check the changelogs of these plugins and upgrade to a version that supports Built-in Kotlin.
-If no such version exists, report the issue to the plugin. If necessary, here is a guide on filing 
-an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
 
-If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
-e: Daemon compilation failed
-java.lang.Exception
-        at org.jetbrains.kotlin.daemon.common.CompileService$CallResult$Error.get(CompileService.kt:69)
-        at org.jetbrains.kotlin.daemon.common.CompileService$CallResult$Error.get(CompileService.kt:65)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.compileWithDaemon(JvmCompilationOperationImpl.kt:303)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.executeCancellableImpl(JvmCompilationOperationImpl.kt:152)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.executeCancellableImpl(JvmCompilationOperationImpl.kt:69)
-        at org.jetbrains.kotlin.buildtools.internal.CancellableBuildOperationImpl.executeImpl(CancellableBuildOperationImpl.kt:58)
-        at org.jetbrains.kotlin.buildtools.internal.BuildOperationImpl.execute(BuildOperationImpl.kt:34)
-        at org.jetbrains.kotlin.buildtools.internal.KotlinToolchainsImpl$BuildSessionImpl.executeOperation$lambda$1(KotlinToolchainsImpl.kt:70)
-        at org.jetbrains.kotlin.buildtools.internal.KotlinToolchainsImpl$BuildSessionImpl.executeOperation(KotlinToolchainsImpl.kt:74)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.performCompilation(BuildToolsApiCompilationWork.kt:172)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.compileInDaemon(BuildToolsApiCompilationWork.kt:244)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:285)
-        at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
-        at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
-        at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
-        at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-        at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
-        at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:176)
-        at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:194)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:127)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:169)
-        at org.gradle.internal.Factories$1.create(Factories.java:31)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:132)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:164)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:133)
-        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-        at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-        at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-        at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
-        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-        at java.base/java.lang.Thread.run(Unknown Source)
-Caused by: java.lang.AssertionError: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-        at org.jetbrains.kotlin.com.google.common.io.Closer.close(Closer.java:218)
-        at org.jetbrains.kotlin.incremental.IncrementalCachesManager.close(IncrementalCachesManager.kt:58)
-        at kotlin.io.CloseableKt.closeFinally(Closeable.kt:47)
-        at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileNonIncrementally(IncrementalCompilerRunner.kt:296)
-        at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compile(IncrementalCompilerRunner.kt:131)
-        at org.jetbrains.kotlin.daemon.CompileServiceImplBase.execIncrementalCompiler(CompileServiceImpl.kt:764)
-        at org.jetbrains.kotlin.daemon.CompileServiceImplBase.access$execIncrementalCompiler(CompileServiceImpl.kt:107)
-        at org.jetbrains.kotlin.daemon.CompileServiceImpl.compile(CompileServiceImpl.kt:2026)
-        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
-        at java.base/java.lang.reflect.Method.invoke(Unknown Source)
-        at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
-        at java.base/java.security.AccessController.doPrivileged(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport.serviceCall(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(Unknown Source)
-        at java.base/java.security.AccessController.doPrivileged(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(Unknown Source)
-        ... 3 more
-Caused by: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:95)
-        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.close(BasicMapsOwner.kt:53)
-        at org.jetbrains.kotlin.com.google.common.io.Closer.close(Closer.java:205)
-        ... 22 more
-        Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\class-fq-name-to-source.tab] is already registered
-                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-                Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\class-fq-name-to-source.tab] registration stack trace
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                        ... 43 more
-        Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\source-to-classes.tab] is already registered
-                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.AppendableSetBasicMap.close(BasicMap.kt:157)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-                Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\source-to-classes.tab] registration stack trace
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                        ... 44 more
-        Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\internal-name-to-source.tab] is already registered
-                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-                Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\internal-name-to-source.tab] registration stack trace
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                        ... 44 more
-        Suppressed: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups: id-to-file.tab, file-to-id.tab
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:95)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.close(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.LookupStorage.close(LookupStorage.kt:155)
-                ... 23 more
-                Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\id-to-file.tab] is already registered
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 25 more
-                        Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\id-to-file.tab] registration stack trace
-                                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                                ... 44 more
-                Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\file-to-id.tab] is already registered
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 25 more
-                        Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\file-to-id.tab] registration stack trace
-                                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                                ... 44 more
-        Suppressed: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\inputs: source-to-output.tab
-                ... 25 more
-                Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\inputs\source-to-output.tab] is already registered
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.AppendableSetBasicMap.close(BasicMap.kt:157)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 24 more
-                        Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\inputs\source-to-output.tab] registration stack trace
-                                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                                ... 44 more
-warning: [options] source value 8 is obsolete and will be removed in a future release
-warning: [options] target value 8 is obsolete and will be removed in a future release
-warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
-e: Daemon compilation failed
-java.lang.Exception
-        at org.jetbrains.kotlin.daemon.common.CompileService$CallResult$Error.get(CompileService.kt:69)
-        at org.jetbrains.kotlin.daemon.common.CompileService$CallResult$Error.get(CompileService.kt:65)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.compileWithDaemon(JvmCompilationOperationImpl.kt:303)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.executeCancellableImpl(JvmCompilationOperationImpl.kt:152)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.executeCancellableImpl(JvmCompilationOperationImpl.kt:69)
-        at org.jetbrains.kotlin.buildtools.internal.CancellableBuildOperationImpl.executeImpl(CancellableBuildOperationImpl.kt:58)
-        at org.jetbrains.kotlin.buildtools.internal.BuildOperationImpl.execute(BuildOperationImpl.kt:34)
-        at org.jetbrains.kotlin.buildtools.internal.KotlinToolchainsImpl$BuildSessionImpl.executeOperation$lambda$1(KotlinToolchainsImpl.kt:70)
-        at org.jetbrains.kotlin.buildtools.internal.KotlinToolchainsImpl$BuildSessionImpl.executeOperation(KotlinToolchainsImpl.kt:74)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.performCompilation(BuildToolsApiCompilationWork.kt:172)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.compileInDaemon(BuildToolsApiCompilationWork.kt:244)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:285)
-        at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
-        at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
-        at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
-        at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-        at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
-        at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:176)
-        at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:194)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:127)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:169)
-        at org.gradle.internal.Factories$1.create(Factories.java:31)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:132)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:164)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:133)
-        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-        at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-        at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-        at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
-        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-        at java.base/java.lang.Thread.run(Unknown Source)
-Caused by: java.lang.AssertionError: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\package_info_plus\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-        at org.jetbrains.kotlin.com.google.common.io.Closer.close(Closer.java:218)
-        at org.jetbrains.kotlin.incremental.IncrementalCachesManager.close(IncrementalCachesManager.kt:58)
-        at kotlin.io.CloseableKt.closeFinally(Closeable.kt:47)
-        at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileNonIncrementally(IncrementalCompilerRunner.kt:296)
-        at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compile(IncrementalCompilerRunner.kt:131)
-        at org.jetbrains.kotlin.daemon.CompileServiceImplBase.execIncrementalCompiler(CompileServiceImpl.kt:764)
-        at org.jetbrains.kotlin.daemon.CompileServiceImplBase.access$execIncrementalCompiler(CompileServiceImpl.kt:107)
-        at org.jetbrains.kotlin.daemon.CompileServiceImpl.compile(CompileServiceImpl.kt:2026)
-        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
-        at java.base/java.lang.reflect.Method.invoke(Unknown Source)
-        at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
-        at java.base/java.security.AccessController.doPrivileged(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport.serviceCall(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(Unknown Source)
-        at java.base/java.security.AccessController.doPrivileged(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(Unknown Source)
-        ... 3 more
-Caused by: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\package_info_plus\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:95)
-        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.close(BasicMapsOwner.kt:53)
-        at org.jetbrains.kotlin.com.google.common.io.Closer.close(Closer.java:205)
-        ... 22 more
-        Suppressed: java.lang.IllegalArgumentException: this and base files have different roots: C:\Users\syedr\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-10.2.0\android\src\main\kotlin\dev\fluttercommunity\plus\packageinfo\PackageInfoPlugin.kt and J:\GitHub\awaken\android.
-                at kotlin.io.FilesKt__UtilsKt.toRelativeString(Utils.kt:119)
-                at kotlin.io.FilesKt__UtilsKt.relativeTo(Utils.kt:130)
-                at org.jetbrains.kotlin.incremental.storage.RelocatableFileToPathConverter.toPath(RelocatableFileToPathConverter.kt:24)
-                at org.jetbrains.kotlin.incremental.storage.FileDescriptor.save(FileToPathConverter.kt:33)
-                at org.jetbrains.kotlin.incremental.storage.FileDescriptor.save(FileToPathConverter.kt:30)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.doPut(PersistentMapImpl.java:446)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.put(PersistentMapImpl.java:425)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.put(PersistentHashMap.java:105)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-        Suppressed: java.lang.IllegalArgumentException: this and base files have different roots: C:\Users\syedr\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-10.2.0\android\src\main\kotlin\dev\fluttercommunity\plus\packageinfo\PackageInfoPlugin.kt and J:\GitHub\awaken\android.
-                at kotlin.io.FilesKt__UtilsKt.toRelativeString(Utils.kt:119)
-                at kotlin.io.FilesKt__UtilsKt.relativeTo(Utils.kt:130)
-                at org.jetbrains.kotlin.incremental.storage.RelocatableFileToPathConverter.toPath(RelocatableFileToPathConverter.kt:24)
-                at org.jetbrains.kotlin.incremental.storage.FileDescriptor.getHashCode(FileToPathConverter.kt:50)
-                at org.jetbrains.kotlin.incremental.storage.FileDescriptor.getHashCode(FileToPathConverter.kt:30)
-                at org.jetbrains.kotlin.com.intellij.util.containers.LinkedCustomHashMap.hashKey(LinkedCustomHashMap.java:112)
-                at org.jetbrains.kotlin.com.intellij.util.containers.LinkedCustomHashMap.remove(LinkedCustomHashMap.java:156)
-                at org.jetbrains.kotlin.com.intellij.util.containers.SLRUMap.remove(SLRUMap.java:89)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.flushAppendCache(PersistentMapImpl.java:996)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.doPut(PersistentMapImpl.java:454)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.put(PersistentMapImpl.java:425)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.put(PersistentHashMap.java:105)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.AppendableSetBasicMap.close(BasicMap.kt:157)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-        Suppressed: java.lang.IllegalArgumentException: this and base files have different roots: C:\Users\syedr\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-10.2.0\android\src\main\kotlin\dev\fluttercommunity\plus\packageinfo\PackageInfoPlugin.kt and J:\GitHub\awaken\android.
-                at kotlin.io.FilesKt__UtilsKt.toRelativeString(Utils.kt:119)
-                at kotlin.io.FilesKt__UtilsKt.relativeTo(Utils.kt:130)
-                at org.jetbrains.kotlin.incremental.storage.RelocatableFileToPathConverter.toPath(RelocatableFileToPathConverter.kt:24)
-                at org.jetbrains.kotlin.incremental.storage.FileDescriptor.save(FileToPathConverter.kt:33)
-                at org.jetbrains.kotlin.incremental.storage.FileDescriptor.save(FileToPathConverter.kt:30)
-                at org.jetbrains.kotlin.incremental.storage.AppendableCollectionExternalizer.save(LazyStorage.kt:151)
-                at org.jetbrains.kotlin.incremental.storage.AppendableCollectionExternalizer.save(LazyStorage.kt:142)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.doPut(PersistentMapImpl.java:446)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.put(PersistentMapImpl.java:425)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.put(PersistentHashMap.java:105)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-        Suppressed: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\package_info_plus\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups: id-to-file.tab, file-to-id.tab
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:95)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.close(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.LookupStorage.close(LookupStorage.kt:155)
-                ... 23 more
-                Suppressed: java.lang.IllegalArgumentException: this and base files have different roots: C:\Users\syedr\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-10.2.0\android\src\main\kotlin\dev\fluttercommunity\plus\packageinfo\PackageInfoPlugin.kt and J:\GitHub\awaken\android.
-                        at kotlin.io.FilesKt__UtilsKt.toRelativeString(Utils.kt:119)
-                        at kotlin.io.FilesKt__UtilsKt.relativeTo(Utils.kt:130)
-                        at org.jetbrains.kotlin.incremental.storage.RelocatableFileToPathConverter.toPath(RelocatableFileToPathConverter.kt:24)
-                        at org.jetbrains.kotlin.incremental.storage.LegacyFileExternalizer.save(IdToFileMap.kt:51)
-                        at org.jetbrains.kotlin.incremental.storage.LegacyFileExternalizer.save(IdToFileMap.kt:48)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.doPut(PersistentMapImpl.java:446)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.put(PersistentMapImpl.java:425)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.put(PersistentHashMap.java:105)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 25 more
-                Suppressed: java.lang.IllegalArgumentException: this and base files have different roots: C:\Users\syedr\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-10.2.0\android\src\main\kotlin\dev\fluttercommunity\plus\packageinfo\PackageInfoPlugin.kt and J:\GitHub\awaken\android.
-                        at kotlin.io.FilesKt__UtilsKt.toRelativeString(Utils.kt:119)
-                        at kotlin.io.FilesKt__UtilsKt.relativeTo(Utils.kt:130)
-                        at org.jetbrains.kotlin.incremental.storage.RelocatableFileToPathConverter.toPath(RelocatableFileToPathConverter.kt:24)
-                        at org.jetbrains.kotlin.incremental.storage.FileDescriptor.getHashCode(FileToPathConverter.kt:50)
-                        at org.jetbrains.kotlin.incremental.storage.FileDescriptor.getHashCode(FileToPathConverter.kt:30)
-                        at org.jetbrains.kotlin.com.intellij.util.containers.LinkedCustomHashMap.hashKey(LinkedCustomHashMap.java:112)
-                        at org.jetbrains.kotlin.com.intellij.util.containers.LinkedCustomHashMap.remove(LinkedCustomHashMap.java:156)
-                        at org.jetbrains.kotlin.com.intellij.util.containers.SLRUMap.remove(SLRUMap.java:89)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.flushAppendCache(PersistentMapImpl.java:996)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.doPut(PersistentMapImpl.java:454)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.put(PersistentMapImpl.java:425)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.put(PersistentHashMap.java:105)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 25 more
-        Suppressed: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\package_info_plus\kotlin\compileDebugKotlin\cacheable\caches-jvm\inputs: source-to-output.tab
-                ... 25 more
-                Suppressed: java.lang.IllegalArgumentException: this and base files have different roots: C:\Users\syedr\AppData\Local\Pub\Cache\hosted\pub.dev\package_info_plus-10.2.0\android\src\main\kotlin\dev\fluttercommunity\plus\packageinfo\PackageInfoPlugin.kt and J:\GitHub\awaken\android.
-                        at kotlin.io.FilesKt__UtilsKt.toRelativeString(Utils.kt:119)
-                        at kotlin.io.FilesKt__UtilsKt.relativeTo(Utils.kt:130)
-                        at org.jetbrains.kotlin.incremental.storage.RelocatableFileToPathConverter.toPath(RelocatableFileToPathConverter.kt:24)
-                        at org.jetbrains.kotlin.incremental.storage.FileDescriptor.getHashCode(FileToPathConverter.kt:50)
-                        at org.jetbrains.kotlin.incremental.storage.FileDescriptor.getHashCode(FileToPathConverter.kt:30)
-                        at org.jetbrains.kotlin.com.intellij.util.containers.LinkedCustomHashMap.hashKey(LinkedCustomHashMap.java:112)
-                        at org.jetbrains.kotlin.com.intellij.util.containers.LinkedCustomHashMap.remove(LinkedCustomHashMap.java:156)
-                        at org.jetbrains.kotlin.com.intellij.util.containers.SLRUMap.remove(SLRUMap.java:89)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.flushAppendCache(PersistentMapImpl.java:996)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.doPut(PersistentMapImpl.java:454)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.put(PersistentMapImpl.java:425)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.put(PersistentHashMap.java:105)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.AppendableSetBasicMap.close(BasicMap.kt:157)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 24 more
-3 warnings
-e: Daemon compilation failed
-java.lang.Exception
-        at org.jetbrains.kotlin.daemon.common.CompileService$CallResult$Error.get(CompileService.kt:69)
-        at org.jetbrains.kotlin.daemon.common.CompileService$CallResult$Error.get(CompileService.kt:65)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.compileWithDaemon(JvmCompilationOperationImpl.kt:303)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.executeCancellableImpl(JvmCompilationOperationImpl.kt:152)
-        at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.executeCancellableImpl(JvmCompilationOperationImpl.kt:69)
-        at org.jetbrains.kotlin.buildtools.internal.CancellableBuildOperationImpl.executeImpl(CancellableBuildOperationImpl.kt:58)
-        at org.jetbrains.kotlin.buildtools.internal.BuildOperationImpl.execute(BuildOperationImpl.kt:34)
-        at org.jetbrains.kotlin.buildtools.internal.KotlinToolchainsImpl$BuildSessionImpl.executeOperation$lambda$1(KotlinToolchainsImpl.kt:70)
-        at org.jetbrains.kotlin.buildtools.internal.KotlinToolchainsImpl$BuildSessionImpl.executeOperation(KotlinToolchainsImpl.kt:74)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.performCompilation(BuildToolsApiCompilationWork.kt:172)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.compileInDaemon(BuildToolsApiCompilationWork.kt:244)
-        at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:285)
-        at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
-        at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
-        at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
-        at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-        at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-        at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
-        at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
-        at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:176)
-        at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:194)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:127)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:169)
-        at org.gradle.internal.Factories$1.create(Factories.java:31)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:263)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:127)
-        at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:132)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:164)
-        at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:133)
-        at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
-        at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
-        at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-        at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
-        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-        at java.base/java.lang.Thread.run(Unknown Source)
-Caused by: java.lang.AssertionError: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-        at org.jetbrains.kotlin.com.google.common.io.Closer.close(Closer.java:218)
-        at org.jetbrains.kotlin.incremental.IncrementalCachesManager.close(IncrementalCachesManager.kt:58)
-        at kotlin.io.CloseableKt.closeFinally(Closeable.kt:47)
-        at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileNonIncrementally(IncrementalCompilerRunner.kt:296)
-        at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compile(IncrementalCompilerRunner.kt:131)
-        at org.jetbrains.kotlin.daemon.CompileServiceImplBase.execIncrementalCompiler(CompileServiceImpl.kt:764)
-        at org.jetbrains.kotlin.daemon.CompileServiceImplBase.access$execIncrementalCompiler(CompileServiceImpl.kt:107)
-        at org.jetbrains.kotlin.daemon.CompileServiceImpl.compile(CompileServiceImpl.kt:2026)
-        at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
-        at java.base/java.lang.reflect.Method.invoke(Unknown Source)
-        at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport$1.run(Unknown Source)
-        at java.base/java.security.AccessController.doPrivileged(Unknown Source)
-        at java.rmi/sun.rmi.transport.Transport.serviceCall(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(Unknown Source)
-        at java.base/java.security.AccessController.doPrivileged(Unknown Source)
-        at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(Unknown Source)
-        ... 3 more
-Caused by: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:95)
-        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.close(BasicMapsOwner.kt:53)
-        at org.jetbrains.kotlin.com.google.common.io.Closer.close(Closer.java:205)
-        ... 22 more
-        Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\class-fq-name-to-source.tab] is already registered
-                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-                Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\class-fq-name-to-source.tab] registration stack trace
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                        ... 43 more
-        Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\source-to-classes.tab] is already registered
-                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.AppendableSetBasicMap.close(BasicMap.kt:157)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-                Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\source-to-classes.tab] registration stack trace
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                        ... 44 more
-        Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\internal-name-to-source.tab] is already registered
-                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                ... 24 more
-                Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin\internal-name-to-source.tab] registration stack trace
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                        ... 44 more
-        Suppressed: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups: id-to-file.tab, file-to-id.tab
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:95)
-                at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.close(BasicMapsOwner.kt:53)
-                at org.jetbrains.kotlin.incremental.LookupStorage.close(LookupStorage.kt:155)
-                ... 23 more
-                Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\id-to-file.tab] is already registered
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 25 more
-                        Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\id-to-file.tab] registration stack trace
-                                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                                ... 44 more
-                Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\file-to-id.tab] is already registered
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.close(PersistentStorage.kt:124)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 25 more
-                        Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\lookups\file-to-id.tab] registration stack trace
-                                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                                ... 44 more
-        Suppressed: java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\inputs: source-to-output.tab
-                ... 25 more
-                Suppressed: java.lang.IllegalStateException: Storage for [J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\inputs\source-to-output.tab] is already registered
-                        at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:410)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PagedFileStorage.<init>(PagedFileStorage.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.ResizeableMappedFile.<init>(ResizeableMappedFile.java:71)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentBTreeEnumerator.<init>(PersistentBTreeEnumerator.java:130)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentEnumerator.createDefaultEnumerator(PersistentEnumerator.java:53)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:166)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.<init>(PersistentMapImpl.java:141)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.buildImplementation(PersistentMapBuilder.java:91)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapBuilder.build(PersistentMapBuilder.java:74)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:44)
-                        at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.<init>(PersistentHashMap.java:70)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.createMap(LazyStorage.kt:62)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.getStorageOrCreateNew(LazyStorage.kt:59)
-                        at org.jetbrains.kotlin.incremental.storage.LazyStorage.set(LazyStorage.kt:80)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.applyChanges(InMemoryStorage.kt:108)
-                        at org.jetbrains.kotlin.incremental.storage.AppendableInMemoryStorage.applyChanges(InMemoryStorage.kt:179)
-                        at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.close(InMemoryStorage.kt:136)
-                        at org.jetbrains.kotlin.incremental.storage.AppendableSetBasicMap.close(BasicMap.kt:157)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner$close$1.invoke(BasicMapsOwner.kt:53)
-                        at org.jetbrains.kotlin.incremental.storage.BasicMapsOwner.forEachMapSafe(BasicMapsOwner.kt:87)
-                        ... 24 more
-                        Suppressed: java.lang.Exception: Storage[J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\inputs\source-to-output.tab] registration stack trace
-                                at org.jetbrains.kotlin.com.intellij.util.io.FilePageCache.registerPagedFileStorage(FilePageCache.java:437)
-                                ... 44 more
-
-FAILURE: Build completed with 3 failures.
-
-1: Task failed with an exception.
------------
-* What went wrong:
-Execution failed for task ':flutter_timezone:compileDebugKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-   > java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\flutter_timezone\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to generate a Build Scan (Powered by Develocity).
-> Get more help at https://help.gradle.org.
-==============================================================================
-
-2: Task failed with an exception.
------------
-* What went wrong:
-Execution failed for task ':package_info_plus:compileDebugKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-   > java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\package_info_plus\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to generate a Build Scan (Powered by Develocity).
-> Get more help at https://help.gradle.org.
-==============================================================================
-
-3: Task failed with an exception.
------------
-* What went wrong:
-Execution failed for task ':camera_android_camerax:compileDebugKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
-   > java.lang.Exception: Could not close incremental caches in J:\GitHub\awaken\build\camera_android_camerax\kotlin\compileDebugKotlin\cacheable\caches-jvm\jvm\kotlin: class-fq-name-to-source.tab, source-to-classes.tab, internal-name-to-source.tab
-
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to generate a Build Scan (Powered by Develocity).
-> Get more help at https://help.gradle.org.
-==============================================================================
-
-BUILD FAILED in 24s
-Running Gradle task 'assembleDebug'...                             24.9s
-Error: Gradle task assembleDebug failed with exit code 1
+A Dart VM Service on SM A528B is available at: http://127.0.0.1:64545/nWeYLObRmM8=/
+The Flutter DevTools debugger and profiler on SM A528B is available at: http://127.0.0.1:64545/nWeYLObRmM8=/devtools/?uri=ws://127.0.0.1:64545/nWeYLObRmM8=/ws
+I/BLASTBufferQueue(23369): [SurfaceView[com.example.awaken/com.example.awaken.MainActivity]@0#1](f:0,a:0,s:0) onFrameAvailable the first frame is available
+I/Choreographer(23369): Skipped 262 frames!  The application may be doing too much work on its main thread.
+I/SurfaceView(23369): 244178581 finishedDrawing
+I/SurfaceView(23369): 244178581 finishedDrawing
+D/CompatibilityChangeReporter(23369): Compat change id reported: 194532703; UID 10653; state: ENABLED
+D/CompatibilityChangeReporter(23369): Compat change id reported: 253665015; UID 10653; state: ENABLED
+I/Choreographer(23369): Skipped 54 frames!  The application may be doing too much work on its main thread.
+I/ViewRootImpl@d61098b[MainActivity](23369): Setup new sync=wmsSync-ViewRootImpl@d61098b[MainActivity]#2
+I/ViewRootImpl@d61098b[MainActivity](23369): Creating new active sync group ViewRootImpl@d61098b[MainActivity]#3
+I/ViewRootImpl@d61098b[MainActivity](23369): registerCallbacksForSync syncBuffer=false
+D/SurfaceView(23369): 244178581 updateSurfacePosition RenderWorker, frameNr = 1, position = [0, 0, 1080, 2400] surfaceSize = 1080x2400
+I/SurfaceView@e8dde95(23369): uSP: rtp = Rect(0, 0 - 1080, 2400) rtsw = 1080 rtsh = 2400
+I/SurfaceView@e8dde95(23369): onSSPAndSRT: pl = 0 pt = 0 sx = 1.0 sy = 1.0
+I/SurfaceView@e8dde95(23369): aOrMT: ViewRootImpl@d61098b[MainActivity] t = android.view.SurfaceControl$Transaction@7f834c2 fN = 1 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionChanged:1666 android.graphics.RenderNode$CompositePositionUpdateListener.positionChanged:369 
+I/ViewRootImpl@d61098b[MainActivity](23369): mWNT: t=0xb4000078ab331990 mBlastBufferQueue=0xb4000078db322e90 fn= 1 mRenderHdrSdrRatio=1.0 caller= android.view.SurfaceView.applyOrMergeTransaction:1598 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionChanged:1666 
+I/ViewRootImpl@d61098b[MainActivity](23369): Received frameDrawingCallback syncResult=0 frameNum=1.
+I/ViewRootImpl@d61098b[MainActivity](23369): mWNT: t=0xb4000078ab369750 mBlastBufferQueue=0xb4000078db322e90 fn= 1 mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$8.onFrameDraw:13841 android.view.ThreadedRenderer$1.onFrameDraw:792 <bottom of call stack> 
+I/ViewRootImpl@d61098b[MainActivity](23369): Setting up sync and frameCommitCallback
+I/BLASTBufferQueue(23369): [ViewRootImpl@d61098b[MainActivity]#0](f:0,a:0,s:0) onFrameAvailable the first frame is available
+I/ViewRootImpl@d61098b[MainActivity](23369): Received frameCommittedCallback lastAttemptedDrawFrameNum=1 didProduceBuffer=true
+D/OpenGLRenderer(23369): CFMS:: SetUp Pid : 23369    Tid : 23438
+I/ViewRootImpl@d61098b[MainActivity](23369): reportDrawFinished seqId=0
+I/ViewRootImpl@d61098b[MainActivity](23369): handleWindowFocusChanged: 1 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+D/ViewRootImpl@d61098b[MainActivity](23369): mThreadedRenderer.initializeIfNeeded()#2 mSurface={isValid=true 0xb4000079fb35c4a0}
+D/InputMethodManagerUtils(23369): startInputInner - Id : 0
+I/InputMethodManager(23369): startInputInner - IInputMethodManagerGlobalInvoker.startInputOrWindowGainedFocus
+D/InputMethodManagerUtils(23369): startInputInner - Id : 0
+I/InsetsController(23369): onStateChanged: host=com.example.awaken/com.example.awaken.MainActivity, from=android.view.ViewRootImpl$ViewRootHandler.handleMessageImpl:7209, state=InsetsState: {mDisplayFrame=Rect(0, 0 - 1080, 2400), mDisplayCutout=DisplayCutout{insets=Rect(0, 88 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(512, 0 - 568, 88), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1080 displayHeight=2400 physicalDisplayWidth=1080 physicalDisplayHeight=2400 density={2.8125} cutoutSpec={M 0,0 M 0,11.43427858034597 a 9.899054752987353,9.899054752987353 0 1,0 0,19.79810950597471 a 9.899054752987353,9.899054752987353 0 1,0 0,-19.79810950597471 Z @dp} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}}}, mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=0, center=Point(0, 0)}, RoundedCorner{position=TopRight, radius=0, center=Point(0, 0)}, RoundedCorner{position=BottomRight, radius=0, center=Point(0, 0)}, RoundedCorner{position=BottomLeft, radius=0, center=Point(0, 0)}]}  mRoundedCornerFrame=Rect(0, 0 - 1080, 2400), mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(956, 0 - 1080, 88) rotation=0}, mDisplayShape=DisplayShape{ spec=-311912193 displayWidth=1080 displayHeight=2400 physicalPixelDisplaySizeRatio=1.0 rotation=0 offsetX=0 offsetY=0 scale=1.0}, mSources= { InsetsSource: {c9350000 mType=statusBars mFrame=[0,0][1080,88] mVisible=true mFlags=[]}, InsetsSource: {c9350005 mType=mandatorySystemGestures mFrame=[0,0][1080,122] mVisible=true mFlags=[]}, InsetsSource: {c9350006 mType=tappableElement mFrame=[0,0][1080,88] mVisible=true mFlags=[]}, InsetsSource: {e4a00001 mType=navigationBars mFrame=[0,2358][1080,2400] mVisible=true mFlags=[SUPPRESS_SCRIM]}, InsetsSource: {e4a00004 mType=systemGestures mFrame=[0,0][84,2400] mVisible=true mFlags=[]}, InsetsSource: {e4a00005 mType=mandatorySystemGestures mFrame=[0,2310][1080,2400] mVisible=true mFlags=[]}, InsetsSource: {e4a00006 mType=tappableElement mFrame=[0,0][0,0] mVisible=true mFlags=[]}, InsetsSource: {e4a00024 mType=systemGestures mFrame=[996,0][1080,2400] mVisible=true mFlags=[]}, InsetsSource: {3 mType=ime mFrame=[0,0][0,0] mVisible=false mFlags=[]}, InsetsSource: {27 mType=displayCutout mFrame=[0,0][1080,88] mVisible=true mFlags=[]} }
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=false, type=ime, host=com.example.awaken/com.example.awaken.MainActivity
+I/FLTFireBGExecutor(23369): Creating background FlutterEngine instance, with args: [--enable-dart-profiling]
+D/FLTFireContextHolder(23369): received application context.
+I/AdrenoVK-0(23369): QUALCOMM build          : 9ad1b67875, Ib48d2dada6
+I/AdrenoVK-0(23369): Build Date              : 05/11/25
+I/AdrenoVK-0(23369): Shader Compiler Version : EV031.35.01.12
+I/AdrenoVK-0(23369): Local Branch            : 
+I/AdrenoVK-0(23369): Remote Branch           : refs/tags/AU_LINUX_ANDROID_LA.UM.9.14.11.00.00.571.148
+I/AdrenoVK-0(23369): Remote Branch           : NONE
+I/AdrenoVK-0(23369): Reconstruct Branch      : NOTHING
+I/AdrenoVK-0(23369): Build Config            : S P 10.0.7 AArch64
+I/AdrenoVK-0(23369): Driver Path             : /vendor/lib64/hw/vulkan.adreno.so
+I/flutter (23369): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+I/flutter (23369): [IMPORTANT:flutter/shell/platform/android/android_context_gl_impeller.cc(104)] Using the Impeller rendering backend (OpenGLES).
+D/FlutterGeolocator(23369): Geolocator foreground service connected
+D/FlutterGeolocator(23369): Initializing Geolocator services
+D/FlutterGeolocator(23369): Flutter engine connected. Connected engine count 2
+I/FLTFireMsgService(23369): FlutterFirebaseMessagingBackgroundService started!
+D/ProfileInstaller(23369): Installing profile for com.example.awaken
+W/WindowOnBackDispatcher(23369): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(23369): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/flutter (23369): supabase.auth: INFO: Signing out user with scope: local 
+W/WindowOnBackDispatcher(23369): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(23369): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+W/WindowOnBackDispatcher(23369): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(23369): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/DecorView(23369): setWindowBackground: isPopOver=false color=0 d=android.graphics.drawable.ColorDrawable@15dfe05
+D/NativeCustomFrequencyManager(23369): [NativeCFMS] BpCustomFrequencyManager::BpCustomFrequencyManager()
+I/InsetsController(23369): onStateChanged: host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity, from=android.view.ViewRootImpl.setView:1753, state=InsetsState: {mDisplayFrame=Rect(0, 0 - 1080, 2400), mDisplayCutout=DisplayCutout{insets=Rect(0, 88 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(512, 0 - 568, 88), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1080 displayHeight=2400 physicalDisplayWidth=1080 physicalDisplayHeight=2400 density={2.8125} cutoutSpec={M 0,0 M 0,11.43427858034597 a 9.899054752987353,9.899054752987353 0 1,0 0,19.79810950597471 a 9.899054752987353,9.899054752987353 0 1,0 0,-19.79810950597471 Z @dp} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}}}, mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=0, center=Point(0, 0)}, RoundedCorner{position=TopRight, radius=0, center=Point(0, 0)}, RoundedCorner{position=BottomRight, radius=0, center=Point(0, 0)}, RoundedCorner{position=BottomLeft, radius=0, center=Point(0, 0)}]}  mRoundedCornerFrame=Rect(0, 0 - 1080, 2400), mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(956, 0 - 1080, 88) rotation=0}, mDisplayShape=DisplayShape{ spec=-311912193 displayWidth=1080 displayHeight=2400 physicalPixelDisplaySizeRatio=1.0 rotation=0 offsetX=0 offsetY=0 scale=1.0}, mSources= { InsetsSource: {c9350000 mType=statusBars mFrame=[0,0][1080,88] mVisible=true mFlags=[]}, InsetsSource: {c9350005 mType=mandatorySystemGestures mFrame=[0,0][1080,122] mVisible=true mFlags=[]}, InsetsSource: {c9350006 mType=tappableElement mFrame=[0,0][1080,88] mVisible=true mFlags=[]}, InsetsSource: {e4a00001 mType=navigationBars mFrame=[0,2358][1080,2400] mVisible=true mFlags=[SUPPRESS_SCRIM]}, InsetsSource: {e4a00004 mType=systemGestures mFrame=[0,0][84,2400] mVisible=true mFlags=[]}, InsetsSource: {e4a00005 mType=mandatorySystemGestures mFrame=[0,2310][1080,2400] mVisible=true mFlags=[]}, InsetsSource: {e4a00006 mType=tappableElement mFrame=[0,0][0,0] mVisible=true mFlags=[]}, InsetsSource: {e4a00024 mType=systemGestures mFrame=[996,0][1080,2400] mVisible=true mFlags=[]}, InsetsSource: {27 mType=displayCutout mFrame=[0,0][1080,88] mVisible=true mFlags=[]} }
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): synced displayState. AttachInfo displayState=2
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): setView = com.android.internal.policy.DecorView@23e33fe TM=true
+D/OpenGLRenderer(23369): HWUI - treat SMPTE_170M as sRGB
+I/InsetsController(23369): onStateChanged: host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity, from=android.view.ViewRootImpl.relayoutWindow:10072, state=InsetsState: {mDisplayFrame=Rect(0, 0 - 1080, 2400), mDisplayCutout=DisplayCutout{insets=Rect(0, 88 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(512, 0 - 568, 88), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]} cutoutPathParserInfo={CutoutPathParserInfo{displayWidth=1080 displayHeight=2400 physicalDisplayWidth=1080 physicalDisplayHeight=2400 density={2.8125} cutoutSpec={M 0,0 M 0,11.43427858034597 a 9.899054752987353,9.899054752987353 0 1,0 0,19.79810950597471 a 9.899054752987353,9.899054752987353 0 1,0 0,-19.79810950597471 Z @dp} rotation={0} scale={1.0} physicalPixelDisplaySizeRatio={1.0}}}}, mRoundedCorners=RoundedCorners{[RoundedCorner{position=TopLeft, radius=0, center=Point(0, 0)}, RoundedCorner{position=TopRight, radius=0, center=Point(0, 0)}, RoundedCorner{position=BottomRight, radius=0, center=Point(0, 0)}, RoundedCorner{position=BottomLeft, radius=0, center=Point(0, 0)}]}  mRoundedCornerFrame=Rect(0, 0 - 1080, 2400), mPrivacyIndicatorBounds=PrivacyIndicatorBounds {static bounds=Rect(956, 0 - 1080, 88) rotation=0}, mDisplayShape=DisplayShape{ spec=-311912193 displayWidth=1080 displayHeight=2400 physicalPixelDisplaySizeRatio=1.0 rotation=0 offsetX=0 offsetY=0 scale=1.0}, mSources= { InsetsSource: {c9350000 mType=statusBars mFrame=[0,0][1080,88] mVisible=true mFlags=[]}, InsetsSource: {c9350005 mType=mandatorySystemGestures mFrame=[0,0][1080,122] mVisible=true mFlags=[]}, InsetsSource: {c9350006 mType=tappableElement mFrame=[0,0][1080,88] mVisible=true mFlags=[]}, InsetsSource: {e4a00001 mType=navigationBars mFrame=[0,2358][1080,2400] mVisible=true mFlags=[SUPPRESS_SCRIM]}, InsetsSource: {e4a00004 mType=systemGestures mFrame=[0,0][84,2400] mVisible=true mFlags=[]}, InsetsSource: {e4a00005 mType=mandatorySystemGestures mFrame=[0,2310][1080,2400] mVisible=true mFlags=[]}, InsetsSource: {e4a00006 mType=tappableElement mFrame=[0,0][0,0] mVisible=true mFlags=[]}, InsetsSource: {e4a00024 mType=systemGestures mFrame=[996,0][1080,2400] mVisible=true mFlags=[]}, InsetsSource: {3 mType=ime mFrame=[0,0][0,0] mVisible=false mFlags=[]}, InsetsSource: {27 mType=displayCutout mFrame=[0,0][1080,88] mVisible=true mFlags=[]} }
+I/BufferQueueProducer(23369): [](id:5b4900000002,api:0,p:0,c:23369) setDequeueTimeout:2077252342
+I/BLASTBufferQueue_Java(23369): new BLASTBufferQueue, mName= ViewRootImpl@2f93e03[SignInHubActivity] mNativeObject= 0xb4000078db3506b0 sc.mNativeObject= 0xb4000078eb359f90 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3028 android.view.ViewRootImpl.relayoutWindow:10131 android.view.ViewRootImpl.performTraversals:4110 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 android.view.Choreographer$CallbackRecord.run:1689 android.view.Choreographer$CallbackRecord.run:1698 android.view.Choreographer.doCallbacks:1153 android.view.Choreographer.doFrame:1079 android.view.Choreographer$FrameDisplayEventReceiver.run:1646 
+I/BLASTBufferQueue_Java(23369): update, w= 1080 h= 2400 mName = ViewRootImpl@2f93e03[SignInHubActivity] mNativeObject= 0xb4000078db3506b0 sc.mNativeObject= 0xb4000078eb359f90 format= -2 caller= android.graphics.BLASTBufferQueue.<init>:89 android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3028 android.view.ViewRootImpl.relayoutWindow:10131 android.view.ViewRootImpl.performTraversals:4110 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): Relayout returned: old=(0,0,1080,2400) new=(0,0,1080,2400) relayoutAsync=false req=(1080,2400)0 dur=9 res=0x403 s={true 0xb4000079fb38b200} ch=true seqId=0
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): performConfigurationChange setNightDimText nightDimLevel=0
+D/ViewRootImpl@2f93e03[SignInHubActivity](23369): mThreadedRenderer.initialize() mSurface={isValid=true 0xb4000079fb38b200} hwInitialized=true
+D/ViewRootImpl@2f93e03[SignInHubActivity](23369): reportNextDraw android.view.ViewRootImpl.performTraversals:4718 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 android.view.Choreographer$CallbackRecord.run:1689 android.view.Choreographer$CallbackRecord.run:1698 
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): Setup new sync=wmsSync-ViewRootImpl@2f93e03[SignInHubActivity]#4
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): Creating new active sync group ViewRootImpl@2f93e03[SignInHubActivity]#5
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): registerCallbacksForSync syncBuffer=false
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): Received frameDrawingCallback syncResult=0 frameNum=1.
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): mWNT: t=0xb4000078ab3774b0 mBlastBufferQueue=0xb4000078db3506b0 fn= 1 mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$8.onFrameDraw:13841 android.view.ThreadedRenderer$1.onFrameDraw:792 <bottom of call stack> 
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): Setting up sync and frameCommitCallback
+I/BLASTBufferQueue(23369): [ViewRootImpl@2f93e03[SignInHubActivity]#2](f:0,a:0,s:0) onFrameAvailable the first frame is available
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): Received frameCommittedCallback lastAttemptedDrawFrameNum=1 didProduceBuffer=true
+D/OpenGLRenderer(23369): CFMS:: SetUp Pid : 23369    Tid : 23438
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): reportDrawFinished seqId=0
+I/ViewRootImpl@d61098b[MainActivity](23369): handleWindowFocusChanged: 0 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+I/ImeFocusController(23369): onPreWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+I/ImeFocusController(23369): onPostWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.awaken/com.example.awaken.MainActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.awaken/com.example.awaken.MainActivity
+D/InputTransport(23369): Input channel destroyed: 'ClientS', fd=166
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity
+D/CompatibilityChangeReporter(23369): Compat change id reported: 78294732; UID 10653; state: ENABLED
+I/ViewRootImpl@d61098b[MainActivity](23369): Resizing android.view.ViewRootImpl@4cd4ab0: frame = [0,0][1080,2400] reportDraw = true forceLayout = false syncSeqId = -1
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): handleWindowFocusChanged: 0 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+I/ImeFocusController(23369): onPreWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+I/ImeFocusController(23369): onPostWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.awaken/com.example.awaken.MainActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.awaken/com.example.awaken.MainActivity
+I/ViewRootImpl@d61098b[MainActivity](23369): handleResized, msg = 5 frames=ClientWindowFrames{frame=[0,0][1080,2400] display=[0,0][1080,2400] parentFrame=[0,0][0,0]} forceNextWindowRelayout=false displayId=0 dragResizing=false compatScale=1.0 frameChanged=false attachedFrameChanged=false configChanged=false displayChanged=false compatScaleChanged=false
+I/ViewRootImpl@d61098b[MainActivity](23369): handleResized mSyncSeqId = 0
+D/ViewRootImpl@d61098b[MainActivity](23369): reportNextDraw android.view.ViewRootImpl.handleResized:2530 android.view.ViewRootImpl.-$$Nest$mhandleResized:0 android.view.ViewRootImpl$ViewRootHandler.handleMessageImpl:7197 android.view.ViewRootImpl$ViewRootHandler.handleMessage:7166 android.os.Handler.dispatchMessage:106 
+D/FlutterJNI(23369): Sending viewport metrics to the engine.
+I/ViewRootImpl@d61098b[MainActivity](23369): Setup new sync=wmsSync-ViewRootImpl@d61098b[MainActivity]#6
+I/ViewRootImpl@d61098b[MainActivity](23369): Creating new active sync group ViewRootImpl@d61098b[MainActivity]#7
+I/ViewRootImpl@d61098b[MainActivity](23369): registerCallbacksForSync syncBuffer=false
+I/ViewRootImpl@d61098b[MainActivity](23369): Received frameDrawingCallback syncResult=0 frameNum=3.
+I/ViewRootImpl@d61098b[MainActivity](23369): mWNT: t=0xb4000078ab3698b0 mBlastBufferQueue=0xb4000078db322e90 fn= 3 mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$8.onFrameDraw:13841 android.view.ThreadedRenderer$1.onFrameDraw:792 <bottom of call stack> 
+I/ViewRootImpl@d61098b[MainActivity](23369): Setting up sync and frameCommitCallback
+I/ViewRootImpl@d61098b[MainActivity](23369): Received frameCommittedCallback lastAttemptedDrawFrameNum=3 didProduceBuffer=true
+I/ViewRootImpl@d61098b[MainActivity](23369): reportDrawFinished seqId=0
+I/ViewRootImpl@d61098b[MainActivity](23369): handleWindowFocusChanged: 1 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+D/ViewRootImpl@d61098b[MainActivity](23369): mThreadedRenderer.initializeIfNeeded()#2 mSurface={isValid=true 0xb4000079fb35c4a0}
+D/InputMethodManagerUtils(23369): startInputInner - Id : 0
+I/InputMethodManager(23369): startInputInner - IInputMethodManagerGlobalInvoker.startInputOrWindowGainedFocus
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): handleAppVisibility mAppVisible = true visible = false
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): stopped(true) old = false
+D/ViewRootImpl@2f93e03[SignInHubActivity](23369): WindowStopped on com.example.awaken/com.google.android.gms.auth.api.signin.internal.SignInHubActivity set to true
+W/WindowOnBackDispatcher(23369): sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda19@445920a
+I/ViewRootImpl@2f93e03[SignInHubActivity](23369): dispatchDetachedFromWindow
+D/InputTransport(23369): Input channel destroyed: 'd2e7c4c', fd=150
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=false, type=ime, host=com.example.awaken/com.example.awaken.MainActivity
+D/SmartClipDataCropperImpl(23369): doExtractSmartClipData : Extraction start! reqId = 13  Cropped area = Rect(540, 1200 - 541, 1201)  Package = com.example.awaken
+D/SmartClipDataCropperImpl(23369): addAppMetaTag : package name is com.example.awaken
+D/SmartClipDataCropperImpl(23369): sendExtractionResultToSmartClipService : -- Extracted SmartClip data information --
+D/SmartClipDataCropperImpl(23369): sendExtractionResultToSmartClipService : Request Id : 13
+D/SmartClipDataCropperImpl(23369): sendExtractionResultToSmartClipService : Extraction mode : 1
+D/SemSmartClipDataRepository(23369): ----- Start of SmartClip repository informations -----
+D/SemSmartClipDataRepository(23369): ** Content type : image
+D/SemSmartClipDataRepository(23369): ** Meta area rect : Rect(0, 0 - 0, 0)
+D/SemSmartClipDataRepository(23369): ** Captured image file path : null
+D/SemSmartClipDataRepository(23369): ----- End of SmartClip repository informations -----
+D/SmartClipDataCropperImpl(23369): sendExtractionResultToSmartClipService : Elapsed = 9
+I/ViewRootImpl@d61098b[MainActivity](23369): handleWindowFocusChanged: 0 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+I/ImeFocusController(23369): onPreWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+I/ImeFocusController(23369): onPostWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+D/SmartClipRemoteRequestDispatcher(23369): dispatchScrollableAreaInfo : windowRect = Rect(0, 0 - 1080, 2400)
+D/SmartClipRemoteRequestDispatcher(23369): dispatchScrollableAreaInfo : Scrollable view count = 1
+D/SmartClipRemoteRequestDispatcher(23369): dispatchScrollableAreaInfo : Unscrollable view count = 0
+D/SmartClipRemoteRequestDispatcher(23369): dispatchScrollableAreaInfo : Pkg=com.example.awaken Activity=null
+I/ViewRootImpl@d61098b[MainActivity](23369): handleWindowFocusChanged: 1 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+D/ViewRootImpl@d61098b[MainActivity](23369): mThreadedRenderer.initializeIfNeeded()#2 mSurface={isValid=true 0xb4000079fb35c4a0}
+D/InputMethodManagerUtils(23369): startInputInner - Id : 0
+I/InputMethodManager(23369): startInputInner - IInputMethodManagerGlobalInvoker.startInputOrWindowGainedFocus
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.example.awaken/com.example.awaken.MainActivity
+I/InsetsSourceConsumer(23369): applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.example.awaken/com.example.awaken.MainActivity
+I/ViewRootImpl@d61098b[MainActivity](23369): handleWindowFocusChanged: 0 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+I/ImeFocusController(23369): onPreWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+I/ImeFocusController(23369): onPostWindowFocus: skipped, hasWindowFocus=false mHasImeFocus=true
+I/ViewRootImpl@d61098b[MainActivity](23369): handleAppVisibility mAppVisible = true visible = false
+I/ViewRootImpl@d61098b[MainActivity](23369): stopped(true) old = false
+D/ViewRootImpl@d61098b[MainActivity](23369): WindowStopped on com.example.awaken/com.example.awaken.MainActivity set to true
+D/OpenGLRenderer(23369): CacheManager::trimMemory(20)
+D/SurfaceView(23369): 67702900 windowPositionLost, frameNr = 0
+I/SurfaceView@e8dde95(23369): aOrMT: ViewRootImpl@d61098b[MainActivity] t = android.view.SurfaceControl$Transaction@897899d fN = 0 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionLost:1696 android.graphics.RenderNode$CompositePositionUpdateListener.positionLost:376 
+I/ViewRootImpl@d61098b[MainActivity](23369): mWNT: t=0xb4000078ab33bff0 mBlastBufferQueue=0xb4000078db322e90 fn= 0 mRenderHdrSdrRatio=1.0 caller= android.view.SurfaceView.applyOrMergeTransaction:1598 android.view.SurfaceView.-$$Nest$mapplyOrMergeTransaction:0 android.view.SurfaceView$SurfaceViewPositionUpdateListener.positionLost:1696 
+I/SurfaceView@e8dde95(23369): windowStopped(true) false io.flutter.embedding.android.FlutterSurfaceView{e8dde95 V.E...... ........ 0,0-1080,2400} of ViewRootImpl@d61098b[MainActivity]
+I/SurfaceView(23369): 244178581 Changes: creating=false format=false size=false visible=true alpha=false hint=false visible=true left=false top=false z=false attached=true lifecycleStrategy=false
+I/SurfaceView@e8dde95(23369): 244178581 Cur surface: Surface(name=null)/@0x4cdfbe5
+I/SurfaceView(23369): 244178581 surfaceDestroyed
+I/SurfaceView@e8dde95(23369): surfaceDestroyed callback.size 1 #1 io.flutter.embedding.android.FlutterSurfaceView{e8dde95 V.E...... ........ 0,0-1080,2400}
+I/SurfaceView@e8dde95(23369): updateSurface: mVisible = false mSurface.isValid() = true
+I/SurfaceView@e8dde95(23369): releaseSurfaces: viewRoot = ViewRootImpl@d61098b[MainActivity]
+V/SurfaceView@e8dde95(23369): Layout: x=0 y=0 w=1080 h=2400, frame=Rect(0, 0 - 1080, 2400)
+D/SurfaceView@e8dde95(23369): updateSurface: surface is not valid
+I/SurfaceView@e8dde95(23369): releaseSurfaces: viewRoot = ViewRootImpl@d61098b[MainActivity]
+I/SurfaceView@e8dde95(23369): onWindowVisibilityChanged(8) false io.flutter.embedding.android.FlutterSurfaceView{e8dde95 G.E...... ......I. 0,0-1080,2400} of ViewRootImpl@d61098b[MainActivity]
+D/SurfaceView@e8dde95(23369): updateSurface: surface is not valid
+I/SurfaceView@e8dde95(23369): releaseSurfaces: viewRoot = ViewRootImpl@d61098b[MainActivity]
+I/ViewRootImpl@d61098b[MainActivity](23369): destroyHardwareResources: Callers=android.view.ViewRootImpl.performTraversals:3932 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 android.view.Choreographer$CallbackRecord.run:1689 android.view.Choreographer$CallbackRecord.run:1698 android.view.Choreographer.doCallbacks:1153 android.view.Choreographer.doFrame:1079 android.view.Choreographer$FrameDisplayEventReceiver.run:1646 android.os.Handler.handleCallback:958 android.os.Handler.dispatchMessage:99 
+D/OpenGLRenderer(23369): CacheManager::trimMemory(20)
+I/ViewRootImpl@d61098b[MainActivity](23369): Relayout returned: old=(0,0,1080,2400) new=(0,0,1080,2400) relayoutAsync=false req=(1080,2400)8 dur=6 res=0x402 s={false 0x0} ch=false seqId=0
+D/SurfaceView@e8dde95(23369): updateSurface: surface is not valid
+I/SurfaceView@e8dde95(23369): releaseSurfaces: viewRoot = ViewRootImpl@d61098b[MainActivity]
+D/OpenGLRenderer(23369): CacheManager::trimMemory(20)
+D/InputTransport(23369): Input channel destroyed: 'ClientS', fd=153
+D/SurfaceView@e8dde95(23369): updateSurface: surface is not valid
+I/SurfaceView@e8dde95(23369): releaseSurfaces: viewRoot = ViewRootImpl@d61098b[MainActivity]
+Lost connection to device.
