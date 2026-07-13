@@ -490,4 +490,113 @@ erDiagram
 
 ---
 
-*End of report.*
+# How the Wake Up Tax (Alarm) Actually Works
+
+## 1. Setting up an alarm
+
+`AlarmSetupScreen` ([alarm_setup_screen.dart](lib/features/alarm/presentation/screens/alarm_setup_screen.dart)) lets the user pick a time, a rep count (5–50, step 5, with tier chips), a label, and an **exercise mode**:
+- **Fixed** — pick one of squats / push-ups / jumping jacks / high knees (`AlarmExerciseTypeX.implemented`)
+- **Roulette** — the exercise is picked at wake time, not now
+
+On "ARM ALARM" (`_save`), in order:
+1. `AlarmNotificationService.requestPermissions()` — notification permission
+2. `_ensureCameraPermission()` — camera permission requested **now**, with a rationale dialog, so the wake-up moment is friction-free ([alarm_setup_screen.dart:294-314](lib/features/alarm/presentation/screens/alarm_setup_screen.dart#L294))
+3. Android 12+ exact-alarm permission check/dialog
+4. Builds an `AlarmEntity` and calls `alarmListProvider.addAlarm()`, which persists it (local or Supabase depending on sign-in) **and** calls `AlarmNotificationService.scheduleAlarm()`
+
+## 2. Scheduling & firing
+
+`AlarmNotificationService.scheduleAlarm` ([alarm_notification_service.dart:98](lib/core/services/alarm_notification_service.dart#L98)) uses `flutter_local_notifications.zonedSchedule` with `AndroidScheduleMode.exactAllowWhileIdle`, a full-screen intent, `Importance.max`/`Priority.max`, `ongoing: true, autoCancel: false` — the notification literally cannot be swiped away. The payload is `id|reps|scheduledTime`.
+
+## 3. What happens when the user "turns off" the alarm
+
+There is **no dismiss/snooze button anywhere**. Tapping the notification (or its "Complete Squats" action) only *opens* `ActiveAlarmScreen` — it does not stop the alarm. The screen is wrapped in `PopScope(canPop: false)` ([active_alarm_screen.dart:293](lib/features/alarm/presentation/screens/active_alarm_screen.dart#L293)), so back-gesture/back-button are inert. The only way out is completing the required reps.
+
+When the screen opens (`initState`):
+- Resolves the exercise (`resolveSessionExercise` — honors Roulette's daily deterministic pick)
+- Resets rep-session Riverpod state (`resetAlarmSession`)
+- Records an `AlarmTriggerRecord` (bailout tracking) via `AlarmBailoutService.recordFire`
+- Shows the `TaxRevealStamp` full-black overlay ("TAX / SQUATS × 20") for 1.2 s
+- Calls `WakeLockService.enable()` (screen stays on), `AlarmAudioService.start()` (looping alarm sound), and `_pipeline.start()` (camera)
+
+Once `repCount >= requiredReps`, `_onRepCompleted` fires haptics and, after a short delay, navigates to `/alarm/success` with `_router.go(...)` — replacing the route, so the alarm screen is gone and can't be popped back into. `SuccessScreen` is also `PopScope(canPop:false)`; the actual dismissal — audio stop, wake-lock release, alarm marked complete, bailout trigger resolved — happens in `_ActiveAlarmScreenState.dispose()` and `SuccessScreen._recordSession()`.
+
+## 4. The camera pipeline — how ML Kit detects the workout
+
+Owned entirely by `AlarmPosePipeline` ([alarm_pose_pipeline.dart](lib/features/alarm/presentation/services/alarm_pose_pipeline.dart)), separate from the screen so pose updates don't rebuild the whole widget tree:
+
+1. **Permission + open**: requests `Permission.camera`, picks the front camera (`ResolutionPreset.medium`, `nv21` on Android / `bgra8888` on iOS, no audio).
+2. **Image stream throttle**: `_onCameraImage` is called on every camera frame but is gated to ~15 FPS via a 66 ms timestamp check plus an `_isDetecting` re-entrancy guard, so ML Kit never gets backed up.
+3. **Frame conversion**: `_buildInputImage` computes the correct `InputImageRotation` (device-orientation-aware on Android, sensor-orientation on iOS) and builds an ML Kit `InputImage`. If the platform delivers 3-plane YUV_420_888 instead of a single NV21 plane, `_yuv420ToNv21` manually interleaves U/V respecting row/pixel strides.
+4. **Detection**: `PoseDetector(options: PoseDetectorOptions(mode: PoseDetectionMode.stream))` — ML Kit's streaming mode, tuned for continuous video rather than single-shot analysis. Returns up to 33 body landmarks (x, y, likelihood) per frame.
+5. **Fan-out**: the first detected pose (or `null`) is pushed to a `ValueNotifier<PoseFrame>` (drives the skeleton overlay) and to the `onPoseResult` callback, which routes into the exercise counter's FSM.
+6. **Lifecycle**: camera is torn down on `AppLifecycleState.inactive/paused/hidden` and reopened on `resumed` — required on Android, where holding the camera open in the background breaks it on many devices.
+
+## 5. What's on the camera UI screen
+
+`ActiveAlarmScreen.build` stacks, in order (all inside `CameraHudOverlay` + siblings):
+
+1. **Camera preview**, cover-fit, mirrored for front-facing
+2. **Radial + edge vignette** tinted by the active `HudTheme` accent
+3. **Pose overlay**: `PoseOverlayPainter` draws the skeleton (glow pass + sharp pass, joint dots) directly from live ML Kit landmarks, colored green while mid-rep, theme-accent otherwise, correctly transformed for all 4 rotation cases and camera mirroring. Before any pose is detected, a static placeholder `SkeletonWireframe` (fixed "partial squat" pose) fills the space instead.
+4. **Scan-line animation** — a glowing horizontal bar sweeping top-to-bottom on a 2 s loop, purely decorative HUD chrome
+5. **Live L/R knee-angle telemetry labels** (only shown for squats) — raw degree readout from `getLeftKneeAngle`/`getRightKneeAngle`
+6. **Rep counter** — centered, oversized mono `12 / 20`, with an expanding "shockwave ring" animation on each increment
+7. **Top instruction bar** — state-driven cue text (see below), the exercise's tax-stamp label, bailout-penalty line if `penaltyMultiplier > 1`
+8. **Accessibility banner** — only if camera permission was denied, explaining the tap-to-count fallback and its cap
+9. **Bottom "WAKE UP TAX — N SQUATS LEFT" strip**
+10. **Tax reveal stamp overlay** — fades out after 1.2 s
+11. **Squad rail** — right-edge column of up to 3 squadmates' live progress (only if the user is in a squad), fed by Supabase Realtime on `squad_alarms`
+
+The whole card has an animated border that flashes **green** on a good rep and **red** on bad form/failure, plus a glow shadow.
+
+Whole-screen tap is wired to `_onTap`, but it's a no-op unless camera permission is denied — that's the accessibility fallback.
+
+## 6. Available exercises & how each is counted
+
+All four implement a shared `ExerciseCounter` interface, each with an EMA smoothing filter (α=0.35) and a standing-calibration phase before rep counting begins:
+
+| Exercise | Landmarks used | Rep trigger | Bad-form check |
+|---|---|---|---|
+| **Squats** | hip, knee, ankle, shoulder | Knee angle drops ≤100° then rises ≥150°, AND achieved hip-to-knee depth ratio ≥0.6 of calibrated standing gap | Shoulder tilt >18% of torso height while squatting → "KEEP SHOULDERS LEVEL" |
+| **Push-ups** | shoulder, elbow, wrist | Elbow angle drops ≤90° then rises ≥150° | Dips below 130° (elbow starting to bend) but returns to ≥150° without ever reaching 90° → "TOO SHALLOW — CHEST TO FLOOR" |
+| **Jumping jacks** | wrist, ankle, hip, nose | Wrists rise above nose level AND ankle gap reaches ≥1.35× standing baseline simultaneously, then both return to closed | Arms up but feet still together (or vice-versa) held ~0.7 s (10 frames) → "ARMS AND FEET TOGETHER" |
+| **High knees** | hip, knee | Alternating: knee rises to within 15% of calibrated thigh length below hip, then plants back down past 60% — L/R must alternate | No explicit bad-form flag; wrong-leg lift just doesn't register a rep (`_expectLeft` gate) |
+| **Sit-ups** | — | *Not implemented.* `AlarmExerciseType.sitUps.isImplemented == false`; if selected it silently routes to the `SquatExerciseCounter` instead (see Issues). |
+
+**Calibration** — every counter requires the user to hold a "ready" pose (standing tall for squats/high-knees/jacks, arms extended for push-ups) for 6–8 consecutive qualifying frames before it starts counting. During calibration the instruction bar shows cues like "STAND TALL — HOLD TO CALIBRATE." This establishes a per-session baseline (standing hip-knee gap, standing thigh length, standing ankle gap, extended elbow angle) so thresholds are relative to *that user's* body/distance from camera rather than fixed pixel values.
+
+**How a user performs a rep, concretely (squats example):**
+1. Stand in frame, full body visible (ankles + hips + knees all above 0.5 confidence) — otherwise "STEP BACK — FEET/FULL BODY IN FRAME"
+2. Hold standing for 8 frames → calibrated ("STAND UPRIGHT TO CALIBRATE" clears)
+3. Squat down until knee angle < 100° → phase becomes `squatting`, tracker records the deepest depth reached
+4. Stand back up until knee angle > 150° → the FSM evaluates the deepest depth reached during the squat:
+   - depth ≥ 0.6 of standing baseline AND shoulders stayed level → `repCompleted: true`, "PERFECT REP", counter increments, green flash, haptic
+   - depth < 0.6 → `badForm: true`, "GO DEEPER", red flash, no increment
+   - shoulders tilted too much → `badForm: true`, "KEEP SHOULDERS LEVEL", no increment
+
+Every processed frame also emits a `depthRatio` (drives the "GO DEEPER" vs "HOLD... STAND BACK UP" cue while mid-squat) and an `hasPose` flag (drives "FULL BODY IN FRAME" / "BODY OUT OF FRAME — STEP BACK" and the out-of-frame audio-ramp penalty).
+
+## 7. Roulette
+
+If the alarm's mode is Roulette, `pickRouletteExercise` seeds `Object.hash(alarmId, year, month, day)` and picks from the implemented list — meant to give a "same alarm, same day → same exercise" guarantee (see Issues, #3).
+
+---
+
+# Issues found while tracing this flow
+
+1. **Sit-ups are advertised but not implemented, and silently mis-execute.** `AlarmExerciseType.sitUps` exists in the enum and the Supabase check constraint allows it, but `AlarmExerciseTypeX.implemented` excludes it and `ExerciseCounterRouter._create` explicitly comments `// deferred` and routes it to `SquatExerciseCounter`. If a user could ever select sit-ups as a fixed exercise (the setup screen's `Wrap` only iterates `implemented`, so it's not reachable via normal UI), they'd be shown squat-style cues while thinking they're doing sit-ups. Low practical risk today since the picker filters it out, but it's dead/misleading enum surface.
+
+2. **High knees can't actually be saved as a fixed alarm to Supabase.** The client implements `highKnees` as a full counter and offers it in the setup screen's exercise chips (`AlarmExerciseTypeX.implemented` includes it). But the DB check constraint on `alarms.exercise_type` is `ANY (ARRAY['squats','pushUps','jumpingJacks','sitUps'])` — **`highKnees` is not in that list.** A signed-in user picking "High Knees" and tapping ARM ALARM would get a Postgres constraint violation on `AlarmSupabaseDatasource.saveAlarm`'s upsert (caught by the generic `try/catch` in `_save`, surfacing a raw "Failed to save alarm: ..." SnackBar). This is a real, reachable bug for any signed-in user.
+
+3. **Roulette's "same alarm + same day" guarantee doesn't survive an app restart.** `pickRouletteExercise` uses `Object.hash(alarmId, y, m, d)`. Dart's `Object.hash`/`hashCode` on Strings is not stable across VM/isolate restarts (it's salted per-run for hash-flooding protection). So a roulette alarm firing twice on the same day in two different app sessions (e.g., user force-closes and reopens between the initial notification tap and a later cold-start reopen) can pick two *different* exercises, contradicting the "no negotiating" pitch in the setup screen's copy.
+
+4. **The out-of-frame penalty and bad-form flashes have no cooldown against camera noise.** A momentary tracking glitch (frame where `hasPose` briefly reads false, e.g. hand crosses the face) will trip `_setOutOfFrame(true)` and start the volume-ramp timer even mid-rep; it self-clears next good frame, but on marginal lighting/framing this could produce an unwanted audio ramp during a real workout rather than genuine frame-abandonment.
+
+5. **Bad-form squat rejection has no partial credit or retry guidance loop beyond text.** A user who repeatedly does shallow squats (common when tired right after waking) gets "GO DEEPER" every time with no adaptive threshold — the 0.6 depth ratio is fixed (`AppConstants.squatDepthThreshold`), not calibrated per-user beyond the standing-gap baseline. This is a design choice, not a bug, but worth flagging as a friction point for the exact half-asleep moment the feature targets.
+
+6. **Push-up and jumping-jack "shallow"/"asymmetry" detection windows are frame-count-based (10 frames ≈ 0.7 s at the ~15 FPS this pipeline runs), not time-based.** If the actual sustained frame rate drops below the assumed ~15 FPS (e.g., slower device, thermal throttling), these thresholds silently tighten (less real time before a bad-form flag fires), since nothing in `JumpingJackCounterService`/`PushUpCounterService` reads wall-clock time.
+
+7. **Camera permission is requested twice, at different times, with different fallback paths.** Once proactively at alarm-arm time (`AlarmSetupScreen._ensureCameraPermission`), and again inside `AlarmPosePipeline.start()` at wake time (`Permission.camera.request()`). If the user granted it at arm time but later revoked it in system settings, the wake-time request will show the OS dialog again *while the alarm is actively ringing* — the exact worst-moment scenario the arm-time pre-request was designed to avoid.
+
+---
