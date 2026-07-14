@@ -1,7 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/features/alarm/domain/services/exercise_counter.dart';
+import 'package:awaken/features/alarm/domain/services/joint_angle.dart';
 import 'package:flutter/painting.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
@@ -44,8 +43,8 @@ class SquatCounterService {
   int _calibrationFrames = 0;
   static const int requiredCalibrationFrames = 8;
 
-  final DoubleEMAFilter _angleFilter = DoubleEMAFilter(alpha: 0.35);
-  final DoubleEMAFilter _depthFilter = DoubleEMAFilter(alpha: 0.35);
+  final EmaFilter _angleFilter = EmaFilter(alpha: 0.35);
+  final EmaFilter _depthFilter = EmaFilter(alpha: 0.35);
 
   bool get isInSquat => _phase == _SquatPhase.squatting;
   bool get isCalibrated => _isCalibrated;
@@ -319,19 +318,11 @@ class SquatCounterService {
         ankle.likelihood < minConfidence) {
       return null;
     }
-    return _angleDeg(
+    return JointAngle.between(
       Offset(hip.x, hip.y),
       Offset(knee.x, knee.y),
       Offset(ankle.x, ankle.y),
     );
-  }
-
-  static double _angleDeg(Offset a, Offset vertex, Offset c) {
-    final ba = Offset(a.dx - vertex.dx, a.dy - vertex.dy);
-    final bc = Offset(c.dx - vertex.dx, c.dy - vertex.dy);
-    final dot = ba.dx * bc.dx + ba.dy * bc.dy;
-    final cross = (ba.dx * bc.dy - ba.dy * bc.dx).abs();
-    return math.atan2(cross, dot) * (180.0 / math.pi);
   }
 }
 

@@ -24,8 +24,8 @@ class HighKneesCounterService implements ExerciseCounter {
   double _standingThigh = 0;
   static const int requiredCalibrationFrames = 6;
 
-  final DoubleEMAFilter _leftDiffFilter = DoubleEMAFilter(alpha: 0.35);
-  final DoubleEMAFilter _rightDiffFilter = DoubleEMAFilter(alpha: 0.35);
+  final EmaFilter _leftDiffFilter = EmaFilter(alpha: 0.35);
+  final EmaFilter _rightDiffFilter = EmaFilter(alpha: 0.35);
 
   @override
   bool get isCalibrated => _isCalibrated;
@@ -45,7 +45,9 @@ class HighKneesCounterService implements ExerciseCounter {
   }
 
   @override
-  ExerciseProcessResult processPose(Pose pose) {
+  ExerciseProcessResult processPose(Pose pose, DateTime timestamp) {
+    // No elapsed-time-gated window in this counter — timestamp is unused
+    // but required by the shared ExerciseCounter interface.
     // Check joint presence and confidence specifically for hips and knees
     final lh = pose.landmarks[PoseLandmarkType.leftHip];
     final rh = pose.landmarks[PoseLandmarkType.rightHip];

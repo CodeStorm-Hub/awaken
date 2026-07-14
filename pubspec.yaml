@@ -18,6 +18,13 @@ dependencies:
   supabase_flutter: ^2.5.0
 
   # ── Computer vision ───────────────────────────────────────────────
+  # Wraps a Google ML Kit native SDK still in BETA (no SLA, no deprecation
+  # policy, may break backward compatibility per Google's own docs) — the
+  # entire Wake Up Tax feature depends on it. Resolved: 0.15.0 (see
+  # pubspec.lock). Check ML Kit Pose Detection release notes before any
+  # Flutter/Android SDK bump that could touch this — upgrades to this
+  # dependency should be deliberate, not automatic (`flutter pub upgrade`
+  # sweeps). See docs/user_story/mlkit_pose_detection_hardening_plan.md §2.3.
   google_mlkit_pose_detection: ^0.15.0
 
   # ── Navigation ────────────────────────────────────────────────────

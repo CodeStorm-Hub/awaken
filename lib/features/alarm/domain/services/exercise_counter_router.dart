@@ -25,7 +25,10 @@ class SquatExerciseCounter implements ExerciseCounter {
   void reset() => _inner.reset();
 
   @override
-  ExerciseProcessResult processPose(Pose pose) {
+  ExerciseProcessResult processPose(Pose pose, DateTime timestamp) {
+    // Squat detection has no elapsed-time-gated bad-form window, so the
+    // frame timestamp isn't needed here — [SquatCounterService] keeps its
+    // own (Pose)-only signature.
     final result = _inner.processPose(pose);
     return ExerciseProcessResult(
       repCompleted: result.repCompleted,
@@ -57,22 +60,34 @@ class ExerciseCounterRouter {
       AlarmExerciseType.pushUps => PushUpCounterService(),
       AlarmExerciseType.jumpingJacks => JumpingJackCounterService(),
       AlarmExerciseType.highKnees => HighKneesCounterService(),
-      AlarmExerciseType.sitUps => SquatExerciseCounter(), // deferred
     };
   }
 
   void reset() => counter.reset();
 }
 
-/// Stable daily roulette pick: same alarm + local date → same exercise.
+/// FNV-1a over a string, deterministic across Dart runtimes/restarts —
+/// unlike [Object.hash]/[String.hashCode], which are salted per isolate for
+/// hash-flooding protection and are NOT stable across app restarts.
+int _stableHash(String input) {
+  var hash = 0x811c9dc5; // FNV-1a offset basis
+  for (final codeUnit in input.codeUnits) {
+    hash ^= codeUnit;
+    hash = (hash * 0x01000193) & 0xFFFFFFFF; // FNV prime, masked to 32-bit
+  }
+  return hash;
+}
+
+/// Stable daily roulette pick: same alarm + local date → same exercise,
+/// including across app restarts (see [_stableHash]).
 AlarmExerciseType pickRouletteExercise({
   required String alarmId,
   DateTime? now,
 }) {
   final day = now ?? DateTime.now();
-  final seed = Object.hash(alarmId, day.year, day.month, day.day);
+  final seed = _stableHash('$alarmId|${day.year}|${day.month}|${day.day}');
   const options = AlarmExerciseTypeX.implemented;
-  return options[seed.abs() % options.length];
+  return options[seed % options.length];
 }
 
 AlarmExerciseType resolveSessionExercise({

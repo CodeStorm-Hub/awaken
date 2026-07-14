@@ -36,9 +36,16 @@ class ActiveAlarmScreen extends ConsumerStatefulWidget {
 
 class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
     with WidgetsBindingObserver {
+  /// Consecutive out-of-frame frames required before treating tracking loss
+  /// as real (~330ms at the pipeline's throttled ~15 FPS) — a single frame
+  /// of tracking loss (hand crossing the face, brief motion blur) must not
+  /// start the audio-ramp/UI warning mid-rep.
+  static const int _outOfFrameDebounceFrames = 5;
+
   late final AlarmPosePipeline _pipeline;
   late final ExerciseCounterRouter _exerciseRouter;
   Timer? _outOfFramePenaltyTimer;
+  int _outOfFrameStreak = 0;
   late final GoRouter _router;
   bool _cameraPermissionDenied = false;
   bool _cameraReady = false;
@@ -135,11 +142,14 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
     super.dispose();
   }
 
-  void _onPoseResult(Pose? pose) {
+  void _onPoseResult(Pose? pose, DateTime timestamp) {
     if (!mounted) return;
 
     if (pose == null) {
-      _setOutOfFrame(true);
+      _outOfFrameStreak++;
+      if (_outOfFrameStreak >= _outOfFrameDebounceFrames) {
+        _setOutOfFrame(true);
+      }
       if (_isActivePhase || _isCalibrated) {
         setState(() {
           _isActivePhase = _exerciseRouter.counter.isInActivePhase;
@@ -149,9 +159,12 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
       return;
     }
 
+    // A single good frame immediately cancels a pending debounce — no
+    // reason to delay relief once tracking is back.
+    _outOfFrameStreak = 0;
     _setOutOfFrame(false);
     final wasCalibratedBefore = _exerciseRouter.counter.isCalibrated;
-    final result = _exerciseRouter.counter.processPose(pose);
+    final result = _exerciseRouter.counter.processPose(pose, timestamp);
 
     final phaseChanged = _isActivePhase != _exerciseRouter.counter.isInActivePhase ||
         _isCalibrated != _exerciseRouter.counter.isCalibrated ||

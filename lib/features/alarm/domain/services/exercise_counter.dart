@@ -24,14 +24,24 @@ abstract class ExerciseCounter {
   bool get isCalibrated;
   bool get isInActivePhase;
 
-  ExerciseProcessResult processPose(Pose pose);
+  /// [timestamp] is the capture time of this frame (not processing time) —
+  /// counters that gate on elapsed duration (e.g. bad-form debounce windows)
+  /// must compare against this rather than [DateTime.now], so behavior stays
+  /// correct under variable inference latency and is deterministically
+  /// testable with synthetic timestamps.
+  ExerciseProcessResult processPose(Pose pose, DateTime timestamp);
 
   void reset();
 }
 
 /// Exponential Moving Average filter to smooth micro-jitter of raw coordinates or metrics.
-class DoubleEMAFilter {
-  DoubleEMAFilter({required this.alpha});
+///
+/// Single-pass EMA (`current = current*(1-α) + new*α`) — not a true Double
+/// EMA (DEMA, `2×EMA1(x) − EMA2(EMA1(x))`), which is a different, lower-lag
+/// filter. Named `EmaFilter` (not `DoubleEMAFilter`) to avoid implying more
+/// sophistication than this implements.
+class EmaFilter {
+  EmaFilter({required this.alpha});
   final double alpha;
   double? _currentValue;
 

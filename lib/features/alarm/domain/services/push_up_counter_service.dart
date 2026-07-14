@@ -1,6 +1,7 @@
-import 'dart:math' as math;
+import 'dart:ui' show Offset;
 
 import 'package:awaken/features/alarm/domain/services/exercise_counter.dart';
+import 'package:awaken/features/alarm/domain/services/joint_angle.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 /// Elbow-angle FSM for push-up reps (front or angled camera).
@@ -19,7 +20,7 @@ class PushUpCounterService implements ExerciseCounter {
   int _calibrationFrames = 0;
   static const int requiredCalibrationFrames = 6;
 
-  final DoubleEMAFilter _elbowFilter = DoubleEMAFilter(alpha: 0.35);
+  final EmaFilter _elbowFilter = EmaFilter(alpha: 0.35);
 
   @override
   bool get isCalibrated => _isCalibrated;
@@ -37,7 +38,10 @@ class PushUpCounterService implements ExerciseCounter {
   }
 
   @override
-  ExerciseProcessResult processPose(Pose pose) {
+  ExerciseProcessResult processPose(Pose pose, DateTime timestamp) {
+    // No elapsed-time-gated bad-form window here (shallow-rep detection is
+    // an angle-transition state machine, not frame-count-based) — timestamp
+    // is unused but required by the shared ExerciseCounter interface.
     // Check joint presence and confidence specifically for shoulders, elbows, wrists
     final ls = pose.landmarks[PoseLandmarkType.leftShoulder];
     final rs = pose.landmarks[PoseLandmarkType.rightShoulder];
@@ -177,26 +181,11 @@ class PushUpCounterService implements ExerciseCounter {
         c.likelihood < minConfidence) {
       return null;
     }
-    return _angle(a.x, a.y, b.x, b.y, c.x, c.y);
-  }
-
-  double _angle(
-    double ax,
-    double ay,
-    double bx,
-    double by,
-    double cx,
-    double cy,
-  ) {
-    final abx = ax - bx;
-    final aby = ay - by;
-    final cbx = cx - bx;
-    final cby = cy - by;
-    final dot = abx * cbx + aby * cby;
-    final mag = math.sqrt(abx * abx + aby * aby) * math.sqrt(cbx * cbx + cby * cby);
-    if (mag == 0) return 180;
-    final cos = (dot / mag).clamp(-1.0, 1.0);
-    return math.acos(cos) * 180 / math.pi;
+    return JointAngle.between(
+      Offset(a.x, a.y),
+      Offset(b.x, b.y),
+      Offset(c.x, c.y),
+    );
   }
 }
 

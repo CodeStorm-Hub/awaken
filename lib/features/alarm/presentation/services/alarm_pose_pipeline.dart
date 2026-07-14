@@ -33,13 +33,24 @@ class AlarmPosePipeline {
     this.onPoseResult,
   }) : _poseDetector = poseDetector ??
             PoseDetector(
-              options: PoseDetectorOptions(mode: PoseDetectionMode.stream),
+              options: PoseDetectorOptions(
+                mode: PoseDetectionMode.stream,
+                // `base` (the plugin default) trades landmark stability for
+                // speed, matching this pipeline's ~15 FPS throttle budget —
+                // pinned explicitly rather than left to the plugin default,
+                // which could change silently on a version bump. `accurate`
+                // is tuned for single static images and too slow for a live
+                // stream at this frame rate; revisit only if squat-depth
+                // precision becomes an issue in practice.
+                model: PoseDetectionModel.base,
+              ),
             );
 
   final PoseDetector _poseDetector;
 
-  /// Called after each processed frame with the raw pose (or null).
-  final void Function(Pose? pose)? onPoseResult;
+  /// Called after each processed frame with the raw pose (or null) and the
+  /// frame's capture timestamp (not processing-completion time).
+  final void Function(Pose? pose, DateTime timestamp)? onPoseResult;
 
   final ValueNotifier<PoseFrame> poseFrame = ValueNotifier(
     const PoseFrame(
@@ -74,7 +85,19 @@ class AlarmPosePipeline {
   };
 
   Future<void> start() async {
-    final status = await Permission.camera.request();
+    // Check status before requesting: if permission was revoked after the
+    // alarm was armed, firing a fresh system permission dialog on top of the
+    // full-screen alarm intent is unreliable (can't be answered over the
+    // lock screen) and blocks the tap-to-dismiss fallback below from ever
+    // being reached. Only request when there's a real chance of granting.
+    var status = await Permission.camera.status;
+    if (status.isPermanentlyDenied || status.isRestricted) {
+      permissionDenied.value = true;
+      return;
+    }
+    if (!status.isGranted) {
+      status = await Permission.camera.request();
+    }
     if (_disposed) return;
     if (!status.isGranted) {
       permissionDenied.value = true;
@@ -171,10 +194,10 @@ class AlarmPosePipeline {
     _lastDetectionTime = now;
 
     _isDetecting = true;
-    _processImage(image).whenComplete(() => _isDetecting = false);
+    _processImage(image, now).whenComplete(() => _isDetecting = false);
   }
 
-  Future<void> _processImage(CameraImage image) async {
+  Future<void> _processImage(CameraImage image, DateTime captureTime) async {
     final inputImage = _buildInputImage(image);
     if (inputImage == null) return;
 
@@ -196,7 +219,7 @@ class AlarmPosePipeline {
       rotation: _imageRotation,
       isFrontCamera: _isFrontCamera,
     );
-    onPoseResult?.call(pose);
+    onPoseResult?.call(pose, captureTime);
   }
 
   InputImage? _buildInputImage(CameraImage image) {

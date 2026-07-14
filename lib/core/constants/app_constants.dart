@@ -28,6 +28,12 @@ abstract final class AppConstants {
   /// Tax reveal stamp duration on active alarm entry.
   static const Duration taxRevealDuration = Duration(milliseconds: 1200);
 
+  /// How long a jumping-jack arms/feet mismatch must persist before it's
+  /// flagged as bad form, in wall-clock time rather than a raw frame count —
+  /// keeps the window's real-world duration constant regardless of the
+  /// device's actual sustained frame rate.
+  static const Duration badFormAsymmetryWindow = Duration(milliseconds: 700);
+
   /// Auto-pause run when speed stays near zero for this long.
   static const Duration runGracePauseDelay = Duration(seconds: 8);
 

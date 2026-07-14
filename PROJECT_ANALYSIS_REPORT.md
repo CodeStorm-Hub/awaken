@@ -1,6 +1,6 @@
 # Awaken — Full Codebase & Database Analysis Report
 
-> Generated 2026-07-14 from a file-by-file read of `lib/` (145 Dart files, ~21,500 lines of hand-written code), `pubspec.yaml`, and a live review of the Supabase project `nankdbntvvopnfvvvaoo` (ap-southeast-1) via MCP. No existing documentation was consulted.
+> Generated 2026-07-14 from a file-by-file read of `lib/` (145 Dart files, ~21,500 lines of hand-written code), `pubspec.yaml`, and a live review of the Supabase project `nankdbntvvopnfvvvaoo` (ap-southeast-1) via MCP. No existing documentation was consulted. §6 was re-verified against the live database on 2026-07-14 with an authenticated MCP session (`list_tables`, `list_migrations`, `get_advisors`, direct SQL against `information_schema`/`pg_catalog`) — the project ID and schema were already correct, but several security/performance advisories were missing from the first pass; §6.3/§6.5/§6.6 and Observations items 11–12 are the result.
 
 ---
 
@@ -216,13 +216,15 @@ Vector tiles rendered in raster mode with 4-way concurrency + file cache; map sh
 
 ## 6. Supabase Database Review (project `nankdbntvvopnfvvvaoo`)
 
-Extensions: **PostGIS** enabled (hence `spatial_ref_sys`). 25 migrations applied (2026-07-07 → 2026-07-13) covering: enable_postgis, core schema, territory tables/views/RPCs/grants, realtime publication, perf fixes, anon-RPC revocation, security-invoker views, server-side capture validation & anti-cheat hardening, unique-area windowed leaderboard, alarm exercise & triggers, squads/bounty, fog sync, turf-hit FCM webhook, squad_members RLS recursion fix, Mirpur/Dhaka bounty seeds, unique territory colors, squad nudges.
+> **Re-verified 2026-07-14 with an authenticated Supabase MCP session** (`list_tables`, `list_migrations`, `list_extensions`, `get_advisors`, and direct `information_schema`/`pg_catalog` queries against the live project). This confirmed the project ID and all 19 application tables + row/column shapes from the original pass were correct, but the original pass under-reported the security/performance advisories below — §6.5 and §6.6 are new/corrected as a result.
+
+Extensions: **PostGIS 3.3.7** enabled in the `public` schema (hence `spatial_ref_sys`, `geometry_columns`, `geography_columns`). 26 migrations applied (2026-07-07 → 2026-07-14, latest is this session's `allow_high_knees_exercise_type` fix) covering: enable_postgis, core schema, territory tables/views/RPCs/grants, realtime publication, perf fixes, anon-RPC revocation, security-invoker views, server-side capture validation & anti-cheat hardening, unique-area windowed leaderboard, alarm exercise & triggers, squads/bounty, fog sync, turf-hit FCM webhook, squad_members RLS recursion fix, Mirpur/Dhaka bounty seeds, unique territory colors, squad nudges, high-knees exercise-type constraint fix.
 
 ### 6.1 Tables (all RLS-enabled except PostGIS's `spatial_ref_sys`)
 | Table | Key columns | RLS policy summary |
 |---|---|---|
 | `profiles` | id (→auth.users), display_name, hud_theme ('cyan'), territory_color (unique, `^#[0-9a-f]{6}$`) | select: all authenticated; update: own |
-| `alarms` | id text PK, user_id, scheduled_time, required_reps (10), is_active, label, exercise_mode (fixed/roulette), exercise_type (squats/pushUps/jumpingJacks/sitUps or null), penalty_multiplier (1–4) | ALL: own |
+| `alarms` | id text PK, user_id, scheduled_time, required_reps (10), is_active, label, exercise_mode (fixed/roulette), exercise_type (squats/pushUps/jumpingJacks/highKnees or null — `sitUps` was removed 2026-07-14, see hardening plan Phase 3), penalty_multiplier (1–4) | ALL: own |
 | `sessions` | id uuid, user_id, alarm_id→alarms, completed_at, reps_completed, duration_seconds, calories_burned | ALL: own |
 | `streaks` | user_id PK, current_streak, best_streak, last_completed_date | ALL: own |
 | `alarm_triggers` | id, user_id, alarm_id, fired_at, resolved_at, required_reps, exercise_type | ALL: own |
@@ -246,16 +248,37 @@ Extensions: **PostGIS** enabled (hence `spatial_ref_sys`). 25 migrations applied
 - `territories_geojson` — territories + owner display name/color with `ST_AsGeoJSON(geom)` and area (the client's map read path).
 
 ### 6.3 Custom RPC functions
-`capture_territory(new_geom, run_path)` (server validation + FOR-UPDATE-ordered locking, steal via difference, self-union, returns claimed/total/rivals), `touch_territory_defense(run_path)`, `leaderboard_nearby(lon, lat, radius)`, `leaderboard_windowed(window_hours, lon, lat, radius)` (unique-area momentum), `decaying_territories()`, `get_nemesis()`, `list_active_bounty_zones()`, `upsert_explored_cells(p_cells)`, `report_squad_bailout()`, `consume_squad_bailout_penalty()`, `is_squad_member(uuid)`, `allocate_territory_color()` + `hsl_to_hex()` + `profiles_lock_territory_color()` (unique per-user map colors), `handle_new_user()` (profile bootstrap trigger), `trg_notify_turf_hit_push()` (webhook trigger to Edge Function), `rls_auto_enable()` (client execute revoked). Anon RPC grants revoked.
+`capture_territory(new_geom, run_path)` (`SECURITY DEFINER`; server validation + FOR-UPDATE-ordered locking, steal via difference, self-union, returns claimed/total/rivals), `touch_territory_defense(run_path)` (`DEFINER`), `leaderboard_nearby(lon, lat, radius)` (`DEFINER`), `leaderboard_windowed(window_hours, lon, lat, radius)` (`DEFINER`, unique-area momentum), `decaying_territories()` (`INVOKER`), `get_nemesis()` (`INVOKER`), `list_active_bounty_zones()` (`INVOKER`), `upsert_explored_cells(p_cells)` (`INVOKER`), `report_squad_bailout()` (`INVOKER`), `consume_squad_bailout_penalty()` (`INVOKER`), `is_squad_member(uuid)` (`DEFINER`), `allocate_territory_color()` (`DEFINER`) + `hsl_to_hex()` (`INVOKER`) + `profiles_lock_territory_color()` (`INVOKER`, unique per-user map colors), `handle_new_user()` (`DEFINER`, profile bootstrap trigger), `trg_notify_turf_hit_push()` (`DEFINER`, webhook trigger to Edge Function), `rls_auto_enable()` (`DEFINER`, client `EXECUTE` correctly revoked — confirmed no anon/authenticated grant remains).
+
+**Correction to the original report:** "Anon RPC grants revoked" is only *mostly* true. Three `SECURITY DEFINER` functions still carry a live `EXECUTE` grant for the `anon` role — see §6.5 finding 3. These were added by migrations *after* `revoke_anon_rpc_grants` (`compete_squads_bounty`, `turf_hit_fcm_webhook`, `unique_profile_territory_colors`) and were never folded into the revocation.
 
 ### 6.4 Realtime & Edge Functions
 - Realtime publication used by the client for: `territories` (map refresh, debounced refetch), `turf_hit_notifications` (victim-filtered inserts), `squad_alarms` (squad-filtered live rep progress).
 - Edge Function **`notify-turf-hit`** (v3, `verify_jwt: false` — invoked by DB webhook/trigger): sends FCM push to the victim's registered `push_tokens`.
 
-### 6.5 Security advisory (must fix / acknowledge)
-⚠️ **`public.spatial_ref_sys` has RLS disabled.** This is the PostGIS-managed SRID reference table (8,500 rows of public coordinate-system metadata, created by the extension). Supabase flags it as exposed to anon/authenticated roles. It contains no user data, but you may choose to run `ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;` — note that PostGIS owns this table, some PostGIS operations read it, and enabling RLS without a select policy could break `ST_Transform`-style calls. The safer conventional remediation is revoking write privileges from anon/authenticated instead of enabling RLS. **Decision left to the project owner — not auto-applied.**
+### 6.5 Security advisory (live `get_advisors` results, 2026-07-14 — must fix / acknowledge)
 
-Also noteworthy: the Supabase anon key and Google OAuth client IDs are committed in `supabase_config.dart` (anon keys are designed to be public and RLS-guarded, but worth an explicit sign-off), and `sessions`/`streaks` calorie/streak writes are client-trusted.
+1. ⚠️ **`public.spatial_ref_sys` has RLS disabled** (advisor level: `ERROR`/critical). This is the PostGIS-managed SRID reference table (8,500 rows of public coordinate-system metadata, created by the extension). Supabase flags it as exposed to anon/authenticated roles. It contains no user data, but you may choose to run `ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;` — note that PostGIS owns this table, some PostGIS operations read it, and enabling RLS without a select policy could break `ST_Transform`-style calls. The safer conventional remediation is revoking write privileges from anon/authenticated instead of enabling RLS. **Decision left to the project owner — not auto-applied.**
+
+2. **`postgis` extension installed in the `public` schema** instead of a dedicated `extensions` schema (`WARN`). Cosmetic/best-practice item — moving it is invasive (every `geometry`/`geography` column and `ST_*` call would need re-pointing) and not worth doing on a live project without a maintenance window. Acknowledge, don't fix.
+
+3. ⚠️ **Three `SECURITY DEFINER` functions are executable by the `anon` role** (unauthenticated requests with just the public anon key), confirmed via `information_schema.routine_privileges` (`WARN`, new finding not in the original report):
+   - `allocate_territory_color()` — assigns/locks a unique map color; reads `auth.uid()` internally so an anon call likely no-ops or errors, but it's unintended public surface.
+   - `is_squad_member(uuid)` — squad-membership check; anon probing returns `false` (no `auth.uid()`) but still an unnecessary IDOR-adjacent surface.
+   - `trg_notify_turf_hit_push()` — **this is a trigger function** (fires FCM pushes via the webhook Edge Function), never meant to be called directly. It being reachable at `/rest/v1/rpc/trg_notify_turf_hit_push` by anon is the most concerning of the three: even if it errors on missing trigger context (`TG_OP`/`NEW`/`OLD`), it's unauthenticated attack surface on a function that ultimately triggers push notifications. **Recommend:** `REVOKE EXECUTE ON FUNCTION public.trg_notify_turf_hit_push() FROM anon, authenticated;` (it only needs to run as the trigger owner) and `REVOKE EXECUTE ... FROM anon` on the other two (keep `authenticated` where the app actually calls them client-side — confirm `allocate_territory_color`/`is_squad_member` call sites before revoking from `authenticated` too).
+
+4. **`hsl_to_hex` and `profiles_lock_territory_color` have a mutable `search_path`** (`WARN`). Both are `SECURITY INVOKER` so the practical risk is low, but the conventional fix is adding `SET search_path = public, pg_temp` to each function definition.
+
+5. **Leaked-password protection is disabled** in Supabase Auth (`WARN`, new finding). Auth won't reject signups/password changes that appear in HaveIBeenPwned's breach corpus. One-toggle fix in the Auth settings; no schema change needed. Only relevant to the email/password sign-in path (Google Sign-In is unaffected).
+
+6. Also noteworthy (unchanged from original pass): the Supabase anon key and Google OAuth client IDs are committed in `supabase_config.dart` (anon keys are designed to be public and RLS-guarded, but worth an explicit sign-off), and `sessions`/`streaks` calorie/streak writes are client-trusted.
+
+### 6.6 Performance advisory (live `get_advisors` results, 2026-07-14 — new section, not in original report)
+
+- **8 RLS policies re-evaluate `auth.uid()`/`auth.<fn>()` per row** instead of once per query (`alarm_triggers`, `push_tokens`, `turf_hit_notifications` ×2, `territory_steals`, `squads`, `squad_members` ×2, `squad_alarms`, `explored_cells`, `bounty_claims`, `squad_bailouts` — 12 policies across 9 tables total). Fix is mechanical: wrap the auth call in a scalar subquery, e.g. `auth.uid()` → `(select auth.uid())`, in each policy's `USING`/`WITH CHECK`. Purely a scale concern — current row counts (single digits to low hundreds) mean this is invisible today; worth batching into one migration before territory/squad tables grow.
+- **`squad_alarms` has two overlapping permissive `SELECT` policies** (`squad_alarms_select` and `squad_alarms_upsert` both grant `SELECT` to `authenticated`) — Postgres evaluates both per query. Consolidate into one policy.
+- **10 unused indexes** flagged (`alarms_user_id_idx`, `sessions_user_id_idx`, `sessions_alarm_id_idx`, `territory_captures_geom_gist_idx`, `territory_captures_geom_geog_idx`, `turf_hit_victim_idx`, `alarm_triggers_user_unresolved_idx`, `bounty_zones_geom_idx`, `bounty_claims_user_idx`). Expected on a project this young with low production traffic — not a real problem, just means there's no query history yet to confirm they're earning their keep. Re-check after real usage accumulates; don't drop them now.
+- **10 foreign keys without a covering index** (`alarm_triggers.alarm_id`, `bounty_claims.bounty_id`, `squad_alarms.user_id`, `squad_bailouts.failed_user_id` + `.squad_id`, `squad_members.user_id`, `squad_nudges.from_user` + `.squad_id`, `squads.created_by`, `territory_steals.victim_id`, `turf_hit_notifications.attacker_user_id`). Low priority at current scale; worth adding if squad/social features see real usage growth, since these back join-heavy queries (squad rosters, bailout history, nudge inboxes).
 
 ---
 
@@ -477,8 +500,10 @@ erDiagram
 
 ## 9. Observations & Risks (from code reading)
 
-1. **`spatial_ref_sys` RLS advisory** — surface to owner (see §6.5).
-2. `alarm_exercise_type.dart` includes `sitUps` (not camera-implemented, routed to squat counter) and `highKnees` (implemented client-side) — but the DB check constraint on `alarms.exercise_type` allows `sitUps` and **not** `highKnees`; a fixed high-knees alarm would fail to save to Supabase.
+1. **`spatial_ref_sys` RLS advisory** — surface to owner (see §6.5, item 1).
+11. **`trg_notify_turf_hit_push()` (a trigger function) and two other `SECURITY DEFINER` RPCs are anon-executable** — the `revoke_anon_rpc_grants` migration predates three later migrations that added new `DEFINER` functions, so they never got the same revocation. See §6.5, item 3 for the exact `REVOKE` statements.
+12. **12 RLS policies across 9 tables re-evaluate `auth.uid()` per row** instead of caching it per statement — a real but currently invisible cost given low row counts; see §6.6.
+2. ~~`alarm_exercise_type.dart` includes `sitUps` (not camera-implemented, routed to squat counter) and `highKnees` (implemented client-side) — but the DB check constraint on `alarms.exercise_type` allows `sitUps` and **not** `highKnees`; a fixed high-knees alarm would fail to save to Supabase.~~ **Resolved 2026-07-14**: `highKnees` added to the DB constraint (Phase 0.1); `sitUps` removed entirely from the enum, router, and DB constraint (Phase 3, Option A — it was dead code with no UI path) rather than left half-shipped. See hardening plan Phases 0 and 3.
 3. `TerritoryDecayNotificationService._hasNotifiedThisSession` and the dashboard listen are once-per-session by design; fine, but decay warnings can be missed if the app stays resident for days.
 4. Client-trusted writes: `sessions` reps/calories and streak upserts are enforceable only by RLS ownership, not plausibility — leaderboard for streaks/reps would be gameable (territory is server-validated, sessions aren't).
 5. `AlarmSupabaseDatasource.saveAlarm` upserts without `onConflict` — relies on `id` PK default, OK.
@@ -560,9 +585,10 @@ All four implement a shared `ExerciseCounter` interface, each with an EMA smooth
 |---|---|---|---|
 | **Squats** | hip, knee, ankle, shoulder | Knee angle drops ≤100° then rises ≥150°, AND achieved hip-to-knee depth ratio ≥0.6 of calibrated standing gap | Shoulder tilt >18% of torso height while squatting → "KEEP SHOULDERS LEVEL" |
 | **Push-ups** | shoulder, elbow, wrist | Elbow angle drops ≤90° then rises ≥150° | Dips below 130° (elbow starting to bend) but returns to ≥150° without ever reaching 90° → "TOO SHALLOW — CHEST TO FLOOR" |
-| **Jumping jacks** | wrist, ankle, hip, nose | Wrists rise above nose level AND ankle gap reaches ≥1.35× standing baseline simultaneously, then both return to closed | Arms up but feet still together (or vice-versa) held ~0.7 s (10 frames) → "ARMS AND FEET TOGETHER" |
+| **Jumping jacks** | wrist, ankle, hip, nose | Wrists rise above nose level AND ankle gap reaches ≥1.35× standing baseline simultaneously, then both return to closed | Arms up but feet still together (or vice-versa) held ~700ms wall-clock (was a raw 10-frame count, converted 2026-07-14 — see hardening plan §1.2) → "ARMS AND FEET TOGETHER" |
 | **High knees** | hip, knee | Alternating: knee rises to within 15% of calibrated thigh length below hip, then plants back down past 60% — L/R must alternate | No explicit bad-form flag; wrong-leg lift just doesn't register a rep (`_expectLeft` gate) |
-| **Sit-ups** | — | *Not implemented.* `AlarmExerciseType.sitUps.isImplemented == false`; if selected it silently routes to the `SquatExerciseCounter` instead (see Issues). |
+
+**Sit-ups removed 2026-07-14** (was never camera-implemented, silently routed to `SquatExerciseCounter`, unreachable via the setup screen) — deleted from `AlarmExerciseType`, the router, and the DB constraint rather than left half-shipped. See hardening plan Phase 3.
 
 **Calibration** — every counter requires the user to hold a "ready" pose (standing tall for squats/high-knees/jacks, arms extended for push-ups) for 6–8 consecutive qualifying frames before it starts counting. During calibration the instruction bar shows cues like "STAND TALL — HOLD TO CALIBRATE." This establishes a per-session baseline (standing hip-knee gap, standing thigh length, standing ankle gap, extended elbow angle) so thresholds are relative to *that user's* body/distance from camera rather than fixed pixel values.
 
@@ -585,18 +611,18 @@ If the alarm's mode is Roulette, `pickRouletteExercise` seeds `Object.hash(alarm
 
 # Issues found while tracing this flow
 
-1. **Sit-ups are advertised but not implemented, and silently mis-execute.** `AlarmExerciseType.sitUps` exists in the enum and the Supabase check constraint allows it, but `AlarmExerciseTypeX.implemented` excludes it and `ExerciseCounterRouter._create` explicitly comments `// deferred` and routes it to `SquatExerciseCounter`. If a user could ever select sit-ups as a fixed exercise (the setup screen's `Wrap` only iterates `implemented`, so it's not reachable via normal UI), they'd be shown squat-style cues while thinking they're doing sit-ups. Low practical risk today since the picker filters it out, but it's dead/misleading enum surface.
+1. ~~**Sit-ups are advertised but not implemented, and silently mis-execute.**~~ **Resolved 2026-07-14** — `sitUps` removed entirely from the enum, router, and DB constraint (Option A from the hardening plan's Phase 3) rather than left as dead/misleading surface.
 
-2. **High knees can't actually be saved as a fixed alarm to Supabase.** The client implements `highKnees` as a full counter and offers it in the setup screen's exercise chips (`AlarmExerciseTypeX.implemented` includes it). But the DB check constraint on `alarms.exercise_type` is `ANY (ARRAY['squats','pushUps','jumpingJacks','sitUps'])` — **`highKnees` is not in that list.** A signed-in user picking "High Knees" and tapping ARM ALARM would get a Postgres constraint violation on `AlarmSupabaseDatasource.saveAlarm`'s upsert (caught by the generic `try/catch` in `_save`, surfacing a raw "Failed to save alarm: ..." SnackBar). This is a real, reachable bug for any signed-in user.
+2. ~~**High knees can't actually be saved as a fixed alarm to Supabase.**~~ **Resolved 2026-07-14** — `highKnees` added to the live DB check constraint (hardening plan Phase 0.1), verified against `pg_constraint`.
 
-3. **Roulette's "same alarm + same day" guarantee doesn't survive an app restart.** `pickRouletteExercise` uses `Object.hash(alarmId, y, m, d)`. Dart's `Object.hash`/`hashCode` on Strings is not stable across VM/isolate restarts (it's salted per-run for hash-flooding protection). So a roulette alarm firing twice on the same day in two different app sessions (e.g., user force-closes and reopens between the initial notification tap and a later cold-start reopen) can pick two *different* exercises, contradicting the "no negotiating" pitch in the setup screen's copy.
+3. ~~**Roulette's "same alarm + same day" guarantee doesn't survive an app restart.**~~ **Resolved 2026-07-14** — `pickRouletteExercise` now uses a manual FNV-1a hash instead of `Object.hash`, deterministic across restarts; a cross-isolate regression test was added (hardening plan Phase 1.1).
 
-4. **The out-of-frame penalty and bad-form flashes have no cooldown against camera noise.** A momentary tracking glitch (frame where `hasPose` briefly reads false, e.g. hand crosses the face) will trip `_setOutOfFrame(true)` and start the volume-ramp timer even mid-rep; it self-clears next good frame, but on marginal lighting/framing this could produce an unwanted audio ramp during a real workout rather than genuine frame-abandonment.
+4. ~~**The out-of-frame penalty and bad-form flashes have no cooldown against camera noise.**~~ **Resolved 2026-07-14** — a 5-frame (~330ms) debounce was added before `_setOutOfFrame(true)` fires; a single good frame cancels it immediately (hardening plan Phase 1.3).
 
 5. **Bad-form squat rejection has no partial credit or retry guidance loop beyond text.** A user who repeatedly does shallow squats (common when tired right after waking) gets "GO DEEPER" every time with no adaptive threshold — the 0.6 depth ratio is fixed (`AppConstants.squatDepthThreshold`), not calibrated per-user beyond the standing-gap baseline. This is a design choice, not a bug, but worth flagging as a friction point for the exact half-asleep moment the feature targets.
 
-6. **Push-up and jumping-jack "shallow"/"asymmetry" detection windows are frame-count-based (10 frames ≈ 0.7 s at the ~15 FPS this pipeline runs), not time-based.** If the actual sustained frame rate drops below the assumed ~15 FPS (e.g., slower device, thermal throttling), these thresholds silently tighten (less real time before a bad-form flag fires), since nothing in `JumpingJackCounterService`/`PushUpCounterService` reads wall-clock time.
+6. ~~**Push-up and jumping-jack "shallow"/"asymmetry" detection windows are frame-count-based, not time-based.**~~ **Resolved 2026-07-14** (scope corrected during implementation — only jumping jacks actually had this issue; push-up shallow-rep detection was already an angle-transition state machine with no frame-count dependency). `JumpingJackCounterService`'s asymmetry gate now compares elapsed wall-clock time (`AppConstants.badFormAsymmetryWindow`, 700ms) against the frame's actual capture timestamp, threaded through a new `ExerciseCounter.processPose(pose, timestamp)` signature (hardening plan Phase 1.2).
 
-7. **Camera permission is requested twice, at different times, with different fallback paths.** Once proactively at alarm-arm time (`AlarmSetupScreen._ensureCameraPermission`), and again inside `AlarmPosePipeline.start()` at wake time (`Permission.camera.request()`). If the user granted it at arm time but later revoked it in system settings, the wake-time request will show the OS dialog again *while the alarm is actively ringing* — the exact worst-moment scenario the arm-time pre-request was designed to avoid.
+7. ~~**Camera permission is requested twice, at different times, with different fallback paths.**~~ **Resolved 2026-07-14** — `AlarmPosePipeline.start()` now checks `.status` before calling `.request()`, and skips straight to the fallback UI on `isPermanentlyDenied`/`isRestricted` instead of firing a system dialog over the ringing alarm (hardening plan Phase 0.2).
 
 ---

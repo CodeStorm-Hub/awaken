@@ -4,7 +4,6 @@ enum AlarmExerciseType {
   pushUps,
   jumpingJacks,
   highKnees,
-  sitUps,
 }
 
 extension AlarmExerciseTypeX on AlarmExerciseType {
@@ -13,7 +12,6 @@ extension AlarmExerciseTypeX on AlarmExerciseType {
         AlarmExerciseType.pushUps => 'Push-ups',
         AlarmExerciseType.jumpingJacks => 'Jumping Jacks',
         AlarmExerciseType.highKnees => 'High Knees',
-        AlarmExerciseType.sitUps => 'Sit-ups',
       };
 
   String get taxStampLabel => switch (this) {
@@ -21,20 +19,15 @@ extension AlarmExerciseTypeX on AlarmExerciseType {
         AlarmExerciseType.pushUps => 'PUSH-UPS',
         AlarmExerciseType.jumpingJacks => 'JUMPING JACKS',
         AlarmExerciseType.highKnees => 'HIGH KNEES',
-        AlarmExerciseType.sitUps => 'SIT-UPS',
       };
 
   String get wireName => name;
 
   /// Camera-verified exercises available in Tax Roulette / fixed mode.
-  bool get isImplemented => switch (this) {
-        AlarmExerciseType.squats ||
-        AlarmExerciseType.pushUps ||
-        AlarmExerciseType.jumpingJacks ||
-        AlarmExerciseType.highKnees =>
-          true,
-        AlarmExerciseType.sitUps => false,
-      };
+  /// Every current value has a counter; kept as a defensive check for
+  /// [resolveSessionExercise] in case a future value ships before its
+  /// counter does.
+  bool get isImplemented => true;
 
   static AlarmExerciseType? tryParse(String? raw) {
     if (raw == null || raw.isEmpty) return null;
