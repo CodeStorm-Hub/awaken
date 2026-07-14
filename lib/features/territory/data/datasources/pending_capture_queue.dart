@@ -16,18 +16,18 @@ class PendingCapture {
   final DateTime enqueuedAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'enqueued_at': enqueuedAt.toIso8601String(),
-        'points': points
-            .map(
-              (p) => {
-                'lat': p.latitude,
-                'lng': p.longitude,
-                'timestamp': p.timestamp.toIso8601String(),
-              },
-            )
-            .toList(),
-      };
+    'id': id,
+    'enqueued_at': enqueuedAt.toIso8601String(),
+    'points': points
+        .map(
+          (p) => {
+            'lat': p.latitude,
+            'lng': p.longitude,
+            'timestamp': p.timestamp.toIso8601String(),
+          },
+        )
+        .toList(),
+  };
 
   factory PendingCapture.fromJson(Map<String, dynamic> json) {
     final rawPoints = json['points'] as List<dynamic>? ?? const [];
@@ -57,8 +57,9 @@ class PendingCaptureQueue {
     final jsonList = prefs.getStringList(_queueKey) ?? [];
     return jsonList
         .map(
-          (jsonStr) =>
-              PendingCapture.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>),
+          (jsonStr) => PendingCapture.fromJson(
+            jsonDecode(jsonStr) as Map<String, dynamic>,
+          ),
         )
         .toList();
   }

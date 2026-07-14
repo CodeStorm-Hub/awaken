@@ -45,11 +45,11 @@ void main() {
 
     test('buildActiveRouteFromPayload includes scheduled param', () {
       final scheduled = DateTime(2026, 7, 3, 7, 30, 45);
-      final payload =
-          'abc|10|${scheduled.toIso8601String()}';
+      final payload = 'abc|10|${scheduled.toIso8601String()}';
 
-      final route =
-          AlarmNotificationService.buildActiveRouteFromPayload(payload);
+      final route = AlarmNotificationService.buildActiveRouteFromPayload(
+        payload,
+      );
 
       expect(route, contains('id=abc'));
       expect(route, contains('reps=10'));

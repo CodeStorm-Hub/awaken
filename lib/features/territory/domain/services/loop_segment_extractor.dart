@@ -31,7 +31,9 @@ class LoopClosureTracker {
     final anchor = points[anchorIndex];
     final current = points[i];
     final distToAnchor = GeoUtils.haversineMeters(current, anchor);
-    final segmentDist = GeoUtils.pathDistanceMeters(points.sublist(anchorIndex, i + 1));
+    final segmentDist = GeoUtils.pathDistanceMeters(
+      points.sublist(anchorIndex, i + 1),
+    );
 
     if (distToAnchor > maxDistFromAnchor) {
       maxDistFromAnchor = distToAnchor;
@@ -52,7 +54,9 @@ class LoopClosureTracker {
     final segment = LoopSegmentEntity(
       startIndex: anchorIndex,
       endIndex: i,
-      points: List<GeoPointEntity>.unmodifiable(points.sublist(anchorIndex, i + 1)),
+      points: List<GeoPointEntity>.unmodifiable(
+        points.sublist(anchorIndex, i + 1),
+      ),
       closedAt: current.timestamp,
     );
 

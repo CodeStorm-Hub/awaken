@@ -43,8 +43,13 @@ class JumpingJackCounterService implements ExerciseCounter {
     final rh = pose.landmarks[PoseLandmarkType.rightHip];
     final nose = pose.landmarks[PoseLandmarkType.nose];
 
-    final hasAnkles = la != null && ra != null && la.likelihood >= minConfidence && ra.likelihood >= minConfidence;
-    final hasOthers = lw != null &&
+    final hasAnkles =
+        la != null &&
+        ra != null &&
+        la.likelihood >= minConfidence &&
+        ra.likelihood >= minConfidence;
+    final hasOthers =
+        lw != null &&
         rw != null &&
         lh != null &&
         rh != null &&
@@ -161,7 +166,15 @@ class JumpingJackCounterService implements ExerciseCounter {
     final rh = pose.landmarks[PoseLandmarkType.rightHip];
 
     if ([nose, lw, rw, la, ra, lh, rh].any((l) => l == null)) return null;
-    if ([nose!, lw!, rw!, la!, ra!, lh!, rh!].any((l) => l.likelihood < minConfidence)) {
+    if ([
+      nose!,
+      lw!,
+      rw!,
+      la!,
+      ra!,
+      lh!,
+      rh!,
+    ].any((l) => l.likelihood < minConfidence)) {
       return null;
     }
 

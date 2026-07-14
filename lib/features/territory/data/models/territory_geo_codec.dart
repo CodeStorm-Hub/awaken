@@ -12,7 +12,9 @@ abstract final class TerritoryGeoCodec {
   /// run path, for the `capture_territory` RPC.
   static String pointsToPolygonEwkt(List<GeoPointEntity> points) {
     if (points.isEmpty) {
-      throw ArgumentError('Cannot build polygon EWKT from an empty point list.');
+      throw ArgumentError(
+        'Cannot build polygon EWKT from an empty point list.',
+      );
     }
     final coords = points.map((p) => '${p.longitude} ${p.latitude}').toList();
     // PostGIS requires the ring to be explicitly closed.

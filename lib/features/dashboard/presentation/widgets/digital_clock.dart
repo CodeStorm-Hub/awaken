@@ -16,7 +16,7 @@ class DigitalClock extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final timeAsync = ref.watch(clockDisplayProvider);
-    final display = timeAsync.valueOrNull ?? '--:--';
+    final display = timeAsync.value ?? '--:--';
 
     final hh = display.substring(0, 2);
     final mm = display.substring(3, 5);

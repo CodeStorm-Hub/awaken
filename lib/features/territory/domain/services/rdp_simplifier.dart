@@ -8,7 +8,10 @@ import 'package:awaken/features/territory/domain/entities/geo_point_entity.dart'
 /// Pure function, safe to run via `compute()` off the UI thread per the
 /// implementation plan's "heavy client-side spatial work" requirement.
 abstract final class RdpSimplifier {
-  static List<GeoPointEntity> simplify(List<GeoPointEntity> points, double epsilonMeters) {
+  static List<GeoPointEntity> simplify(
+    List<GeoPointEntity> points,
+    double epsilonMeters,
+  ) {
     if (points.length < 3) return points;
 
     var maxDistance = 0.0;

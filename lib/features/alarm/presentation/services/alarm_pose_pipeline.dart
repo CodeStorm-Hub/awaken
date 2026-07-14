@@ -28,23 +28,22 @@ class PoseFrame {
 /// Keeps pose updates on [poseFrame] so the HUD can rebuild via
 /// [ValueListenableBuilder] without rebuilding the full alarm screen.
 class AlarmPosePipeline {
-  AlarmPosePipeline({
-    PoseDetector? poseDetector,
-    this.onPoseResult,
-  }) : _poseDetector = poseDetector ??
-            PoseDetector(
-              options: PoseDetectorOptions(
-                mode: PoseDetectionMode.stream,
-                // `base` (the plugin default) trades landmark stability for
-                // speed, matching this pipeline's ~15 FPS throttle budget —
-                // pinned explicitly rather than left to the plugin default,
-                // which could change silently on a version bump. `accurate`
-                // is tuned for single static images and too slow for a live
-                // stream at this frame rate; revisit only if squat-depth
-                // precision becomes an issue in practice.
-                model: PoseDetectionModel.base,
-              ),
-            );
+  AlarmPosePipeline({PoseDetector? poseDetector, this.onPoseResult})
+    : _poseDetector =
+          poseDetector ??
+          PoseDetector(
+            options: PoseDetectorOptions(
+              mode: PoseDetectionMode.stream,
+              // `base` (the plugin default) trades landmark stability for
+              // speed, matching this pipeline's ~15 FPS throttle budget —
+              // pinned explicitly rather than left to the plugin default,
+              // which could change silently on a version bump. `accurate`
+              // is tuned for single static images and too slow for a live
+              // stream at this frame rate; revisit only if squat-depth
+              // precision becomes an issue in practice.
+              model: PoseDetectionModel.base,
+            ),
+          );
 
   final PoseDetector _poseDetector;
 
@@ -62,6 +61,12 @@ class AlarmPosePipeline {
   );
 
   final ValueNotifier<bool> permissionDenied = ValueNotifier(false);
+
+  /// Camera hardware/driver failure with permission GRANTED — e.g. camera
+  /// held by another app or a HAL error. Distinct from [permissionDenied]
+  /// so the HUD can show "retry" instead of sending the user to settings
+  /// for a permission they already granted.
+  final ValueNotifier<bool> cameraFailed = ValueNotifier(false);
   final ValueNotifier<bool> isReady = ValueNotifier(false);
 
   CameraController? _cameraController;
@@ -107,7 +112,7 @@ class AlarmPosePipeline {
     final cameras = await availableCameras();
     if (_disposed) return;
     if (cameras.isEmpty) {
-      permissionDenied.value = true;
+      cameraFailed.value = true;
       return;
     }
 
@@ -129,8 +134,9 @@ class AlarmPosePipeline {
       camera,
       ResolutionPreset.medium,
       enableAudio: false,
-      imageFormatGroup:
-          Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
+      imageFormatGroup: Platform.isAndroid
+          ? ImageFormatGroup.nv21
+          : ImageFormatGroup.bgra8888,
     );
     _cameraController = controller;
 
@@ -138,13 +144,15 @@ class AlarmPosePipeline {
       await controller.initialize();
     } on CameraException catch (e) {
       debugPrint('[Camera] Init failed: ${e.code} ${e.description}');
-      permissionDenied.value = true;
+      cameraFailed.value = true;
       return;
     } catch (e) {
       debugPrint('[Camera] Init failed: $e');
-      permissionDenied.value = true;
+      cameraFailed.value = true;
       return;
     }
+
+    cameraFailed.value = false;
 
     if (_disposed || _pausedByLifecycle) {
       await controller.dispose();
@@ -154,6 +162,19 @@ class AlarmPosePipeline {
 
     isReady.value = true;
     await controller.startImageStream(_onCameraImage);
+  }
+
+  /// Retries opening the camera after a hardware failure ([cameraFailed]) —
+  /// the other app may have released it, or the HAL recovered.
+  Future<void> retryCamera() async {
+    if (_disposed || _pausedByLifecycle) return;
+    cameraFailed.value = false;
+    await _teardownCamera();
+    if (_camera == null) {
+      await start();
+    } else {
+      await _openCamera();
+    }
   }
 
   /// Releases the camera when the app leaves the foreground (camera plugin
@@ -228,7 +249,8 @@ class AlarmPosePipeline {
     if (Platform.isIOS) {
       rotation = InputImageRotationValue.fromRawValue(_sensorOrientation);
     } else {
-      final deviceOrientation = _cameraController?.value.deviceOrientation ??
+      final deviceOrientation =
+          _cameraController?.value.deviceOrientation ??
           DeviceOrientation.portraitUp;
       final deviceCompensation = _orientationMap[deviceOrientation] ?? 0;
 
@@ -319,6 +341,7 @@ class AlarmPosePipeline {
     await _poseDetector.close();
     poseFrame.dispose();
     permissionDenied.dispose();
+    cameraFailed.dispose();
     isReady.dispose();
   }
 }

@@ -28,22 +28,22 @@ class AlarmTriggerRecord {
   bool get isResolved => resolvedAt != null;
 
   AlarmTriggerRecord copyWith({DateTime? resolvedAt}) => AlarmTriggerRecord(
-        id: id,
-        alarmId: alarmId,
-        firedAt: firedAt,
-        requiredReps: requiredReps,
-        exerciseType: exerciseType,
-        resolvedAt: resolvedAt ?? this.resolvedAt,
-      );
+    id: id,
+    alarmId: alarmId,
+    firedAt: firedAt,
+    requiredReps: requiredReps,
+    exerciseType: exerciseType,
+    resolvedAt: resolvedAt ?? this.resolvedAt,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'alarm_id': alarmId,
-        'fired_at': firedAt.toIso8601String(),
-        'required_reps': requiredReps,
-        'exercise_type': exerciseType.wireName,
-        if (resolvedAt != null) 'resolved_at': resolvedAt!.toIso8601String(),
-      };
+    'id': id,
+    'alarm_id': alarmId,
+    'fired_at': firedAt.toIso8601String(),
+    'required_reps': requiredReps,
+    'exercise_type': exerciseType.wireName,
+    if (resolvedAt != null) 'resolved_at': resolvedAt!.toIso8601String(),
+  };
 
   factory AlarmTriggerRecord.fromJson(Map<String, dynamic> json) {
     return AlarmTriggerRecord(
@@ -51,7 +51,8 @@ class AlarmTriggerRecord {
       alarmId: json['alarm_id'] as String,
       firedAt: DateTime.parse(json['fired_at'] as String),
       requiredReps: json['required_reps'] as int,
-      exerciseType: AlarmExerciseTypeX.tryParse(json['exercise_type'] as String?) ??
+      exerciseType:
+          AlarmExerciseTypeX.tryParse(json['exercise_type'] as String?) ??
           AlarmExerciseType.squats,
       resolvedAt: json['resolved_at'] != null
           ? DateTime.parse(json['resolved_at'] as String)
@@ -70,9 +71,11 @@ class AlarmBailoutService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_key) ?? [];
     return raw
-        .map((e) => AlarmTriggerRecord.fromJson(
-              jsonDecode(e) as Map<String, dynamic>,
-            ))
+        .map(
+          (e) => AlarmTriggerRecord.fromJson(
+            jsonDecode(e) as Map<String, dynamic>,
+          ),
+        )
         .toList();
   }
 
@@ -91,9 +94,7 @@ class AlarmBailoutService {
     DateTime? now,
   }) async {
     final records = await _readAll();
-    final open = records.where(
-      (r) => r.alarmId == alarm.id && !r.isResolved,
-    );
+    final open = records.where((r) => r.alarmId == alarm.id && !r.isResolved);
     if (open.isNotEmpty) return open.first;
 
     final record = AlarmTriggerRecord(
@@ -152,8 +153,9 @@ class AlarmBailoutService {
 
     // Consume peer bailouts → double this user's next tax too.
     try {
-      final hit = await Supabase.instance.client
-          .rpc<bool>('consume_squad_bailout_penalty');
+      final hit = await Supabase.instance.client.rpc<bool>(
+        'consume_squad_bailout_penalty',
+      );
       if (hit == true) {
         for (final alarm in await repository.getAlarms()) {
           if (alarm.penaltyMultiplier >= 2) continue;
@@ -164,6 +166,28 @@ class AlarmBailoutService {
     } on Object catch (_) {}
 
     return applied;
+  }
+
+  /// Emergency-stop path: immediately doubles this alarm's next tax and
+  /// resolves its open trigger (so [applyBailoutPenalties] doesn't also
+  /// double it later), then reports the bailout to the user's squad — same
+  /// consequence as an unattended bailout, just chosen deliberately instead
+  /// of happening by default. Exists so a user who genuinely cannot use the
+  /// camera (hardware failure, managed-device policy) and has exhausted the
+  /// accessibility tap allowance is never trapped with a ringing, un-poppable
+  /// alarm and no way out.
+  Future<void> forceBailout({
+    required AlarmEntity alarm,
+    required AlarmRepository repository,
+    DateTime? now,
+  }) async {
+    await resolveForAlarm(alarm.id, now: now);
+    if (alarm.penaltyMultiplier < 2) {
+      await repository.saveAlarm(alarm.copyWith(penaltyMultiplier: 2));
+    }
+    try {
+      await Supabase.instance.client.rpc<void>('report_squad_bailout');
+    } on Object catch (_) {}
   }
 
   Future<bool> hasPendingPenalty(String alarmId) async {

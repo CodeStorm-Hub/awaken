@@ -59,11 +59,14 @@ class SquatCounterService {
     final lk = pose.landmarks[PoseLandmarkType.leftKnee];
     final rk = pose.landmarks[PoseLandmarkType.rightKnee];
 
-    final hasAnkles = (la != null && la.likelihood >= minConfidence) ||
+    final hasAnkles =
+        (la != null && la.likelihood >= minConfidence) ||
         (ra != null && ra.likelihood >= minConfidence);
-    final hasHips = (lh != null && lh.likelihood >= minConfidence) ||
+    final hasHips =
+        (lh != null && lh.likelihood >= minConfidence) ||
         (rh != null && rh.likelihood >= minConfidence);
-    final hasKnees = (lk != null && lk.likelihood >= minConfidence) ||
+    final hasKnees =
+        (lk != null && lk.likelihood >= minConfidence) ||
         (rk != null && rk.likelihood >= minConfidence);
 
     if (!hasAnkles) {
@@ -187,18 +190,18 @@ class SquatCounterService {
   }
 
   double? getLeftKneeAngle(Pose pose) => _kneeAngle(
-        pose,
-        PoseLandmarkType.leftHip,
-        PoseLandmarkType.leftKnee,
-        PoseLandmarkType.leftAnkle,
-      );
+    pose,
+    PoseLandmarkType.leftHip,
+    PoseLandmarkType.leftKnee,
+    PoseLandmarkType.leftAnkle,
+  );
 
   double? getRightKneeAngle(Pose pose) => _kneeAngle(
-        pose,
-        PoseLandmarkType.rightHip,
-        PoseLandmarkType.rightKnee,
-        PoseLandmarkType.rightAnkle,
-      );
+    pose,
+    PoseLandmarkType.rightHip,
+    PoseLandmarkType.rightKnee,
+    PoseLandmarkType.rightAnkle,
+  );
 
   // ── Internals ──────────────────────────────────────────────────────
 
@@ -295,8 +298,8 @@ class SquatCounterService {
       return false;
     }
 
-    final torso =
-        (((leftHip.y + rightHip.y) / 2) - ((left.y + right.y) / 2)).abs();
+    final torso = (((leftHip.y + rightHip.y) / 2) - ((left.y + right.y) / 2))
+        .abs();
     if (torso < 1) return false;
 
     final tilt = (left.y - right.y).abs() / torso;

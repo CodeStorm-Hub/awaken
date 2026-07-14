@@ -22,10 +22,8 @@ class AlarmLocalDatasource {
     final prefs = await SharedPreferences.getInstance();
     final alarms = await getAlarms();
     // Upsert: replace existing entry with same id
-    final updated = [
-      ...alarms.where((a) => a.id != alarm.id),
-      alarm,
-    ]..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    final updated = [...alarms.where((a) => a.id != alarm.id), alarm]
+      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
 
     await prefs.setStringList(
       _key,

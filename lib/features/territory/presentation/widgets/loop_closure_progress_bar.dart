@@ -16,9 +16,13 @@ class LoopClosureProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (1.0 -
-            (metersToStart / AppConstants.loopClosureGraceMeters).clamp(0.0, 1.0))
-        .clamp(0.0, 1.0);
+    final progress =
+        (1.0 -
+                (metersToStart / AppConstants.loopClosureGraceMeters).clamp(
+                  0.0,
+                  1.0,
+                ))
+            .clamp(0.0, 1.0);
     final canClose = metersToStart <= closureRadiusMeters;
 
     return Column(

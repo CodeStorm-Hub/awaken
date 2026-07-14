@@ -54,12 +54,12 @@ class DashboardStatsEntity {
 
   @override
   int get hashCode => Object.hash(
-        currentStreak,
-        bestStreak,
-        weeklyReps,
-        monthlyCalories,
-        nextAlarm,
-        nextAlarmReps,
-        Object.hashAll(repsTrend),
-      );
+    currentStreak,
+    bestStreak,
+    weeklyReps,
+    monthlyCalories,
+    nextAlarm,
+    nextAlarmReps,
+    Object.hashAll(repsTrend),
+  );
 }

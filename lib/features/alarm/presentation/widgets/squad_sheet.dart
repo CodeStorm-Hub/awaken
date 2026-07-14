@@ -95,12 +95,10 @@ class _SquadSheetState extends ConsumerState<SquadSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final squadId = ref.watch(currentSquadIdProvider).valueOrNull;
+    final squadId = ref.watch(currentSquadIdProvider).value;
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         decoration: const BoxDecoration(
@@ -151,8 +149,10 @@ class _SquadSheetState extends ConsumerState<SquadSheet> {
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
                   onPressed: _busy ? null : () => _nudge(squadId),
-                  icon: const Icon(Icons.notifications_active_rounded,
-                      size: 18),
+                  icon: const Icon(
+                    Icons.notifications_active_rounded,
+                    size: 18,
+                  ),
                   label: const Text('NUDGE THE SQUAD'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.accent,

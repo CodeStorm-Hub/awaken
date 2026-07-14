@@ -70,9 +70,7 @@ class CameraHudOverlay extends StatelessWidget {
           )
         else
           SkeletonWireframe(accentColor: hud.primary),
-        RepaintBoundary(
-          child: ScanLineAnimation(accentColor: hud.primary),
-        ),
+        RepaintBoundary(child: ScanLineAnimation(accentColor: hud.primary)),
       ],
     );
   }

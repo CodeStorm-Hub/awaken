@@ -6,87 +6,181 @@ part of 'dashboard_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$exactAlarmPermissionHash() =>
-    r'3d0d9390fb66d7ba0d36ac85a57308992af80bd1';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Android exact-alarm permission state.
+///
+/// `null` when not applicable (iOS / desktop). `false` when Android and the
+/// user has denied "Alarms & reminders" — alarms may not fire on time.
+
+@ProviderFor(exactAlarmPermission)
+final exactAlarmPermissionProvider = ExactAlarmPermissionProvider._();
 
 /// Android exact-alarm permission state.
 ///
 /// `null` when not applicable (iOS / desktop). `false` when Android and the
 /// user has denied "Alarms & reminders" — alarms may not fire on time.
-///
-/// Copied from [exactAlarmPermission].
-@ProviderFor(exactAlarmPermission)
-final exactAlarmPermissionProvider = FutureProvider<bool?>.internal(
-  exactAlarmPermission,
-  name: r'exactAlarmPermissionProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$exactAlarmPermissionHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ExactAlarmPermissionRef = FutureProviderRef<bool?>;
-String _$clockHash() => r'37cd9243c72070a24dec2c81c9280f6c40c9a2ca';
+final class ExactAlarmPermissionProvider
+    extends $FunctionalProvider<AsyncValue<bool?>, bool?, FutureOr<bool?>>
+    with $FutureModifier<bool?>, $FutureProvider<bool?> {
+  /// Android exact-alarm permission state.
+  ///
+  /// `null` when not applicable (iOS / desktop). `false` when Android and the
+  /// user has denied "Alarms & reminders" — alarms may not fire on time.
+  ExactAlarmPermissionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'exactAlarmPermissionProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$exactAlarmPermissionHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<bool?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool?> create(Ref ref) {
+    return exactAlarmPermission(ref);
+  }
+}
+
+String _$exactAlarmPermissionHash() =>
+    r'20137c1f310188110d4efd7f50e95ae6f06cfe68';
 
 /// Ticking clock — emits a new DateTime every second.
-///
-/// Copied from [clock].
-@ProviderFor(clock)
-final clockProvider = StreamProvider<DateTime>.internal(
-  clock,
-  name: r'clockProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$clockHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ClockRef = StreamProviderRef<DateTime>;
-String _$clockDisplayHash() => r'febf263dbf56b94534a548c349bd1b69e4c50f9e';
+@ProviderFor(clock)
+final clockProvider = ClockProvider._();
+
+/// Ticking clock — emits a new DateTime every second.
+
+final class ClockProvider
+    extends
+        $FunctionalProvider<AsyncValue<DateTime>, DateTime, Stream<DateTime>>
+    with $FutureModifier<DateTime>, $StreamProvider<DateTime> {
+  /// Ticking clock — emits a new DateTime every second.
+  ClockProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'clockProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$clockHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<DateTime> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<DateTime> create(Ref ref) {
+    return clock(ref);
+  }
+}
+
+String _$clockHash() => r'99d892c98e0eb6b5c760bc23e73ff09184cfd465';
 
 /// Formatted clock string — only emits when the displayed HH:MM value changes
 /// (once per minute). Downstream widgets that render the clock should watch
 /// this, not [clockProvider], to avoid rebuilding every second.
-///
-/// Copied from [clockDisplay].
-@ProviderFor(clockDisplay)
-final clockDisplayProvider = StreamProvider<String>.internal(
-  clockDisplay,
-  name: r'clockDisplayProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$clockDisplayHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ClockDisplayRef = StreamProviderRef<String>;
-String _$dashboardStatsHash() => r'dc456fb67b9a01bc7f00b915dcc419a8e3913fdb';
+@ProviderFor(clockDisplay)
+final clockDisplayProvider = ClockDisplayProvider._();
+
+/// Formatted clock string — only emits when the displayed HH:MM value changes
+/// (once per minute). Downstream widgets that render the clock should watch
+/// this, not [clockProvider], to avoid rebuilding every second.
+
+final class ClockDisplayProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, Stream<String>>
+    with $FutureModifier<String>, $StreamProvider<String> {
+  /// Formatted clock string — only emits when the displayed HH:MM value changes
+  /// (once per minute). Downstream widgets that render the clock should watch
+  /// this, not [clockProvider], to avoid rebuilding every second.
+  ClockDisplayProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'clockDisplayProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$clockDisplayHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<String> create(Ref ref) {
+    return clockDisplay(ref);
+  }
+}
+
+String _$clockDisplayHash() => r'606af519aed70225f9d5483ac9a7ed3f01cac92d';
 
 /// Dashboard stats — cloud when signed in, local SharedPreferences when guest.
-///
-/// Copied from [dashboardStats].
-@ProviderFor(dashboardStats)
-final dashboardStatsProvider = FutureProvider<DashboardStatsEntity>.internal(
-  dashboardStats,
-  name: r'dashboardStatsProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$dashboardStatsHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef DashboardStatsRef = FutureProviderRef<DashboardStatsEntity>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+@ProviderFor(dashboardStats)
+final dashboardStatsProvider = DashboardStatsProvider._();
+
+/// Dashboard stats — cloud when signed in, local SharedPreferences when guest.
+
+final class DashboardStatsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<DashboardStatsEntity>,
+          DashboardStatsEntity,
+          FutureOr<DashboardStatsEntity>
+        >
+    with
+        $FutureModifier<DashboardStatsEntity>,
+        $FutureProvider<DashboardStatsEntity> {
+  /// Dashboard stats — cloud when signed in, local SharedPreferences when guest.
+  DashboardStatsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'dashboardStatsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$dashboardStatsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<DashboardStatsEntity> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<DashboardStatsEntity> create(Ref ref) {
+    return dashboardStats(ref);
+  }
+}
+
+String _$dashboardStatsHash() => r'6fb0be61b48102a819754e74cc43af94fecf13e1';

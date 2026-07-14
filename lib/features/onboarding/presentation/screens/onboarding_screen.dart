@@ -108,7 +108,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           page.body,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: AppColors.mutedForeground,
                                 height: 1.5,
                               ),

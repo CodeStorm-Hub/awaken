@@ -49,10 +49,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signInWithEmailAndPassword(String email, String password) async {
-    await _client.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    await _client.auth.signInWithPassword(email: email, password: password);
   }
 
   @override
@@ -75,9 +72,9 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   static AppUser _toAppUser(User user) => AppUser(
-        id: user.id,
-        email: user.email ?? '',
-        displayName: user.userMetadata?['full_name'] as String?,
-        avatarUrl: user.userMetadata?['avatar_url'] as String?,
-      );
+    id: user.id,
+    email: user.email ?? '',
+    displayName: user.userMetadata?['full_name'] as String?,
+    avatarUrl: user.userMetadata?['avatar_url'] as String?,
+  );
 }

@@ -18,27 +18,33 @@ class TerritorySupabaseRepositoryImpl implements TerritoryRepository {
   @override
   Future<List<TerritoryEntity>> getAllTerritories() async {
     final models = await _datasource.getAllTerritories();
-    return models.map((m) => m.toEntity(currentUserId: _currentUserId)).toList();
+    return models
+        .map((m) => m.toEntity(currentUserId: _currentUserId))
+        .toList();
   }
 
   @override
   Stream<List<TerritoryEntity>> watchTerritories() {
     return _datasource.watchTerritories().map(
-          (models) => models.map((m) => m.toEntity(currentUserId: _currentUserId)).toList(),
-        );
+      (models) =>
+          models.map((m) => m.toEntity(currentUserId: _currentUserId)).toList(),
+    );
   }
 
   @override
   Future<void> recordRun(RunTrackEntity run) => _datasource.recordRun(run);
 
   @override
-  Future<CaptureResultEntity> captureTerritory(List<GeoPointEntity> loopPoints) async {
+  Future<CaptureResultEntity> captureTerritory(
+    List<GeoPointEntity> loopPoints,
+  ) async {
     final result = await _datasource.captureTerritory(loopPoints);
     return result.toEntity();
   }
 
   @override
-  Future<void> touchDefense(List<GeoPointEntity> path) => _datasource.touchDefense(path);
+  Future<void> touchDefense(List<GeoPointEntity> path) =>
+      _datasource.touchDefense(path);
 
   @override
   Future<List<LeaderboardEntryEntity>> getGlobalLeaderboard() async {
@@ -51,7 +57,10 @@ class TerritorySupabaseRepositoryImpl implements TerritoryRepository {
     GeoPointEntity viewerLocation, {
     double radiusMeters = 5000,
   }) async {
-    final models = await _datasource.getNearbyLeaderboard(viewerLocation, radiusMeters);
+    final models = await _datasource.getNearbyLeaderboard(
+      viewerLocation,
+      radiusMeters,
+    );
     return models.map((m) => m.toEntity()).toList();
   }
 

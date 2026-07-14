@@ -6,59 +6,143 @@ part of 'alarm_schedule_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$alarmRepositoryHash() => r'756dd5b08e17c38446c8efcd308783dd77826743';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Picks the correct repository based on auth state:
+///   - Signed in  → Supabase (cloud-synced)
+///   - Signed out → SharedPreferences (local-only)
+
+@ProviderFor(alarmRepository)
+final alarmRepositoryProvider = AlarmRepositoryProvider._();
 
 /// Picks the correct repository based on auth state:
 ///   - Signed in  → Supabase (cloud-synced)
 ///   - Signed out → SharedPreferences (local-only)
-///
-/// Copied from [alarmRepository].
-@ProviderFor(alarmRepository)
-final alarmRepositoryProvider = Provider<AlarmRepository>.internal(
-  alarmRepository,
-  name: r'alarmRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$alarmRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AlarmRepositoryRef = ProviderRef<AlarmRepository>;
-String _$nextAlarmHash() => r'75dbd72eafb27879a79d08968b23cbb9c3e22e64';
+final class AlarmRepositoryProvider
+    extends
+        $FunctionalProvider<AlarmRepository, AlarmRepository, AlarmRepository>
+    with $Provider<AlarmRepository> {
+  /// Picks the correct repository based on auth state:
+  ///   - Signed in  → Supabase (cloud-synced)
+  ///   - Signed out → SharedPreferences (local-only)
+  AlarmRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'alarmRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
-/// See also [nextAlarm].
-@ProviderFor(nextAlarm)
-final nextAlarmProvider = Provider<AlarmEntity?>.internal(
-  nextAlarm,
-  name: r'nextAlarmProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$nextAlarmHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+  @override
+  String debugGetCreateSourceHash() => _$alarmRepositoryHash();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef NextAlarmRef = ProviderRef<AlarmEntity?>;
-String _$alarmListHash() => r'dcbfe23a1c74c2450c1654db1b1b9632cfa9fa09';
+  @$internal
+  @override
+  $ProviderElement<AlarmRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
 
-/// See also [AlarmList].
-@ProviderFor(AlarmList)
-final alarmListProvider =
-    AsyncNotifierProvider<AlarmList, List<AlarmEntity>>.internal(
-      AlarmList.new,
-      name: r'alarmListProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$alarmListHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
+  @override
+  AlarmRepository create(Ref ref) {
+    return alarmRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AlarmRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AlarmRepository>(value),
     );
+  }
+}
 
-typedef _$AlarmList = AsyncNotifier<List<AlarmEntity>>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+String _$alarmRepositoryHash() => r'900590b51be3a229156bb28ab07f5a6685655473';
+
+@ProviderFor(AlarmList)
+final alarmListProvider = AlarmListProvider._();
+
+final class AlarmListProvider
+    extends $AsyncNotifierProvider<AlarmList, List<AlarmEntity>> {
+  AlarmListProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'alarmListProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$alarmListHash();
+
+  @$internal
+  @override
+  AlarmList create() => AlarmList();
+}
+
+String _$alarmListHash() => r'd71f0ef920c87983562c300fb9f0fd4e8b93479f';
+
+abstract class _$AlarmList extends $AsyncNotifier<List<AlarmEntity>> {
+  FutureOr<List<AlarmEntity>> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<List<AlarmEntity>>, List<AlarmEntity>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<AlarmEntity>>, List<AlarmEntity>>,
+              AsyncValue<List<AlarmEntity>>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(nextAlarm)
+final nextAlarmProvider = NextAlarmProvider._();
+
+final class NextAlarmProvider
+    extends $FunctionalProvider<AlarmEntity?, AlarmEntity?, AlarmEntity?>
+    with $Provider<AlarmEntity?> {
+  NextAlarmProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'nextAlarmProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$nextAlarmHash();
+
+  @$internal
+  @override
+  $ProviderElement<AlarmEntity?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AlarmEntity? create(Ref ref) {
+    return nextAlarm(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AlarmEntity? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AlarmEntity?>(value),
+    );
+  }
+}
+
+String _$nextAlarmHash() => r'580f25c319d6c1ff22efd76d7b0607a4a1aef804';

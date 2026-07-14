@@ -86,11 +86,7 @@ class _FogPainter extends CustomPainter {
         holePaint.shader = ui.Gradient.radial(
           screen,
           radius,
-          const [
-            Color(0xFFFFFFFF),
-            Color(0xCCFFFFFF),
-            Color(0x00FFFFFF),
-          ],
+          const [Color(0xFFFFFFFF), Color(0xCCFFFFFF), Color(0x00FFFFFF)],
           const [0.0, 0.55, 1.0],
         );
         canvas.drawCircle(screen, radius, holePaint);

@@ -66,7 +66,10 @@ class _GuestAuthRepository implements AuthRepository {
   Future<void> signInWithGoogle() async {}
 
   @override
-  Future<void> signInWithEmailAndPassword(String email, String password) async {}
+  Future<void> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {}
 
   @override
   Future<void> signUpWithEmailAndPassword(
@@ -96,15 +99,11 @@ void main() {
   test('success route builder forwards AlarmEntity extra to SuccessScreen', () {
     // Mirrors lib/core/router/app_router.dart success route builder.
     Object? extra = alarm;
-    final screen = SuccessScreen(
-      alarm: extra is AlarmEntity ? extra : null,
-    );
+    final screen = SuccessScreen(alarm: extra is AlarmEntity ? extra : null);
     expect(screen.alarm?.id, 'alarm-1');
 
     extra = null;
-    final missing = SuccessScreen(
-      alarm: extra is AlarmEntity ? extra : null,
-    );
+    final missing = SuccessScreen(alarm: extra is AlarmEntity ? extra : null);
     expect(missing.alarm, isNull);
     expect(AppRoutes.success, '/alarm/success');
   });
@@ -126,7 +125,9 @@ void main() {
 
     // Same persistence order as SuccessScreen._recordSession.
     const userId = SessionEntity.localGuestUserId;
-    await container.read(sessionRepositoryProvider).recordSession(
+    await container
+        .read(sessionRepositoryProvider)
+        .recordSession(
           SessionEntity(
             userId: userId,
             alarmId: alarm.id,

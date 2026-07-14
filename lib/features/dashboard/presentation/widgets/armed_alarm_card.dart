@@ -93,12 +93,15 @@ class ArmedAlarmCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.secondary,
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.chipRadius),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.chipRadius,
+                      ),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Text(
@@ -126,12 +129,13 @@ class ArmedAlarmCard extends StatelessWidget {
               ],
               const SizedBox(height: 14),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withValues(alpha: 0.12),
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.chipRadius),
+                  borderRadius: BorderRadius.circular(AppConstants.chipRadius),
                   border: Border.all(
                     color: AppColors.accent.withValues(alpha: 0.45),
                   ),

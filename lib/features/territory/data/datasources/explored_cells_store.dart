@@ -58,17 +58,18 @@ class ExploredCellsStore {
       const step = AppConstants.fogCellDegrees;
       for (var di = -1; di <= 1; di++) {
         for (var dj = -1; dj <= 1; dj++) {
-          _cells.add(cellKey(
-            p.latitude + di * step,
-            p.longitude + dj * step,
-          ));
+          _cells.add(cellKey(p.latitude + di * step, p.longitude + dj * step));
         }
       }
     }
     await _persist();
   }
 
-  Future<void> revealAround(double lat, double lng, {int radiusCells = 2}) async {
+  Future<void> revealAround(
+    double lat,
+    double lng, {
+    int radiusCells = 2,
+  }) async {
     _prefs ??= await SharedPreferences.getInstance();
     const step = AppConstants.fogCellDegrees;
     for (var di = -radiusCells; di <= radiusCells; di++) {

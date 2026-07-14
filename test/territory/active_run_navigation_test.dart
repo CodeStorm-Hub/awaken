@@ -37,29 +37,30 @@ void main() {
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('dexterous.com/flutter/local_notifications'),
-      (MethodCall methodCall) {
-        if (methodCall.method == 'initialize' || methodCall.method == 'show') {
-          return Future<bool>.value(true);
-        }
-        return Future<dynamic>.value(null);
-      },
-    );
+          const MethodChannel('dexterous.com/flutter/local_notifications'),
+          (MethodCall methodCall) {
+            if (methodCall.method == 'initialize' ||
+                methodCall.method == 'show') {
+              return Future<bool>.value(true);
+            }
+            return Future<dynamic>.value(null);
+          },
+        );
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('flutter.baseflow.com/geolocator'),
-      (MethodCall methodCall) {
-        if (methodCall.method == 'isLocationServiceEnabled') {
-          return Future<bool>.value(true);
-        }
-        if (methodCall.method == 'checkPermission' ||
-            methodCall.method == 'requestPermission') {
-          return Future<int>.value(3);
-        }
-        return Future<dynamic>.value(null);
-      },
-    );
+          const MethodChannel('flutter.baseflow.com/geolocator'),
+          (MethodCall methodCall) {
+            if (methodCall.method == 'isLocationServiceEnabled') {
+              return Future<bool>.value(true);
+            }
+            if (methodCall.method == 'checkPermission' ||
+                methodCall.method == 'requestPermission') {
+              return Future<int>.value(3);
+            }
+            return Future<dynamic>.value(null);
+          },
+        );
   });
 
   setUp(() {
@@ -84,7 +85,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
-        authStateProvider.overrideWith((ref) => signedOutAuthStateStream()),
+        authStateProvider.overrideWith(SignedOutAuthStateNotifier.new),
         isSignedInProvider.overrideWith((ref) => true),
         currentUserProvider.overrideWith(
           (ref) => const AppUser(
@@ -111,10 +112,7 @@ void main() {
 
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const AwakenApp(),
-      ),
+      UncontrolledProviderScope(container: container, child: const AwakenApp()),
     );
     await tester.pumpAndSettle();
   }
@@ -134,102 +132,102 @@ void main() {
   }
 
   group('active run survives navigation', () {
-    testWidgets(
-      'switching tabs mid-run does not discard and keeps tracking',
-      (WidgetTester tester) async {
-        await pumpApp(tester);
-        await startRunFromTerritoryTab(tester);
+    testWidgets('switching tabs mid-run does not discard and keeps tracking', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(tester);
+      await startRunFromTerritoryTab(tester);
 
-        await tester.tap(find.text('HOME'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('HOME'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        expect(find.text('Discard this run?'), findsNothing);
-        expect(
-          container.read(activeRunProvider).status,
-          RunSessionStatus.tracking,
-        );
-        expect(find.text('AWAKEN'), findsOneWidget);
+      expect(find.text('Discard this run?'), findsNothing);
+      expect(
+        container.read(activeRunProvider).status,
+        RunSessionStatus.tracking,
+      );
+      expect(find.text('AWAKEN'), findsOneWidget);
 
-        await tester.tap(find.text('TERRITORY'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('TERRITORY'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        expect(
-          container.read(activeRunProvider).status,
-          RunSessionStatus.tracking,
-        );
-        expect(find.text('Stop'), findsOneWidget);
-        expect(find.text('Start run'), findsNothing);
+      expect(
+        container.read(activeRunProvider).status,
+        RunSessionStatus.tracking,
+      );
+      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Start run'), findsNothing);
 
-        // Cancel tick timer before widget-test invariant check.
-        container.read(activeRunProvider.notifier).reset();
-      },
-    );
+      // Cancel tick timer before widget-test invariant check.
+      container.read(activeRunProvider.notifier).reset();
+    });
 
-    testWidgets(
-      'back arrow mid-run leaves territory without discarding',
-      (WidgetTester tester) async {
-        await pumpApp(tester);
-        await startRunFromTerritoryTab(tester);
+    testWidgets('back arrow mid-run leaves territory without discarding', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(tester);
+      await startRunFromTerritoryTab(tester);
 
-        await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        expect(find.text('Discard this run?'), findsNothing);
-        expect(
-          container.read(activeRunProvider).status,
-          RunSessionStatus.tracking,
-        );
-        expect(find.text('AWAKEN'), findsOneWidget);
+      expect(find.text('Discard this run?'), findsNothing);
+      expect(
+        container.read(activeRunProvider).status,
+        RunSessionStatus.tracking,
+      );
+      expect(find.text('AWAKEN'), findsOneWidget);
 
-        await tester.tap(find.text('TERRITORY'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('TERRITORY'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Stop'), findsOneWidget);
 
-        container.read(activeRunProvider.notifier).reset();
-      },
-    );
+      container.read(activeRunProvider.notifier).reset();
+    });
 
-    testWidgets(
-      'Stop is what ends the run after navigating away and back',
-      (WidgetTester tester) async {
-        await pumpApp(tester);
-        await startRunFromTerritoryTab(tester);
+    testWidgets('Stop is what ends the run after navigating away and back', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(tester);
+      await startRunFromTerritoryTab(tester);
 
-        await tester.tap(find.text('RANKS'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
-        expect(
-          container.read(activeRunProvider).status,
-          RunSessionStatus.tracking,
-        );
+      await tester.tap(find.text('RANKS'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(
+        container.read(activeRunProvider).status,
+        RunSessionStatus.tracking,
+      );
 
-        await tester.tap(find.text('TERRITORY'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('TERRITORY'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-        await tester.tap(find.text('Stop'));
-        await tester.pump();
-        // finishRun is async (checkpoint clear + classify + record).
-        await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('Stop'));
+      await tester.pump();
+      // finishRun is async (checkpoint clear + classify + record).
+      await tester.pump(const Duration(milliseconds: 500));
 
-        expect(
-          container.read(activeRunProvider).status,
-          isNot(RunSessionStatus.tracking),
-        );
-      },
-    );
+      expect(
+        container.read(activeRunProvider).status,
+        isNot(RunSessionStatus.tracking),
+      );
+    });
   });
 }
 
 class _FakeAuthRepository implements AuthRepository {
   @override
-  AppUser? get currentUser =>
-      const AppUser(id: 'user-1', email: 'test@example.com', displayName: 'Runner');
+  AppUser? get currentUser => const AppUser(
+    id: 'user-1',
+    email: 'test@example.com',
+    displayName: 'Runner',
+  );
 
   @override
   Stream<AuthState> get authStateChanges => signedOutAuthStateStream();
@@ -238,7 +236,10 @@ class _FakeAuthRepository implements AuthRepository {
   Future<void> signInWithGoogle() async {}
 
   @override
-  Future<void> signInWithEmailAndPassword(String email, String password) async {}
+  Future<void> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {}
 
   @override
   Future<void> signUpWithEmailAndPassword(

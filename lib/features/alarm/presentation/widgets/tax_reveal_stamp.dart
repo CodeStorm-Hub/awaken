@@ -58,11 +58,7 @@ class TaxRevealStamp extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Container(
-              width: 48,
-              height: 3,
-              color: AppColors.primary,
-            ),
+            Container(width: 48, height: 3, color: AppColors.primary),
           ],
         ),
       ),

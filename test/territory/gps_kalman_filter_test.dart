@@ -88,9 +88,11 @@ void main() {
       final aggressiveResult = aggressive.filter(40.7130, -74.0062, 3.0);
 
       final conservativeDelta =
-          (conservativeResult.$1 - 40.7128).abs() + (conservativeResult.$2 - (-74.0060)).abs();
+          (conservativeResult.$1 - 40.7128).abs() +
+          (conservativeResult.$2 - (-74.0060)).abs();
       final aggressiveDelta =
-          (aggressiveResult.$1 - 40.7128).abs() + (aggressiveResult.$2 - (-74.0060)).abs();
+          (aggressiveResult.$1 - 40.7128).abs() +
+          (aggressiveResult.$2 - (-74.0060)).abs();
 
       expect(aggressiveDelta, greaterThan(conservativeDelta));
     });

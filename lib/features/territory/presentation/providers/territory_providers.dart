@@ -21,6 +21,9 @@ import 'package:awaken/features/territory/domain/services/location_permission_he
 import 'package:awaken/features/territory/presentation/widgets/territory_map_style.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// StateProvider moved to legacy.dart in Riverpod 3 (still fully supported,
+// just no longer part of the primary API surface).
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -58,7 +61,7 @@ bool _territoryGpsActive(Ref ref) {
 ///   - Signed in  → Supabase (cloud-synced)
 ///   - Signed out → SharedPreferences (local-only)
 @Riverpod(keepAlive: true)
-TerritoryRepository territoryRepository(TerritoryRepositoryRef ref) {
+TerritoryRepository territoryRepository(Ref ref) {
   final signedIn = ref.watch(isSignedInProvider);
   if (signedIn) {
     return const TerritorySupabaseRepositoryImpl(TerritorySupabaseDatasource());
@@ -71,7 +74,7 @@ TerritoryRepository territoryRepository(TerritoryRepositoryRef ref) {
 /// Deferred until [territoryMapReadyProvider] is true so startup and other
 /// shell tabs do not open the Realtime subscription.
 @Riverpod(keepAlive: true)
-Stream<List<TerritoryEntity>> territoryList(TerritoryListRef ref) {
+Stream<List<TerritoryEntity>> territoryList(Ref ref) {
   if (!ref.watch(territoryMapReadyProvider)) {
     return Completer<List<TerritoryEntity>>().future.asStream();
   }
@@ -100,8 +103,6 @@ class LeaderboardModeNotifier extends _$LeaderboardModeNotifier {
   set state(LeaderboardMode value) => super.state = value;
 }
 
-final leaderboardModeProvider = leaderboardModeNotifierProvider;
-
 /// Defaults to all-time (current ownership).
 @riverpod
 class LeaderboardWindowNotifier extends _$LeaderboardWindowNotifier {
@@ -111,8 +112,6 @@ class LeaderboardWindowNotifier extends _$LeaderboardWindowNotifier {
   @override
   set state(LeaderboardWindow value) => super.state = value;
 }
-
-final leaderboardWindowProvider = leaderboardWindowNotifierProvider;
 
 /// The viewer's current position, used only to scope the "Nearby" leaderboard.
 @riverpod
@@ -124,10 +123,8 @@ class ViewerLocationNotifier extends _$ViewerLocationNotifier {
   set state(GeoPointEntity? value) => super.state = value;
 }
 
-final viewerLocationProvider = viewerLocationNotifierProvider;
-
 @riverpod
-Future<List<LeaderboardEntryEntity>> leaderboard(LeaderboardRef ref) async {
+Future<List<LeaderboardEntryEntity>> leaderboard(Ref ref) async {
   final repo = ref.watch(territoryRepositoryProvider);
   final mode = ref.watch(leaderboardModeProvider);
   final window = ref.watch(leaderboardWindowProvider);
@@ -140,7 +137,9 @@ Future<List<LeaderboardEntryEntity>> leaderboard(LeaderboardRef ref) async {
   }
 
   if (window == LeaderboardWindow.allTime) {
-    return nearby ? repo.getNearbyLeaderboard(viewerLocation) : repo.getGlobalLeaderboard();
+    return nearby
+        ? repo.getNearbyLeaderboard(viewerLocation)
+        : repo.getGlobalLeaderboard();
   }
 
   final windowHours = switch (window) {
@@ -155,7 +154,7 @@ Future<List<LeaderboardEntryEntity>> leaderboard(LeaderboardRef ref) async {
 }
 
 @riverpod
-Future<List<DecayWarningEntity>> decayWarnings(DecayWarningsRef ref) async {
+Future<List<DecayWarningEntity>> decayWarnings(Ref ref) async {
   return ref.watch(territoryRepositoryProvider).getDecayWarnings();
 }
 
@@ -169,8 +168,6 @@ class TerritoryMapReadyNotifier extends _$TerritoryMapReadyNotifier {
   set state(bool value) => super.state = value;
 }
 
-final territoryMapReadyProvider = territoryMapReadyNotifierProvider;
-
 /// Last known GPS fix for the idle map marker.
 @riverpod
 class MapLastKnownPositionNotifier extends _$MapLastKnownPositionNotifier {
@@ -181,11 +178,9 @@ class MapLastKnownPositionNotifier extends _$MapLastKnownPositionNotifier {
   set state(Position? value) => super.state = value;
 }
 
-final mapLastKnownPositionProvider = mapLastKnownPositionNotifierProvider;
-
 /// Loads and caches Awaken's branded OpenFreeMap vector style once per app session.
 @Riverpod(keepAlive: true)
-Future<Style> territoryMapStyle(TerritoryMapStyleRef ref) async {
+Future<Style> territoryMapStyle(Ref ref) async {
   if (!ref.watch(territoryMapReadyProvider)) {
     // Stay in [AsyncLoading] until the territory tab opens once.
     await Completer<Style>().future;
@@ -197,7 +192,7 @@ Future<Style> territoryMapStyle(TerritoryMapStyleRef ref) async {
 
 /// Continuous "blue dot" GPS feed for the map's live-position marker.
 @riverpod
-Stream<Position?> myLocation(MyLocationRef ref) async* {
+Stream<Position?> myLocation(Ref ref) async* {
   if (!ref.watch(territoryMapReadyProvider)) {
     return;
   }
@@ -261,8 +256,6 @@ class MapEngineNotifier extends _$MapEngineNotifier {
   set state(MapEngine value) => super.state = value;
 }
 
-final mapEngineProvider = mapEngineNotifierProvider;
-
 /// Fog-of-war toggle (default on). Persisted for the session via StateProvider.
 final fogOfWarEnabledProvider = StateProvider<bool>((ref) => false);
 
@@ -290,8 +283,6 @@ class TerritoryMapFocusNotifier extends _$TerritoryMapFocusNotifier {
   @override
   set state(LatLng? value) => super.state = value;
 }
-
-final territoryMapFocusProvider = territoryMapFocusNotifierProvider;
 
 /// Ring-vertex average of a territory's first polygon.
 LatLng? territoryApproxCentroid(TerritoryEntity territory) {
@@ -323,7 +314,9 @@ final captureSyncOnSignInProvider = Provider<void>((ref) {
             await queue.remove(item.id);
             ref.invalidate(territoryListProvider);
           } catch (e) {
-            debugPrint('[CaptureQueue] sign-in flush failed for ${item.id}: $e');
+            debugPrint(
+              '[CaptureQueue] sign-in flush failed for ${item.id}: $e',
+            );
           }
         }
       }
@@ -356,12 +349,12 @@ final bountyZonesProvider = FutureProvider<List<BountyZoneEntity>>((ref) async {
   if (!signedIn) return const [];
 
   try {
-    final rows = await Supabase.instance.client
-        .rpc<List<dynamic>>('list_active_bounty_zones');
+    final rows = await Supabase.instance.client.rpc<List<dynamic>>(
+      'list_active_bounty_zones',
+    );
     return [
       for (final row in rows)
-        if (row is Map<String, dynamic>)
-          BountyZoneEntity.fromRpc(row),
+        if (row is Map<String, dynamic>) BountyZoneEntity.fromRpc(row),
     ];
   } catch (e) {
     debugPrint('[bountyZonesProvider] RPC failed: $e');
@@ -376,8 +369,9 @@ final nemesisProvider = FutureProvider<NemesisEntity?>((ref) async {
   if (!signedIn) return null;
 
   try {
-    final rows = await Supabase.instance.client
-        .rpc<List<dynamic>>('get_nemesis');
+    final rows = await Supabase.instance.client.rpc<List<dynamic>>(
+      'get_nemesis',
+    );
     if (rows.isEmpty) return null;
     final first = rows.first;
     if (first is! Map<String, dynamic>) return null;

@@ -11,12 +11,14 @@ import 'package:vector_map_tiles/vector_map_tiles.dart';
 const territoryFlutterMapKey = ValueKey<String>('territory-flutter-map');
 
 /// Stable key for the capture-result minimap — must differ from the run screen.
-const territoryCaptureMinimapKey =
-    ValueKey<String>('territory-capture-minimap');
+const territoryCaptureMinimapKey = ValueKey<String>(
+  'territory-capture-minimap',
+);
 
 /// Stable key for the vector tile layer subtree.
-const territoryVectorTileLayerKey =
-    ValueKey<String>('territory-vector-tile-layer');
+const territoryVectorTileLayerKey = ValueKey<String>(
+  'territory-vector-tile-layer',
+);
 
 /// Renders Awaken's basemap — branded OpenFreeMap vector tiles by default,
 /// or a plain OSM raster fallback when [mapEngineProvider] is flipped to
@@ -49,7 +51,8 @@ class TerritoryVectorTileLayer extends ConsumerStatefulWidget {
       _TerritoryVectorTileLayerState();
 }
 
-class _TerritoryVectorTileLayerState extends ConsumerState<TerritoryVectorTileLayer>
+class _TerritoryVectorTileLayerState
+    extends ConsumerState<TerritoryVectorTileLayer>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;

@@ -50,7 +50,8 @@ class PushUpCounterService implements ExerciseCounter {
     final lw = pose.landmarks[PoseLandmarkType.leftWrist];
     final rw = pose.landmarks[PoseLandmarkType.rightWrist];
 
-    final hasUpperBody = ls != null &&
+    final hasUpperBody =
+        ls != null &&
         rs != null &&
         le != null &&
         re != null &&

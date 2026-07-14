@@ -30,7 +30,8 @@ abstract final class SupabaseConfig {
   );
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbmtkYm50dnZvcG5mdnZ2YW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDM4NDEsImV4cCI6MjA5OTAxOTg0MX0.jAV0yktnr_N7JKaXEBvtI9iVXbUy48StGoSFyz9qDN0',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbmtkYm50dnZvcG5mdnZ2YW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDM4NDEsImV4cCI6MjA5OTAxOTg0MX0.jAV0yktnr_N7JKaXEBvtI9iVXbUy48StGoSFyz9qDN0',
   );
 
   // ── Google OAuth (from android/app/google-services.json) ──────────────────

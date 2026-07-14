@@ -96,10 +96,7 @@ class NemesisCard extends StatelessWidget {
                       final myWidth = constraints.maxWidth * myFraction;
                       return Row(
                         children: [
-                          Container(
-                            width: myWidth,
-                            color: AppColors.primary,
-                          ),
+                          Container(width: myWidth, color: AppColors.primary),
                           Expanded(
                             child: Container(color: AppColors.destructive),
                           ),

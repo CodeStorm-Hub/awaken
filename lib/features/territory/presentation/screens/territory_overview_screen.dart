@@ -43,8 +43,9 @@ class TerritoryOverviewScreen extends ConsumerWidget {
                 ref.read(fogOfWarEnabledProvider.notifier).state = !fogEnabled;
               },
               style: TextButton.styleFrom(
-                foregroundColor:
-                    fogEnabled ? AppColors.primary : AppColors.mutedForeground,
+                foregroundColor: fogEnabled
+                    ? AppColors.primary
+                    : AppColors.mutedForeground,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -61,8 +62,11 @@ class TerritoryOverviewScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded,
-                color: AppColors.mutedForeground, size: 20),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.mutedForeground,
+              size: 20,
+            ),
             onPressed: () {
               ref.invalidate(territoryListProvider);
               ref.invalidate(decayWarningsProvider);
@@ -100,8 +104,9 @@ class TerritoryOverviewScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.card,
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.borderRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.borderRadius,
+                    ),
                     border: Border.all(
                       color: AppColors.primary.withValues(alpha: 0.25),
                     ),
@@ -165,9 +170,14 @@ class _OwnershipStats extends StatelessWidget {
   Widget build(BuildContext context) {
     final hud = Theme.of(context).extension<AwakenTypography>()!;
     final owned = territories.where((t) => t.isOwnedByCurrentUser).toList();
-    final totalAreaSqMeters =
-        owned.fold<double>(0, (sum, t) => sum + t.areaSqMeters);
-    final polygonCount = owned.fold<int>(0, (sum, t) => sum + t.polygons.length);
+    final totalAreaSqMeters = owned.fold<double>(
+      0,
+      (sum, t) => sum + t.areaSqMeters,
+    );
+    final polygonCount = owned.fold<int>(
+      0,
+      (sum, t) => sum + t.polygons.length,
+    );
 
     return Container(
       width: double.infinity,
@@ -182,7 +192,8 @@ class _OwnershipStats extends StatelessWidget {
           Expanded(
             child: _StatColumn(
               label: 'Total owned',
-              value: '${(totalAreaSqMeters / 1_000_000).toStringAsFixed(3)} km²',
+              value:
+                  '${(totalAreaSqMeters / 1_000_000).toStringAsFixed(3)} km²',
               hud: hud,
               valueColor: AppColors.primary,
             ),
@@ -318,7 +329,9 @@ class _DecayRiskTile extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            urgent ? Icons.warning_amber_rounded : Icons.hourglass_bottom_rounded,
+            urgent
+                ? Icons.warning_amber_rounded
+                : Icons.hourglass_bottom_rounded,
             color: color,
             size: 20,
           ),
@@ -340,8 +353,8 @@ class _DecayRiskTile extends StatelessWidget {
                   days <= 0
                       ? 'Decaying now'
                       : days == 1
-                          ? 'Decays in 1 day'
-                          : 'Decays in $days days',
+                      ? 'Decays in 1 day'
+                      : 'Decays in $days days',
                   style: TextStyle(color: color, fontSize: 12),
                 ),
               ],

@@ -18,7 +18,8 @@ class PendingSessionQueue {
 
   /// Stable key for deduplication and [remove].
   static String keyFor(SessionEntity session) =>
-      session.id ?? '${session.userId}_${session.completedAt.toIso8601String()}';
+      session.id ??
+      '${session.userId}_${session.completedAt.toIso8601String()}';
 
   Future<List<SessionEntity>> _readAll() async {
     final prefs = await SharedPreferences.getInstance();

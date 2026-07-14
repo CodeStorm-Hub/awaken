@@ -9,7 +9,7 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 /// Adapts [SquatCounterService] to the shared [ExerciseCounter] interface.
 class SquatExerciseCounter implements ExerciseCounter {
   SquatExerciseCounter([SquatCounterService? inner])
-      : _inner = inner ?? SquatCounterService();
+    : _inner = inner ?? SquatCounterService();
 
   final SquatCounterService _inner;
 
@@ -35,12 +35,13 @@ class SquatExerciseCounter implements ExerciseCounter {
       badForm: result.badForm,
       depthRatio: result.depthRatio,
       hasPose: result.hasPose,
-      cue: result.cue ??
+      cue:
+          result.cue ??
           (result.badForm
               ? 'GO LOWER / KEEP SHOULDERS LEVEL'
               : result.repCompleted
-                  ? 'PERFECT REP'
-                  : null),
+              ? 'PERFECT REP'
+              : null),
     );
   }
 }
@@ -48,8 +49,8 @@ class SquatExerciseCounter implements ExerciseCounter {
 /// Picks the concrete counter for the resolved wake-up tax exercise.
 class ExerciseCounterRouter {
   ExerciseCounterRouter({required AlarmExerciseType type})
-      : counter = _create(type),
-        exerciseType = type;
+    : counter = _create(type),
+      exerciseType = type;
 
   final AlarmExerciseType exerciseType;
   final ExerciseCounter counter;

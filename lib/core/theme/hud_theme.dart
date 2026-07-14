@@ -17,18 +17,18 @@ enum HudThemeId {
 
 extension HudThemeIdLabel on HudThemeId {
   String get label => switch (this) {
-        HudThemeId.cyan => 'Cyan',
-        HudThemeId.magenta => 'Magenta',
-        HudThemeId.acid => 'Acid',
-        HudThemeId.mono => 'Mono',
-      };
+    HudThemeId.cyan => 'Cyan',
+    HudThemeId.magenta => 'Magenta',
+    HudThemeId.acid => 'Acid',
+    HudThemeId.mono => 'Mono',
+  };
 
   int get requiredStreak => switch (this) {
-        HudThemeId.cyan => 0,
-        HudThemeId.magenta => 7,
-        HudThemeId.acid => 30,
-        HudThemeId.mono => 90,
-      };
+    HudThemeId.cyan => 0,
+    HudThemeId.magenta => 7,
+    HudThemeId.acid => 30,
+    HudThemeId.mono => 90,
+  };
 }
 
 /// Per-theme colour tokens applied to the active alarm HUD and territory map
@@ -83,11 +83,11 @@ class HudTheme extends ThemeExtension<HudTheme> {
   );
 
   static HudTheme forId(HudThemeId id) => switch (id) {
-        HudThemeId.cyan => cyan,
-        HudThemeId.magenta => magenta,
-        HudThemeId.acid => acid,
-        HudThemeId.mono => mono,
-      };
+    HudThemeId.cyan => cyan,
+    HudThemeId.magenta => magenta,
+    HudThemeId.acid => acid,
+    HudThemeId.mono => mono,
+  };
 
   // ── ThemeExtension boilerplate ───────────────────────────────────────────
 

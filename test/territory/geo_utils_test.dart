@@ -52,18 +52,31 @@ void main() {
     test('sums segment distances along a polyline', () {
       final pts = [
         point(lat: 40.7128, lng: -74.0060, time: epoch),
-        point(lat: 40.7138, lng: -74.0060, time: epoch.add(const Duration(seconds: 1))),
-        point(lat: 40.7138, lng: -74.0050, time: epoch.add(const Duration(seconds: 2))),
+        point(
+          lat: 40.7138,
+          lng: -74.0060,
+          time: epoch.add(const Duration(seconds: 1)),
+        ),
+        point(
+          lat: 40.7138,
+          lng: -74.0050,
+          time: epoch.add(const Duration(seconds: 2)),
+        ),
       ];
       final expected =
-          GeoUtils.haversineMeters(pts[0], pts[1]) + GeoUtils.haversineMeters(pts[1], pts[2]);
+          GeoUtils.haversineMeters(pts[0], pts[1]) +
+          GeoUtils.haversineMeters(pts[1], pts[2]);
       expect(GeoUtils.pathDistanceMeters(pts), closeTo(expected, 0.001));
     });
 
     test('returns zero for stationary path with multiple timestamps', () {
       final pts = [
         point(lat: 40.7128, lng: -74.0060, time: epoch),
-        point(lat: 40.7128, lng: -74.0060, time: epoch.add(const Duration(seconds: 5))),
+        point(
+          lat: 40.7128,
+          lng: -74.0060,
+          time: epoch.add(const Duration(seconds: 5)),
+        ),
       ];
       expect(GeoUtils.pathDistanceMeters(pts), equals(0.0));
     });
@@ -121,8 +134,14 @@ void main() {
         point(lat: 0.0, lng: 1.0),
         point(lat: 1.0, lng: 0.0),
       ];
-      expect(GeoUtils.isPointInPolygon(point(lat: 0.1, lng: 0.1), triangle), isTrue);
-      expect(GeoUtils.isPointInPolygon(point(lat: 0.9, lng: 0.9), triangle), isFalse);
+      expect(
+        GeoUtils.isPointInPolygon(point(lat: 0.1, lng: 0.1), triangle),
+        isTrue,
+      );
+      expect(
+        GeoUtils.isPointInPolygon(point(lat: 0.9, lng: 0.9), triangle),
+        isFalse,
+      );
     });
   });
 }
@@ -142,13 +161,25 @@ List<GeoPointEntity> _createRectangleLoop({
   final dLon = widthMeters / metersPerDegreeLon;
 
   return [
-    GeoPointEntity(latitude: startLat, longitude: startLng, timestamp: startTime),
-    GeoPointEntity(latitude: startLat + dLat, longitude: startLng, timestamp: startTime),
+    GeoPointEntity(
+      latitude: startLat,
+      longitude: startLng,
+      timestamp: startTime,
+    ),
+    GeoPointEntity(
+      latitude: startLat + dLat,
+      longitude: startLng,
+      timestamp: startTime,
+    ),
     GeoPointEntity(
       latitude: startLat + dLat,
       longitude: startLng + dLon,
       timestamp: startTime,
     ),
-    GeoPointEntity(latitude: startLat, longitude: startLng + dLon, timestamp: startTime),
+    GeoPointEntity(
+      latitude: startLat,
+      longitude: startLng + dLon,
+      timestamp: startTime,
+    ),
   ];
 }

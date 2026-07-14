@@ -18,7 +18,8 @@ abstract final class ExactAlarmPermissionService {
 
     final androidPlugin = FlutterLocalNotificationsPlugin()
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     final canSchedule = await androidPlugin?.canScheduleExactNotifications();
     if (canSchedule != null) return canSchedule;
@@ -32,7 +33,8 @@ abstract final class ExactAlarmPermissionService {
 
     final androidPlugin = FlutterLocalNotificationsPlugin()
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     await androidPlugin?.requestExactAlarmsPermission();
   }

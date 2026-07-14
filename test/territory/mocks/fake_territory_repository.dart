@@ -13,7 +13,8 @@ import 'package:awaken/features/territory/domain/services/geo_utils.dart';
 class FakeTerritoryRepository implements TerritoryRepository {
   final List<TerritoryEntity> territories = [];
   final List<RunTrackEntity> recordedRuns = [];
-  final StreamController<List<TerritoryEntity>> _controller = StreamController<List<TerritoryEntity>>.broadcast();
+  final StreamController<List<TerritoryEntity>> _controller =
+      StreamController<List<TerritoryEntity>>.broadcast();
 
   String currentUserId = 'user-1';
   String currentUserDisplayName = 'Player 1';
@@ -37,17 +38,23 @@ class FakeTerritoryRepository implements TerritoryRepository {
   }
 
   @override
-  Future<CaptureResultEntity> captureTerritory(List<GeoPointEntity> loopPoints) async {
+  Future<CaptureResultEntity> captureTerritory(
+    List<GeoPointEntity> loopPoints,
+  ) async {
     final area = calculatePolygonArea(loopPoints);
     if (area < AppConstants.minLoopAreaSqMeters) {
-      throw Exception('loop_too_small: Enclosed area of ${area.toStringAsFixed(1)} m² is below the minimum of ${AppConstants.minLoopAreaSqMeters} m²');
+      throw Exception(
+        'loop_too_small: Enclosed area of ${area.toStringAsFixed(1)} m² is below the minimum of ${AppConstants.minLoopAreaSqMeters} m²',
+      );
     }
 
     final userId = currentUserId;
     final displayName = currentUserDisplayName;
 
     // Find the current user's existing territory index
-    final userTerritoryIndex = territories.indexWhere((t) => t.userId == userId);
+    final userTerritoryIndex = territories.indexWhere(
+      (t) => t.userId == userId,
+    );
 
     List<PolygonRing> userPolygons = [];
     if (userTerritoryIndex != -1) {
@@ -90,8 +97,9 @@ class FakeTerritoryRepository implements TerritoryRepository {
           if (pointsOverlap) {
             rivalAffectedByThisTerritory = true;
 
-            final isInside =
-                poly.map((p) => _isPointInPolygon(p, loopPoints)).toList();
+            final isInside = poly
+                .map((p) => _isPointInPolygon(p, loopPoints))
+                .toList();
             if (!isInside.contains(true)) {
               remainingRivalPolygons.add(poly);
               rivalArea += calculatePolygonArea(poly);
@@ -139,16 +147,18 @@ class FakeTerritoryRepository implements TerritoryRepository {
       }
 
       if (remainingRivalPolygons.isNotEmpty) {
-        updatedRivalTerritories.add(TerritoryEntity(
-          id: t.id,
-          userId: t.userId,
-          ownerDisplayName: t.ownerDisplayName,
-          polygons: remainingRivalPolygons,
-          areaSqMeters: rivalArea,
-          lastDefendedAt: t.lastDefendedAt,
-          isOwnedByCurrentUser: false,
-          mapColorHex: t.mapColorHex,
-        ));
+        updatedRivalTerritories.add(
+          TerritoryEntity(
+            id: t.id,
+            userId: t.userId,
+            ownerDisplayName: t.ownerDisplayName,
+            polygons: remainingRivalPolygons,
+            areaSqMeters: rivalArea,
+            lastDefendedAt: t.lastDefendedAt,
+            isOwnedByCurrentUser: false,
+            mapColorHex: t.mapColorHex,
+          ),
+        );
       }
     }
 
@@ -184,7 +194,10 @@ class FakeTerritoryRepository implements TerritoryRepository {
             final mergedPoints = <GeoPointEntity>[];
             mergedPoints.addAll(poly);
             for (final p in loopPoints) {
-              if (!mergedPoints.any((mp) => mp.latitude == p.latitude && mp.longitude == p.longitude)) {
+              if (!mergedPoints.any(
+                (mp) =>
+                    mp.latitude == p.latitude && mp.longitude == p.longitude,
+              )) {
                 mergedPoints.add(p);
               }
             }
@@ -208,7 +221,9 @@ class FakeTerritoryRepository implements TerritoryRepository {
     }
 
     final userTerritory = TerritoryEntity(
-      id: userTerritoryIndex != -1 ? territories[userTerritoryIndex].id : 'territory-$userId',
+      id: userTerritoryIndex != -1
+          ? territories[userTerritoryIndex].id
+          : 'territory-$userId',
       userId: userId,
       ownerDisplayName: displayName,
       polygons: mergedPolygons,
@@ -335,13 +350,17 @@ class FakeTerritoryRepository implements TerritoryRepository {
     for (final t in territories) {
       if (t.userId != currentUserId) continue;
       final age = now.difference(t.lastDefendedAt);
-      final daysLeft = AppConstants.territoryDecayGracePeriod.inDays - (age.inSeconds / (24 * 3600));
+      final daysLeft =
+          AppConstants.territoryDecayGracePeriod.inDays -
+          (age.inSeconds / (24 * 3600));
       if (daysLeft <= 2.0 && daysLeft > 0) {
-        warnings.add(DecayWarningEntity(
-          territoryId: t.id,
-          daysUntilDecay: daysLeft,
-          areaSqMeters: t.areaSqMeters,
-        ));
+        warnings.add(
+          DecayWarningEntity(
+            territoryId: t.id,
+            daysUntilDecay: daysLeft,
+            areaSqMeters: t.areaSqMeters,
+          ),
+        );
       }
     }
     return warnings;
@@ -353,22 +372,23 @@ class FakeTerritoryRepository implements TerritoryRepository {
       final t = territories[i];
       final newLastDefended = t.lastDefendedAt.subtract(ageOffset);
       final age = now.difference(newLastDefended);
-      
+
       double newArea = t.areaSqMeters;
       List<PolygonRing> newPolygons = List.from(t.polygons);
-      
+
       if (age > AppConstants.territoryDecayGracePeriod) {
-        final decaySeconds = age.inSeconds - AppConstants.territoryDecayGracePeriod.inSeconds;
+        final decaySeconds =
+            age.inSeconds - AppConstants.territoryDecayGracePeriod.inSeconds;
         final decayDays = decaySeconds / (24 * 3600.0);
         final shrinkAmount = math.max(0.0, decayDays * 5.0);
         newArea = math.max(0.0, t.areaSqMeters - shrinkAmount);
-        
+
         if (newArea < 1.0) {
           newArea = 0.0;
           newPolygons = [];
         }
       }
-      
+
       territories[i] = TerritoryEntity(
         id: t.id,
         userId: t.userId,
@@ -413,8 +433,11 @@ class FakeTerritoryRepository implements TerritoryRepository {
     return area.abs() / 2.0;
   }
 
-  ({double minLat, double maxLat, double minLon, double maxLon}) _getBoundingBox(List<GeoPointEntity> points) {
-    if (points.isEmpty) return (minLat: 0.0, maxLat: 0.0, minLon: 0.0, maxLon: 0.0);
+  ({double minLat, double maxLat, double minLon, double maxLon})
+  _getBoundingBox(List<GeoPointEntity> points) {
+    if (points.isEmpty) {
+      return (minLat: 0.0, maxLat: 0.0, minLon: 0.0, maxLon: 0.0);
+    }
     double minLat = points.first.latitude;
     double maxLat = points.first.latitude;
     double minLon = points.first.longitude;
@@ -445,7 +468,11 @@ class FakeTerritoryRepository implements TerritoryRepository {
       final p1 = polygon[i];
       final p2 = polygon[nextIndex];
       if ((p1.latitude > p.latitude) != (p2.latitude > p.latitude)) {
-        final xIntersection = (p2.longitude - p1.longitude) * (p.latitude - p1.latitude) / (p2.latitude - p1.latitude) + p1.longitude;
+        final xIntersection =
+            (p2.longitude - p1.longitude) *
+                (p.latitude - p1.latitude) /
+                (p2.latitude - p1.latitude) +
+            p1.longitude;
         if (p.longitude < xIntersection) {
           intersectCount++;
         }

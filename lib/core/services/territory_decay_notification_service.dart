@@ -21,11 +21,13 @@ abstract final class TerritoryDecayNotificationService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(android: android, iOS: ios),
+      settings: const InitializationSettings(android: android, iOS: ios),
     );
 
     await _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(
           const AndroidNotificationChannel(
             _channelId,
@@ -51,14 +53,15 @@ abstract final class TerritoryDecayNotificationService {
         : '$territoryCount of your territories are decaying — run there soon to defend them.';
 
     await _plugin.show(
-      _notificationId,
-      'Territory at risk',
-      body,
-      const NotificationDetails(
+      id: _notificationId,
+      title: 'Territory at risk',
+      body: body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
           _channelName,
-          channelDescription: 'Warns when your territory is about to start decaying',
+          channelDescription:
+              'Warns when your territory is about to start decaying',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
           color: Color(0xFFA259FF),

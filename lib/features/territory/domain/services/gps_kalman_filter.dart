@@ -16,7 +16,11 @@ class GpsKalmanFilter {
 
   /// Feeds one raw fix (lat/lng in degrees, accuracy in meters from the
   /// platform location API) and returns the smoothed lat/lng.
-  (double lat, double lng) filter(double lat, double lng, double accuracyMeters) {
+  (double lat, double lng) filter(
+    double lat,
+    double lng,
+    double accuracyMeters,
+  ) {
     if (_variance < 0) {
       _lat = lat;
       _lng = lng;

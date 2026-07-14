@@ -1,5 +1,7 @@
 import 'package:awaken/features/alarm/domain/entities/alarm_exercise_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// StateProvider moved to legacy.dart in Riverpod 3.
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'alarm_providers.g.dart';
@@ -33,8 +35,6 @@ class RepFeedbackNotifier extends _$RepFeedbackNotifier {
 
   void setFeedback(RepFeedback value) => state = value;
 }
-
-final repFeedbackProvider = repFeedbackNotifierProvider;
 
 @Riverpod(keepAlive: true)
 class RequiredReps extends _$RequiredReps {

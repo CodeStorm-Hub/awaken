@@ -79,8 +79,7 @@ abstract final class LocationPermissionHelper {
     return switch (kind) {
       LocationAccessKind.serviceDisabled => Geolocator.openLocationSettings(),
       LocationAccessKind.permissionDeniedForever ||
-      LocationAccessKind.permissionDenied =>
-        Geolocator.openAppSettings(),
+      LocationAccessKind.permissionDenied => Geolocator.openAppSettings(),
     };
   }
 }

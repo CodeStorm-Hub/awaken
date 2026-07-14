@@ -73,7 +73,9 @@ final sessionSyncOnSignInProvider = Provider<void>((ref) {
             ),
           );
         } catch (_) {
-          await ref.read(pendingSessionQueueProvider).enqueue(
+          await ref
+              .read(pendingSessionQueueProvider)
+              .enqueue(
                 SessionEntity(
                   userId: session.user.id,
                   alarmId: guest.alarmId,

@@ -25,16 +25,16 @@ void main() {
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('dexterous.com/flutter/local_notifications'),
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'initialize' ||
-            methodCall.method == 'requestNotificationsPermission' ||
-            methodCall.method == 'requestExactAlarmsPermission') {
-          return true;
-        }
-        return null;
-      },
-    );
+          const MethodChannel('dexterous.com/flutter/local_notifications'),
+          (MethodCall methodCall) async {
+            if (methodCall.method == 'initialize' ||
+                methodCall.method == 'requestNotificationsPermission' ||
+                methodCall.method == 'requestExactAlarmsPermission') {
+              return true;
+            }
+            return null;
+          },
+        );
   });
 
   tearDown(() {
@@ -48,11 +48,7 @@ void main() {
       ActiveRunCheckpoint(
         statusName: 'tracking',
         points: [
-          GeoPointEntity(
-            latitude: 43.65,
-            longitude: -79.38,
-            timestamp: start,
-          ),
+          GeoPointEntity(latitude: 43.65, longitude: -79.38, timestamp: start),
         ],
         distanceMeters: 0,
         elapsed: const Duration(minutes: 3),
@@ -69,9 +65,7 @@ void main() {
     );
 
     final container = ProviderContainer(
-      overrides: [
-        territoryRepositoryProvider.overrideWithValue(fakeRepo),
-      ],
+      overrides: [territoryRepositoryProvider.overrideWithValue(fakeRepo)],
     );
     addTearDown(() {
       container.read(activeRunProvider.notifier).reset();
@@ -92,9 +86,7 @@ void main() {
 
   test('startRun persists a resumable checkpoint', () async {
     final container = ProviderContainer(
-      overrides: [
-        territoryRepositoryProvider.overrideWithValue(fakeRepo),
-      ],
+      overrides: [territoryRepositoryProvider.overrideWithValue(fakeRepo)],
     );
     addTearDown(() {
       container.read(activeRunProvider.notifier).reset();
@@ -116,9 +108,7 @@ void main() {
 
   test('reset clears the durable checkpoint', () async {
     final container = ProviderContainer(
-      overrides: [
-        territoryRepositoryProvider.overrideWithValue(fakeRepo),
-      ],
+      overrides: [territoryRepositoryProvider.overrideWithValue(fakeRepo)],
     );
     addTearDown(container.dispose);
 

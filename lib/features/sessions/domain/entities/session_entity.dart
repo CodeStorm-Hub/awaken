@@ -26,22 +26,22 @@ class SessionEntity {
   static int estimateCalories(int reps) => (reps * 0.35).round().clamp(1, 999);
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'alarm_id': alarmId,
-        'completed_at': completedAt.toIso8601String(),
-        'reps_completed': repsCompleted,
-        'duration_seconds': durationSeconds,
-        'calories_burned': caloriesBurned,
-      };
+    'id': id,
+    'user_id': userId,
+    'alarm_id': alarmId,
+    'completed_at': completedAt.toIso8601String(),
+    'reps_completed': repsCompleted,
+    'duration_seconds': durationSeconds,
+    'calories_burned': caloriesBurned,
+  };
 
   factory SessionEntity.fromJson(Map<String, dynamic> json) => SessionEntity(
-        id: json['id'] as String?,
-        userId: json['user_id'] as String,
-        alarmId: json['alarm_id'] as String?,
-        completedAt: DateTime.parse(json['completed_at'] as String),
-        repsCompleted: json['reps_completed'] as int,
-        durationSeconds: json['duration_seconds'] as int,
-        caloriesBurned: json['calories_burned'] as int,
-      );
+    id: json['id'] as String?,
+    userId: json['user_id'] as String,
+    alarmId: json['alarm_id'] as String?,
+    completedAt: DateTime.parse(json['completed_at'] as String),
+    repsCompleted: json['reps_completed'] as int,
+    durationSeconds: json['duration_seconds'] as int,
+    caloriesBurned: json['calories_burned'] as int,
+  );
 }

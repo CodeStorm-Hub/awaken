@@ -17,11 +17,14 @@ abstract final class RunValidationService {
   static bool isSustainedOverSpeed(List<GeoPointEntity> recentPoints) {
     if (recentPoints.length < 2) return false;
     final window = recentPoints.length > AppConstants.speedRollingWindowSize
-        ? recentPoints.sublist(recentPoints.length - AppConstants.speedRollingWindowSize)
+        ? recentPoints.sublist(
+            recentPoints.length - AppConstants.speedRollingWindowSize,
+          )
         : recentPoints;
 
     for (var i = 1; i < window.length; i++) {
-      if (GeoUtils.speedKmh(window[i - 1], window[i]) <= AppConstants.maxRunSpeedKmh) {
+      if (GeoUtils.speedKmh(window[i - 1], window[i]) <=
+          AppConstants.maxRunSpeedKmh) {
         return false;
       }
     }
@@ -36,7 +39,9 @@ abstract final class RunValidationService {
 
   /// Extracts all valid closed-loop segments from a run path (supports
   /// overrun past the start and multiple loops per session).
-  static List<LoopSegmentEntity> extractLoopSegments(List<GeoPointEntity> points) {
+  static List<LoopSegmentEntity> extractLoopSegments(
+    List<GeoPointEntity> points,
+  ) {
     return LoopSegmentExtractor.extract(points);
   }
 
@@ -60,8 +65,9 @@ abstract final class RunValidationService {
       return RunOutcome.invalidatedTooShort;
     }
 
-    final segments =
-        loopSegments.isNotEmpty ? loopSegments : extractLoopSegments(points);
+    final segments = loopSegments.isNotEmpty
+        ? loopSegments
+        : extractLoopSegments(points);
     if (segments.isEmpty && !isClosedLoop(points)) {
       return RunOutcome.loopNotClosed;
     }

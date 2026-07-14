@@ -17,8 +17,7 @@ class WeekTrendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
 
-    final maxReps =
-        repsTrend.fold<int>(0, (max, v) => v > max ? v : max);
+    final maxReps = repsTrend.fold<int>(0, (max, v) => v > max ? v : max);
     final (deltaLabel, deltaColor) = _weekOverWeekDelta();
 
     return ClipRRect(
@@ -82,7 +81,10 @@ class WeekTrendCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${repsTrend.length}W AGO', style: tt.statLabel.copyWith(fontSize: 9)),
+                  Text(
+                    '${repsTrend.length}W AGO',
+                    style: tt.statLabel.copyWith(fontSize: 9),
+                  ),
                   Text('NOW', style: tt.statLabel.copyWith(fontSize: 9)),
                 ],
               ),

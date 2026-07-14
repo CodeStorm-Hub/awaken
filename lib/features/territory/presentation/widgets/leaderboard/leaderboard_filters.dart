@@ -91,9 +91,10 @@ class LeaderboardMetricBadge extends StatelessWidget {
     final isOwned = window == LeaderboardWindow.allTime;
     final label = isOwned ? 'LAND OWNED (km²)' : 'UNIQUE AREA CLAIMED (km²)';
     final detail = switch (window) {
-      LeaderboardWindow.allTime => mode == LeaderboardMode.nearby
-          ? 'Current territory near you — area, not run distance'
-          : 'Current territory worldwide — area, not run distance',
+      LeaderboardWindow.allTime =>
+        mode == LeaderboardMode.nearby
+            ? 'Current territory near you — area, not run distance'
+            : 'Current territory worldwide — area, not run distance',
       LeaderboardWindow.day => 'Distinct land claimed in the last 24 hours',
       LeaderboardWindow.week => 'Distinct land claimed in the last 7 days',
     };
@@ -105,8 +106,9 @@ class LeaderboardMetricBadge extends StatelessWidget {
         color: AppColors.card,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: (isOwned ? AppColors.primary : AppColors.accent)
-              .withValues(alpha: 0.35),
+          color: (isOwned ? AppColors.primary : AppColors.accent).withValues(
+            alpha: 0.35,
+          ),
         ),
       ),
       child: Row(

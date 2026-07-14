@@ -98,25 +98,30 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
 
   @override
   Future<CaptureResultEntity> captureTerritory(
-      List<GeoPointEntity> loopPoints) async {
+    List<GeoPointEntity> loopPoints,
+  ) async {
     await _ensureLoaded();
 
     final area = _calculatePolygonArea(loopPoints);
     if (area < AppConstants.minLoopAreaSqMeters) {
       throw Exception(
-          'loop_too_small: Enclosed area of ${area.toStringAsFixed(1)} m² is below the minimum of ${AppConstants.minLoopAreaSqMeters} m²');
+        'loop_too_small: Enclosed area of ${area.toStringAsFixed(1)} m² is below the minimum of ${AppConstants.minLoopAreaSqMeters} m²',
+      );
     }
 
     final userId = _currentUserId;
     final displayName = _currentUserDisplayName;
 
     // Find the current user's existing territory index
-    final userTerritoryIndex =
-        _cachedTerritories!.indexWhere((t) => t.userId == userId);
+    final userTerritoryIndex = _cachedTerritories!.indexWhere(
+      (t) => t.userId == userId,
+    );
 
     List<PolygonRing> userPolygons = [];
     if (userTerritoryIndex != -1) {
-      userPolygons = List.from(_cachedTerritories![userTerritoryIndex].polygons);
+      userPolygons = List.from(
+        _cachedTerritories![userTerritoryIndex].polygons,
+      );
     }
 
     int rivalsAffected = 0;
@@ -157,8 +162,9 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
 
             // Vertex-based ST_Difference approximation (matches server sliver
             // cleanup at ST_Area >= 1.0 m² per resulting polygon).
-            final isInside =
-                poly.map((p) => _isPointInPolygon(p, loopPoints)).toList();
+            final isInside = poly
+                .map((p) => _isPointInPolygon(p, loopPoints))
+                .toList();
             if (!isInside.contains(true)) {
               // Edge-only overlap: no vertex inside either polygon. Geometry
               // is unchanged (PostGIS would cut along edges).
@@ -209,16 +215,18 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
       }
 
       if (remainingRivalPolygons.isNotEmpty) {
-        updatedRivalTerritories.add(TerritoryEntity(
-          id: t.id,
-          userId: t.userId,
-          ownerDisplayName: t.ownerDisplayName,
-          polygons: remainingRivalPolygons,
-          areaSqMeters: rivalArea,
-          lastDefendedAt: t.lastDefendedAt,
-          isOwnedByCurrentUser: false,
-          mapColorHex: t.mapColorHex,
-        ));
+        updatedRivalTerritories.add(
+          TerritoryEntity(
+            id: t.id,
+            userId: t.userId,
+            ownerDisplayName: t.ownerDisplayName,
+            polygons: remainingRivalPolygons,
+            areaSqMeters: rivalArea,
+            lastDefendedAt: t.lastDefendedAt,
+            isOwnedByCurrentUser: false,
+            mapColorHex: t.mapColorHex,
+          ),
+        );
       }
     }
 
@@ -247,16 +255,17 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
 
         if (overlaps) {
           mergedWithSelf = true;
-          final allInside =
-              loopPoints.every((p) => _isPointInPolygon(p, poly));
+          final allInside = loopPoints.every((p) => _isPointInPolygon(p, poly));
           if (allInside) {
             mergedPolygons.add(poly);
           } else {
             final mergedPoints = <GeoPointEntity>[];
             mergedPoints.addAll(poly);
             for (final p in loopPoints) {
-              if (!mergedPoints.any((mp) =>
-                  mp.latitude == p.latitude && mp.longitude == p.longitude)) {
+              if (!mergedPoints.any(
+                (mp) =>
+                    mp.latitude == p.latitude && mp.longitude == p.longitude,
+              )) {
                 mergedPoints.add(p);
               }
             }
@@ -417,14 +426,17 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
     for (final t in _cachedTerritories!) {
       if (t.userId != _currentUserId) continue;
       final age = now.difference(t.lastDefendedAt);
-      final daysLeft = AppConstants.territoryDecayGracePeriod.inDays -
+      final daysLeft =
+          AppConstants.territoryDecayGracePeriod.inDays -
           (age.inSeconds / (24 * 3600));
       if (daysLeft <= 2.0 && daysLeft > 0) {
-        warnings.add(DecayWarningEntity(
-          territoryId: t.id,
-          daysUntilDecay: daysLeft,
-          areaSqMeters: t.areaSqMeters,
-        ));
+        warnings.add(
+          DecayWarningEntity(
+            territoryId: t.id,
+            daysUntilDecay: daysLeft,
+            areaSqMeters: t.areaSqMeters,
+          ),
+        );
       }
     }
     return warnings;
@@ -457,7 +469,7 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
   }
 
   ({double minLat, double maxLat, double minLon, double maxLon})
-      _getBoundingBox(List<GeoPointEntity> points) {
+  _getBoundingBox(List<GeoPointEntity> points) {
     if (points.isEmpty) {
       return (minLat: 0.0, maxLat: 0.0, minLon: 0.0, maxLon: 0.0);
     }
@@ -491,7 +503,8 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
       final p1 = polygon[i];
       final p2 = polygon[nextIndex];
       if ((p1.latitude > p.latitude) != (p2.latitude > p.latitude)) {
-        final xIntersection = (p2.longitude - p1.longitude) *
+        final xIntersection =
+            (p2.longitude - p1.longitude) *
                 (p.latitude - p1.latitude) /
                 (p2.latitude - p1.latitude) +
             p1.longitude;
@@ -506,28 +519,28 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
   // --- Serialization Helpers ---
 
   Map<String, dynamic> _geoPointToJson(GeoPointEntity point) => {
-        'latitude': point.latitude,
-        'longitude': point.longitude,
-        'timestamp': point.timestamp.toIso8601String(),
-      };
+    'latitude': point.latitude,
+    'longitude': point.longitude,
+    'timestamp': point.timestamp.toIso8601String(),
+  };
 
   GeoPointEntity _geoPointFromJson(Map<String, dynamic> json) => GeoPointEntity(
-        latitude: (json['latitude'] as num).toDouble(),
-        longitude: (json['longitude'] as num).toDouble(),
-        timestamp: DateTime.parse(json['timestamp'] as String),
-      );
+    latitude: (json['latitude'] as num).toDouble(),
+    longitude: (json['longitude'] as num).toDouble(),
+    timestamp: DateTime.parse(json['timestamp'] as String),
+  );
 
   Map<String, dynamic> _territoryToJson(TerritoryEntity t) => {
-        'id': t.id,
-        'user_id': t.userId,
-        'owner_display_name': t.ownerDisplayName,
-        'polygons': t.polygons
-            .map((ring) => ring.map(_geoPointToJson).toList())
-            .toList(),
-        'area_sq_meters': t.areaSqMeters,
-        'last_defended_at': t.lastDefendedAt.toIso8601String(),
-        'map_color_hex': t.mapColorHex,
-      };
+    'id': t.id,
+    'user_id': t.userId,
+    'owner_display_name': t.ownerDisplayName,
+    'polygons': t.polygons
+        .map((ring) => ring.map(_geoPointToJson).toList())
+        .toList(),
+    'area_sq_meters': t.areaSqMeters,
+    'last_defended_at': t.lastDefendedAt.toIso8601String(),
+    'map_color_hex': t.mapColorHex,
+  };
 
   TerritoryEntity _territoryFromJson(Map<String, dynamic> json) =>
       TerritoryEntity(
@@ -535,9 +548,11 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
         userId: json['user_id'] as String,
         ownerDisplayName: json['owner_display_name'] as String?,
         polygons: (json['polygons'] as List<dynamic>)
-            .map((ring) => (ring as List<dynamic>)
-                .map((pt) => _geoPointFromJson(pt as Map<String, dynamic>))
-                .toList())
+            .map(
+              (ring) => (ring as List<dynamic>)
+                  .map((pt) => _geoPointFromJson(pt as Map<String, dynamic>))
+                  .toList(),
+            )
             .toList(),
         areaSqMeters: (json['area_sq_meters'] as num).toDouble(),
         lastDefendedAt: DateTime.parse(json['last_defended_at'] as String),
@@ -620,21 +635,20 @@ class TerritoryLocalRepositoryImpl implements TerritoryRepository {
   }
 
   Map<String, dynamic> _runTrackToJson(RunTrackEntity run) => {
-        'points': run.points.map(_geoPointToJson).toList(),
-        'distance_meters': run.distanceMeters,
-        'duration_seconds': run.duration.inSeconds,
-        'outcome': run.outcome.name,
-        'area_claimed_sq_meters': run.areaClaimedSqMeters,
-      };
+    'points': run.points.map(_geoPointToJson).toList(),
+    'distance_meters': run.distanceMeters,
+    'duration_seconds': run.duration.inSeconds,
+    'outcome': run.outcome.name,
+    'area_claimed_sq_meters': run.areaClaimedSqMeters,
+  };
 
   RunTrackEntity _runTrackFromJson(Map<String, dynamic> json) => RunTrackEntity(
-        points: (json['points'] as List<dynamic>)
-            .map((pt) => _geoPointFromJson(pt as Map<String, dynamic>))
-            .toList(),
-        distanceMeters: (json['distance_meters'] as num).toDouble(),
-        duration: Duration(seconds: json['duration_seconds'] as int),
-        outcome: RunOutcome.values.byName(json['outcome'] as String),
-        areaClaimedSqMeters:
-            (json['area_claimed_sq_meters'] as num?)?.toDouble(),
-      );
+    points: (json['points'] as List<dynamic>)
+        .map((pt) => _geoPointFromJson(pt as Map<String, dynamic>))
+        .toList(),
+    distanceMeters: (json['distance_meters'] as num).toDouble(),
+    duration: Duration(seconds: json['duration_seconds'] as int),
+    outcome: RunOutcome.values.byName(json['outcome'] as String),
+    areaClaimedSqMeters: (json['area_claimed_sq_meters'] as num?)?.toDouble(),
+  );
 }

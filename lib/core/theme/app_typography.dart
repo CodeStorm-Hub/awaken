@@ -78,15 +78,14 @@ abstract final class AppTypography {
     required Color color,
     double letterSpacing = 0,
     double? height,
-  }) =>
-      GoogleFonts.spaceMono(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      );
+  }) => GoogleFonts.spaceMono(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
 
   static TextStyle _sans({
     required double size,
@@ -94,163 +93,162 @@ abstract final class AppTypography {
     required Color color,
     double letterSpacing = 0,
     double? height,
-  }) =>
-      GoogleFonts.spaceGrotesk(
-        fontSize: size,
-        fontWeight: FontWeight.values.firstWhere(
-          (w) => w == weight,
-          orElse: () => FontWeight.w400,
-        ),
-        color: color,
-        letterSpacing: letterSpacing,
-        height: height,
-      );
+  }) => GoogleFonts.spaceGrotesk(
+    fontSize: size,
+    fontWeight: FontWeight.values.firstWhere(
+      (w) => w == weight,
+      orElse: () => FontWeight.w400,
+    ),
+    color: color,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
 
   // ── Material TextTheme ────────────────────────────────────────────
   static TextTheme get textTheme => TextTheme(
-        // Display — GeistMono-equivalent HUD numerics
-        displayLarge: _mono(
-          size: 80,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          letterSpacing: -2,
-        ),
-        displayMedium: _mono(
-          size: 56,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          letterSpacing: -1.5,
-        ),
-        displaySmall: _mono(
-          size: 36,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          letterSpacing: -0.5,
-        ),
+    // Display — GeistMono-equivalent HUD numerics
+    displayLarge: _mono(
+      size: 80,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      letterSpacing: -2,
+    ),
+    displayMedium: _mono(
+      size: 56,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      letterSpacing: -1.5,
+    ),
+    displaySmall: _mono(
+      size: 36,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      letterSpacing: -0.5,
+    ),
 
-        // Headlines — Geist-equivalent sans
-        headlineLarge: _sans(
-          size: 32,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          height: 1.2,
-        ),
-        headlineMedium: _sans(
-          size: 24,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          height: 1.25,
-        ),
-        headlineSmall: _sans(
-          size: 20,
-          weight: FontWeight.w600,
-          color: AppColors.foreground,
-          height: 1.3,
-        ),
+    // Headlines — Geist-equivalent sans
+    headlineLarge: _sans(
+      size: 32,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      height: 1.2,
+    ),
+    headlineMedium: _sans(
+      size: 24,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      height: 1.25,
+    ),
+    headlineSmall: _sans(
+      size: 20,
+      weight: FontWeight.w600,
+      color: AppColors.foreground,
+      height: 1.3,
+    ),
 
-        // Titles
-        titleLarge: _sans(
-          size: 18,
-          weight: FontWeight.w600,
-          color: AppColors.foreground,
-          height: 1.35,
-        ),
-        titleMedium: _sans(
-          size: 16,
-          weight: FontWeight.w500,
-          color: AppColors.foreground,
-          height: 1.4,
-        ),
-        titleSmall: _sans(
-          size: 14,
-          weight: FontWeight.w500,
-          color: AppColors.mutedForeground,
-          height: 1.4,
-        ),
+    // Titles
+    titleLarge: _sans(
+      size: 18,
+      weight: FontWeight.w600,
+      color: AppColors.foreground,
+      height: 1.35,
+    ),
+    titleMedium: _sans(
+      size: 16,
+      weight: FontWeight.w500,
+      color: AppColors.foreground,
+      height: 1.4,
+    ),
+    titleSmall: _sans(
+      size: 14,
+      weight: FontWeight.w500,
+      color: AppColors.mutedForeground,
+      height: 1.4,
+    ),
 
-        // Body
-        bodyLarge: _sans(
-          size: 16,
-          weight: FontWeight.w400,
-          color: AppColors.foreground,
-          height: 1.6,
-        ),
-        bodyMedium: _sans(
-          size: 14,
-          weight: FontWeight.w400,
-          color: AppColors.foreground,
-          height: 1.6,
-        ),
-        bodySmall: _sans(
-          size: 12,
-          weight: FontWeight.w400,
-          color: AppColors.mutedForeground,
-          height: 1.5,
-        ),
+    // Body
+    bodyLarge: _sans(
+      size: 16,
+      weight: FontWeight.w400,
+      color: AppColors.foreground,
+      height: 1.6,
+    ),
+    bodyMedium: _sans(
+      size: 14,
+      weight: FontWeight.w400,
+      color: AppColors.foreground,
+      height: 1.6,
+    ),
+    bodySmall: _sans(
+      size: 12,
+      weight: FontWeight.w400,
+      color: AppColors.mutedForeground,
+      height: 1.5,
+    ),
 
-        // Labels / eyebrow chips
-        labelLarge: _sans(
-          size: 12,
-          weight: FontWeight.w600,
-          color: AppColors.mutedForeground,
-          letterSpacing: 2.5,
-          height: 1,
-        ),
-        labelMedium: _sans(
-          size: 11,
-          weight: FontWeight.w600,
-          color: AppColors.mutedForeground,
-          letterSpacing: 2,
-          height: 1,
-        ),
-        labelSmall: _sans(
-          size: 10,
-          weight: FontWeight.w600,
-          color: AppColors.mutedForeground,
-          letterSpacing: 1.5,
-          height: 1,
-        ),
-      );
+    // Labels / eyebrow chips
+    labelLarge: _sans(
+      size: 12,
+      weight: FontWeight.w600,
+      color: AppColors.mutedForeground,
+      letterSpacing: 2.5,
+      height: 1,
+    ),
+    labelMedium: _sans(
+      size: 11,
+      weight: FontWeight.w600,
+      color: AppColors.mutedForeground,
+      letterSpacing: 2,
+      height: 1,
+    ),
+    labelSmall: _sans(
+      size: 10,
+      weight: FontWeight.w600,
+      color: AppColors.mutedForeground,
+      letterSpacing: 1.5,
+      height: 1,
+    ),
+  );
 
   /// AwakenTypography ThemeExtension — injected in app.dart into ThemeData.
   static AwakenTypography get extension => AwakenTypography(
-        hudClock: _mono(
-          size: 80,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          letterSpacing: -2,
-        ),
-        hudRepCounter: _mono(
-          size: 72,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          letterSpacing: -1,
-        ),
-        hudRepFraction: _mono(
-          size: 36,
-          weight: FontWeight.w400,
-          color: AppColors.mutedForeground,
-          letterSpacing: -0.5,
-        ),
-        eyebrow: _sans(
-          size: 11,
-          weight: FontWeight.w600,
-          color: AppColors.mutedForeground,
-          letterSpacing: 3,
-          height: 1,
-        ),
-        statValue: _mono(
-          size: 28,
-          weight: FontWeight.w700,
-          color: AppColors.foreground,
-          letterSpacing: -0.5,
-        ),
-        statLabel: _sans(
-          size: 11,
-          weight: FontWeight.w500,
-          color: AppColors.mutedForeground,
-          letterSpacing: 1.5,
-          height: 1,
-        ),
-      );
+    hudClock: _mono(
+      size: 80,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      letterSpacing: -2,
+    ),
+    hudRepCounter: _mono(
+      size: 72,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      letterSpacing: -1,
+    ),
+    hudRepFraction: _mono(
+      size: 36,
+      weight: FontWeight.w400,
+      color: AppColors.mutedForeground,
+      letterSpacing: -0.5,
+    ),
+    eyebrow: _sans(
+      size: 11,
+      weight: FontWeight.w600,
+      color: AppColors.mutedForeground,
+      letterSpacing: 3,
+      height: 1,
+    ),
+    statValue: _mono(
+      size: 28,
+      weight: FontWeight.w700,
+      color: AppColors.foreground,
+      letterSpacing: -0.5,
+    ),
+    statLabel: _sans(
+      size: 11,
+      weight: FontWeight.w500,
+      color: AppColors.mutedForeground,
+      letterSpacing: 1.5,
+      height: 1,
+    ),
+  );
 }

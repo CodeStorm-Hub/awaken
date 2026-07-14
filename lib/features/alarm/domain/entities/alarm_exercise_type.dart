@@ -1,25 +1,20 @@
 /// Dismiss-exercise types for the active alarm.
-enum AlarmExerciseType {
-  squats,
-  pushUps,
-  jumpingJacks,
-  highKnees,
-}
+enum AlarmExerciseType { squats, pushUps, jumpingJacks, highKnees }
 
 extension AlarmExerciseTypeX on AlarmExerciseType {
   String get label => switch (this) {
-        AlarmExerciseType.squats => 'Squats',
-        AlarmExerciseType.pushUps => 'Push-ups',
-        AlarmExerciseType.jumpingJacks => 'Jumping Jacks',
-        AlarmExerciseType.highKnees => 'High Knees',
-      };
+    AlarmExerciseType.squats => 'Squats',
+    AlarmExerciseType.pushUps => 'Push-ups',
+    AlarmExerciseType.jumpingJacks => 'Jumping Jacks',
+    AlarmExerciseType.highKnees => 'High Knees',
+  };
 
   String get taxStampLabel => switch (this) {
-        AlarmExerciseType.squats => 'SQUATS',
-        AlarmExerciseType.pushUps => 'PUSH-UPS',
-        AlarmExerciseType.jumpingJacks => 'JUMPING JACKS',
-        AlarmExerciseType.highKnees => 'HIGH KNEES',
-      };
+    AlarmExerciseType.squats => 'SQUATS',
+    AlarmExerciseType.pushUps => 'PUSH-UPS',
+    AlarmExerciseType.jumpingJacks => 'JUMPING JACKS',
+    AlarmExerciseType.highKnees => 'HIGH KNEES',
+  };
 
   String get wireName => name;
 
@@ -46,10 +41,7 @@ extension AlarmExerciseTypeX on AlarmExerciseType {
 }
 
 /// How the wake-up tax exercise is chosen.
-enum AlarmExerciseMode {
-  fixed,
-  roulette,
-}
+enum AlarmExerciseMode { fixed, roulette }
 
 extension AlarmExerciseModeX on AlarmExerciseMode {
   String get wireName => name;

@@ -17,11 +17,7 @@ void main() {
       final checkpoint = ActiveRunCheckpoint(
         statusName: 'tracking',
         points: [
-          GeoPointEntity(
-            latitude: 43.65,
-            longitude: -79.38,
-            timestamp: start,
-          ),
+          GeoPointEntity(latitude: 43.65, longitude: -79.38, timestamp: start),
           GeoPointEntity(
             latitude: 43.651,
             longitude: -79.381,
@@ -102,11 +98,7 @@ void main() {
         ActiveRunCheckpoint(
           statusName: 'paused',
           points: [
-            GeoPointEntity(
-              latitude: 40.71,
-              longitude: -74.0,
-              timestamp: start,
-            ),
+            GeoPointEntity(latitude: 40.71, longitude: -74.0, timestamp: start),
           ],
           distanceMeters: 10,
           elapsed: const Duration(minutes: 1),

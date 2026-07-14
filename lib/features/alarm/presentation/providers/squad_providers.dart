@@ -15,11 +15,13 @@ final currentSquadIdProvider = FutureProvider<String?>((ref) async {
   if (user == null) return null;
 
   try {
-    final rows = await Supabase.instance.client
-        .from('squad_members')
-        .select('squad_id')
-        .eq('user_id', user.id)
-        .limit(1) as List<dynamic>;
+    final rows =
+        await Supabase.instance.client
+                .from('squad_members')
+                .select('squad_id')
+                .eq('user_id', user.id)
+                .limit(1)
+            as List<dynamic>;
     if (rows.isEmpty) return null;
     return (rows.first as Map<String, dynamic>)['squad_id'] as String?;
   } catch (e) {
@@ -35,10 +37,11 @@ final currentSquadIdProvider = FutureProvider<String?>((ref) async {
 ///
 /// Subscribes to Realtime INSERT/UPDATE on `squad_alarms` filtered by
 /// `squad_id`. Returns an empty list when the user has no squad.
-final squadMateProgressProvider =
-    StreamProvider<List<SquadMateProgress>>((ref) async* {
+final squadMateProgressProvider = StreamProvider<List<SquadMateProgress>>((
+  ref,
+) async* {
   final squadIdAsync = ref.watch(currentSquadIdProvider);
-  final squadId = squadIdAsync.valueOrNull;
+  final squadId = squadIdAsync.value;
   if (squadId == null) {
     yield const [];
     return;
@@ -55,10 +58,12 @@ final squadMateProgressProvider =
 
   Future<void> bootstrapFromDb() async {
     try {
-      final rows = await Supabase.instance.client
-          .from('squad_alarms')
-          .select('user_id, rep_count, required_reps, exercise_type')
-          .eq('squad_id', squadId) as List<dynamic>;
+      final rows =
+          await Supabase.instance.client
+                  .from('squad_alarms')
+                  .select('user_id, rep_count, required_reps, exercise_type')
+                  .eq('squad_id', squadId)
+              as List<dynamic>;
       for (final row in rows) {
         if (row is Map<String, dynamic>) {
           final uid = row['user_id'] as String?;
@@ -94,8 +99,7 @@ final squadMateProgressProvider =
           if (uid == null || uid == currentUserId) return;
           progress[uid] = SquadMateProgress.fromRow(row);
           if (!controller.isClosed) {
-            controller
-                .add(List.unmodifiable(progress.values.take(3).toList()));
+            controller.add(List.unmodifiable(progress.values.take(3).toList()));
           }
         },
       )
@@ -121,17 +125,14 @@ Future<void> upsertSquadAlarmProgress({
   required String exerciseType,
 }) async {
   try {
-    await Supabase.instance.client.from('squad_alarms').upsert(
-      {
-        'squad_id': squadId,
-        'user_id': userId,
-        'rep_count': repCount,
-        'required_reps': requiredReps,
-        'exercise_type': exerciseType,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      onConflict: 'squad_id,user_id',
-    );
+    await Supabase.instance.client.from('squad_alarms').upsert({
+      'squad_id': squadId,
+      'user_id': userId,
+      'rep_count': repCount,
+      'required_reps': requiredReps,
+      'exercise_type': exerciseType,
+      'updated_at': DateTime.now().toIso8601String(),
+    }, onConflict: 'squad_id,user_id');
   } catch (e) {
     debugPrint('[SquadProviders] upsert failed: $e');
   }
@@ -146,11 +147,13 @@ final unseenSquadNudgeCountProvider = FutureProvider<int>((ref) async {
   if (user == null) return 0;
 
   try {
-    final rows = await Supabase.instance.client
-        .from('squad_nudges')
-        .select('id')
-        .eq('to_user', user.id)
-        .eq('seen', false) as List<dynamic>;
+    final rows =
+        await Supabase.instance.client
+                .from('squad_nudges')
+                .select('id')
+                .eq('to_user', user.id)
+                .eq('seen', false)
+            as List<dynamic>;
     return rows.length;
   } catch (e) {
     debugPrint('[SquadProviders] unseen nudges fetch failed: $e');
@@ -165,10 +168,12 @@ Future<int> nudgeSquad({required String squadId}) async {
   if (userId == null) return 0;
 
   try {
-    final rows = await Supabase.instance.client
-        .from('squad_members')
-        .select('user_id')
-        .eq('squad_id', squadId) as List<dynamic>;
+    final rows =
+        await Supabase.instance.client
+                .from('squad_members')
+                .select('user_id')
+                .eq('squad_id', squadId)
+            as List<dynamic>;
     final mates = rows
         .map((r) => (r as Map<String, dynamic>)['user_id'] as String?)
         .whereType<String>()
@@ -237,17 +242,19 @@ Future<String?> joinSquadByCode({required String code}) async {
   if (userId == null) return null;
 
   try {
-    final rows = await Supabase.instance.client
-        .from('squads')
-        .select('id')
-        .eq('invite_code', code)
-        .limit(1) as List<dynamic>;
+    final rows =
+        await Supabase.instance.client
+                .from('squads')
+                .select('id')
+                .eq('invite_code', code)
+                .limit(1)
+            as List<dynamic>;
     if (rows.isEmpty) return null;
     final squadId = (rows.first as Map<String, dynamic>)['id'] as String;
-    await Supabase.instance.client.from('squad_members').upsert(
-      {'squad_id': squadId, 'user_id': userId},
-      onConflict: 'squad_id,user_id',
-    );
+    await Supabase.instance.client.from('squad_members').upsert({
+      'squad_id': squadId,
+      'user_id': userId,
+    }, onConflict: 'squad_id,user_id');
     return squadId;
   } catch (e) {
     debugPrint('[SquadProviders] joinSquadByCode failed: $e');

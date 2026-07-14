@@ -42,9 +42,10 @@ class _StatRevealItemState extends State<StatRevealItem>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    _animation = Tween<double>(begin: 0.0, end: widget.targetValue.toDouble()).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: widget.targetValue.toDouble(),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _animation.addListener(() {
       final current = _animation.value.round();
@@ -73,59 +74,67 @@ class _StatRevealItemState extends State<StatRevealItem>
     final tt = Theme.of(context).extension<AwakenTypography>()!;
 
     return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          final displayVal = _animation.value.round();
-          return Row(
-            children: [
-              // Icon
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: widget.accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(widget.icon, color: widget.accentColor, size: 18),
-              ),
-              const SizedBox(width: 14),
-
-              // Label
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: tt.statLabel.copyWith(fontSize: 13),
-                ),
-              ),
-
-              // Value + unit
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '$displayVal',
-                      style: tt.statValue.copyWith(
-                        fontSize: 22,
-                        color: widget.accentColor,
+      child:
+          AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  final displayVal = _animation.value.round();
+                  return Row(
+                    children: [
+                      // Icon
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: widget.accentColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          widget.icon,
+                          color: widget.accentColor,
+                          size: 18,
+                        ),
                       ),
-                    ),
-                    TextSpan(text: ' ${widget.unit}', style: tt.statLabel),
-                  ],
-                ),
+                      const SizedBox(width: 14),
+
+                      // Label
+                      Expanded(
+                        child: Text(
+                          widget.label,
+                          style: tt.statLabel.copyWith(fontSize: 13),
+                        ),
+                      ),
+
+                      // Value + unit
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '$displayVal',
+                              style: tt.statValue.copyWith(
+                                fontSize: 22,
+                                color: widget.accentColor,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' ${widget.unit}',
+                              style: tt.statLabel,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              )
+              .animate(delay: widget.delay)
+              .fadeIn(duration: 400.ms)
+              .slideY(
+                begin: 0.25,
+                end: 0,
+                duration: 400.ms,
+                curve: Curves.easeOutCubic,
               ),
-            ],
-          );
-        },
-      )
-          .animate(delay: widget.delay)
-          .fadeIn(duration: 400.ms)
-          .slideY(
-            begin: 0.25,
-            end: 0,
-            duration: 400.ms,
-            curve: Curves.easeOutCubic,
-          ),
     );
   }
 }

@@ -43,8 +43,7 @@ class _TerritoryLeaderboardScreenState
       await LocationPermissionHelper.ensureLocationAccess(
         serviceDisabledMessage:
             'Turn on location services to see nearby rivals.',
-        permissionDeniedMessage:
-            'Allow location access to see nearby rivals.',
+        permissionDeniedMessage: 'Allow location access to see nearby rivals.',
       );
       final position = await LocationFixService.acquireForMapCentering();
       if (!mounted || position == null) return;
@@ -59,7 +58,7 @@ class _TerritoryLeaderboardScreenState
   }
 
   void _onEntryTap(LeaderboardEntryEntity entry) {
-    final territories = ref.read(territoryListProvider).valueOrNull ?? const [];
+    final territories = ref.read(territoryListProvider).value ?? const [];
     TerritoryEntity? match;
     for (final t in territories) {
       if (t.userId == entry.userId) {
@@ -116,9 +115,7 @@ class _TerritoryLeaderboardScreenState
               ),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Text('RANKS', style: hud.eyebrow),
-                  ),
+                  Expanded(child: Text('RANKS', style: hud.eyebrow)),
                   IconButton(
                     tooltip: 'Refresh',
                     icon: const Icon(
@@ -155,16 +152,22 @@ class _TerritoryLeaderboardScreenState
                           const SizedBox(height: 16),
                           LeaderboardScopeToggle(
                             mode: mode,
-                            onChanged: (m) => ref
-                                .read(leaderboardModeProvider.notifier)
-                                .state = m,
+                            onChanged: (m) =>
+                                ref
+                                        .read(leaderboardModeProvider.notifier)
+                                        .state =
+                                    m,
                           ),
                           const SizedBox(height: 10),
                           LeaderboardWindowChips(
                             window: window,
-                            onChanged: (w) => ref
-                                .read(leaderboardWindowProvider.notifier)
-                                .state = w,
+                            onChanged: (w) =>
+                                ref
+                                        .read(
+                                          leaderboardWindowProvider.notifier,
+                                        )
+                                        .state =
+                                    w,
                           ),
                           const SizedBox(height: 12),
                           LeaderboardMetricBadge(window: window, mode: mode),
@@ -295,21 +298,18 @@ class _TerritoryLeaderboardScreenState
             28,
           ),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final entry = rest[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: LeaderboardRankRow(
-                    entry: entry,
-                    highlight: entry.userId == viewerUserId,
-                    maxAreaSqMeters: maxArea,
-                    onTap: () => _onEntryTap(entry),
-                  ),
-                );
-              },
-              childCount: rest.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final entry = rest[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: LeaderboardRankRow(
+                  entry: entry,
+                  highlight: entry.userId == viewerUserId,
+                  maxAreaSqMeters: maxArea,
+                  onTap: () => _onEntryTap(entry),
+                ),
+              );
+            }, childCount: rest.length),
           ),
         )
       else
@@ -323,9 +323,10 @@ class _TerritoryLeaderboardScreenState
         'No captures in the last 24 hours.\nClose a loop to take the board.',
       LeaderboardWindow.week =>
         'No captures in the last 7 days.\nClose a loop to take the board.',
-      LeaderboardWindow.allTime => mode == LeaderboardMode.nearby
-          ? 'No nearby territory yet.\nRun a loop to seed this board.'
-          : 'No territory claimed yet.\nRun a loop to join the board.',
+      LeaderboardWindow.allTime =>
+        mode == LeaderboardMode.nearby
+            ? 'No nearby territory yet.\nRun a loop to seed this board.'
+            : 'No territory claimed yet.\nRun a loop to join the board.',
     };
   }
 }
@@ -345,9 +346,10 @@ class _LeaderboardTitle extends StatelessWidget {
       LeaderboardWindow.week => '$scope · 7 days',
     };
     final subtitle = switch (window) {
-      LeaderboardWindow.allTime => mode == LeaderboardMode.nearby
-          ? 'Who holds the most land around you.'
-          : 'Who holds the most land worldwide.',
+      LeaderboardWindow.allTime =>
+        mode == LeaderboardMode.nearby
+            ? 'Who holds the most land around you.'
+            : 'Who holds the most land worldwide.',
       _ => 'Who claimed the most distinct land recently.',
     };
 

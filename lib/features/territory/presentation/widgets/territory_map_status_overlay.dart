@@ -24,7 +24,9 @@ class TerritoryMapStatusOverlay extends ConsumerWidget {
     final territoriesAsync = ref.watch(territoryListProvider);
 
     final styleError = styleAsync.hasError ? styleAsync.error : null;
-    final territoriesError = territoriesAsync.hasError ? territoriesAsync.error : null;
+    final territoriesError = territoriesAsync.hasError
+        ? territoriesAsync.error
+        : null;
     final error = styleError ?? territoriesError;
 
     if (error == null) {
@@ -42,7 +44,8 @@ class TerritoryMapStatusOverlay extends ConsumerWidget {
       );
     }
 
-    final isTerritoryLoadFailure = styleError == null && territoriesError != null;
+    final isTerritoryLoadFailure =
+        styleError == null && territoriesError != null;
 
     return Center(
       child: Container(
@@ -99,11 +102,12 @@ class TerritoryMapStatusOverlay extends ConsumerWidget {
               style: TextButton.styleFrom(
                 backgroundColor: AppColors.primary.withValues(alpha: 0.14),
                 foregroundColor: AppColors.primary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.chipRadius),
+                  borderRadius: BorderRadius.circular(AppConstants.chipRadius),
                 ),
               ),
               child: const Text(

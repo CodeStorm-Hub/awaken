@@ -48,14 +48,14 @@ void main() {
     final now = DateTime.now();
 
     Future<void> record(int daysAgo, int reps) => repo.recordSession(
-          SessionEntity(
-            userId: userId,
-            completedAt: now.subtract(Duration(days: daysAgo)),
-            repsCompleted: reps,
-            durationSeconds: 40,
-            caloriesBurned: 4,
-          ),
-        );
+      SessionEntity(
+        userId: userId,
+        completedAt: now.subtract(Duration(days: daysAgo)),
+        repsCompleted: reps,
+        durationSeconds: 40,
+        caloriesBurned: 4,
+      ),
+    );
 
     await record(0, 10); // current week
     await record(3, 5); // current week
@@ -67,21 +67,23 @@ void main() {
     expect(trend, [0, 30, 20, 15]);
   });
 
-  test('weeklyRepsTrend ignores other users and returns zeros when empty',
-      () async {
-    const userId = SessionEntity.localGuestUserId;
+  test(
+    'weeklyRepsTrend ignores other users and returns zeros when empty',
+    () async {
+      const userId = SessionEntity.localGuestUserId;
 
-    expect(await repo.weeklyRepsTrend(userId), [0, 0, 0, 0]);
+      expect(await repo.weeklyRepsTrend(userId), [0, 0, 0, 0]);
 
-    await repo.recordSession(
-      SessionEntity(
-        userId: 'someone-else',
-        completedAt: DateTime.now(),
-        repsCompleted: 50,
-        durationSeconds: 40,
-        caloriesBurned: 4,
-      ),
-    );
-    expect(await repo.weeklyRepsTrend(userId), [0, 0, 0, 0]);
-  });
+      await repo.recordSession(
+        SessionEntity(
+          userId: 'someone-else',
+          completedAt: DateTime.now(),
+          repsCompleted: 50,
+          durationSeconds: 40,
+          caloriesBurned: 4,
+        ),
+      );
+      expect(await repo.weeklyRepsTrend(userId), [0, 0, 0, 0]);
+    },
+  );
 }

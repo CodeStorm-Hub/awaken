@@ -35,9 +35,10 @@ class _RepCounterDisplayState extends State<RepCounterDisplay>
     _scaleAnim = Tween<double>(begin: 0.4, end: 1.6).animate(
       CurvedAnimation(parent: _shockwaveCtrl, curve: Curves.easeOutCubic),
     );
-    _opacityAnim = Tween<double>(begin: 0.8, end: 0.0).animate(
-      CurvedAnimation(parent: _shockwaveCtrl, curve: Curves.easeOut),
-    );
+    _opacityAnim = Tween<double>(
+      begin: 0.8,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _shockwaveCtrl, curve: Curves.easeOut));
   }
 
   @override
@@ -82,7 +83,9 @@ class _RepCounterDisplayState extends State<RepCounterDisplay>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: ringColor.withValues(alpha: _opacityAnim.value * 0.4),
+                    color: ringColor.withValues(
+                      alpha: _opacityAnim.value * 0.4,
+                    ),
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),
@@ -121,10 +124,7 @@ class _RepCounterDisplayState extends State<RepCounterDisplay>
             ),
 
             // Required count
-            Text(
-              '${widget.required}',
-              style: tt.hudRepFraction,
-            ),
+            Text('${widget.required}', style: tt.hudRepFraction),
           ],
         ),
       ],

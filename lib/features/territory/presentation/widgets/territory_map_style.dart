@@ -4,7 +4,8 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:vector_map_tiles/vector_map_tiles.dart';
-import 'package:vector_tile_renderer/vector_tile_renderer.dart' show ThemeReader;
+import 'package:vector_tile_renderer/vector_tile_renderer.dart'
+    show ThemeReader;
 
 /// Loads Awaken's bundled, re-themed OpenFreeMap "dark" vector style.
 ///

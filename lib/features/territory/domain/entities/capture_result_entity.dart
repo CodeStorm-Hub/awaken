@@ -51,8 +51,7 @@ class SessionCaptureResultEntity {
 
   bool get stoleFromRival => totalRivalsAffected > 0;
 
-  bool get hasPartialFailure =>
-      loopsRejectedTooSmall > 0 && loopsCaptured > 0;
+  bool get hasPartialFailure => loopsRejectedTooSmall > 0 && loopsCaptured > 0;
 
   bool get hitBounty => bountyMultiplier > 1.0 && bountyLabel != null;
 }

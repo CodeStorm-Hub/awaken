@@ -8,11 +8,10 @@ void main() {
 
     setUp(() {
       service = SquatCounterService();
-      _calibrate(service, _pose(
-        hip: (200, 80),
-        knee: (200, 200),
-        ankle: (200, 320),
-      ));
+      _calibrate(
+        service,
+        _pose(hip: (200, 80), knee: (200, 200), ankle: (200, 320)),
+      );
     });
 
     test('full depth rep counts', () {
@@ -346,8 +345,14 @@ Pose _pose({
       PoseLandmarkType.rightKnee: landmark(PoseLandmarkType.rightKnee, knee),
       PoseLandmarkType.leftAnkle: landmark(PoseLandmarkType.leftAnkle, ankle),
       PoseLandmarkType.rightAnkle: landmark(PoseLandmarkType.rightAnkle, ankle),
-      PoseLandmarkType.leftShoulder: landmark(PoseLandmarkType.leftShoulder, (hip.$1, hip.$2 - 60)),
-      PoseLandmarkType.rightShoulder: landmark(PoseLandmarkType.rightShoulder, (hip.$1, hip.$2 - 60)),
+      PoseLandmarkType.leftShoulder: landmark(PoseLandmarkType.leftShoulder, (
+        hip.$1,
+        hip.$2 - 60,
+      )),
+      PoseLandmarkType.rightShoulder: landmark(PoseLandmarkType.rightShoulder, (
+        hip.$1,
+        hip.$2 - 60,
+      )),
     },
   );
 }
@@ -373,7 +378,10 @@ Pose _leftLegPose({
       PoseLandmarkType.leftHip: landmark(PoseLandmarkType.leftHip, hip),
       PoseLandmarkType.leftKnee: landmark(PoseLandmarkType.leftKnee, knee),
       PoseLandmarkType.leftAnkle: landmark(PoseLandmarkType.leftAnkle, ankle),
-      PoseLandmarkType.leftShoulder: landmark(PoseLandmarkType.leftShoulder, (hip.$1, hip.$2 - 60)),
+      PoseLandmarkType.leftShoulder: landmark(PoseLandmarkType.leftShoulder, (
+        hip.$1,
+        hip.$2 - 60,
+      )),
     },
   );
 }
@@ -399,7 +407,10 @@ Pose _rightLegPose({
       PoseLandmarkType.rightHip: landmark(PoseLandmarkType.rightHip, hip),
       PoseLandmarkType.rightKnee: landmark(PoseLandmarkType.rightKnee, knee),
       PoseLandmarkType.rightAnkle: landmark(PoseLandmarkType.rightAnkle, ankle),
-      PoseLandmarkType.rightShoulder: landmark(PoseLandmarkType.rightShoulder, (hip.$1, hip.$2 - 60)),
+      PoseLandmarkType.rightShoulder: landmark(PoseLandmarkType.rightShoulder, (
+        hip.$1,
+        hip.$2 - 60,
+      )),
     },
   );
 }

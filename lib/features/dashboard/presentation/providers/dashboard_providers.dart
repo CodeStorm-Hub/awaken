@@ -3,7 +3,8 @@ import 'package:awaken/features/auth/presentation/providers/auth_providers.dart'
 import 'package:awaken/features/dashboard/domain/entities/dashboard_stats_entity.dart';
 import 'package:awaken/features/sessions/domain/entities/session_entity.dart';
 import 'package:awaken/features/sessions/presentation/providers/session_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+// StateProvider moved to legacy.dart in Riverpod 3.
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'dashboard_providers.g.dart';
@@ -19,14 +20,14 @@ final guestSyncPromptDismissedProvider = StateProvider<bool>((ref) => false);
 /// `null` when not applicable (iOS / desktop). `false` when Android and the
 /// user has denied "Alarms & reminders" — alarms may not fire on time.
 @Riverpod(keepAlive: true)
-Future<bool?> exactAlarmPermission(ExactAlarmPermissionRef ref) async {
+Future<bool?> exactAlarmPermission(Ref ref) async {
   if (!ExactAlarmPermissionService.isAndroid) return null;
   return ExactAlarmPermissionService.isGranted();
 }
 
 /// Ticking clock — emits a new DateTime every second.
 @Riverpod(keepAlive: true)
-Stream<DateTime> clock(ClockRef ref) {
+Stream<DateTime> clock(Ref ref) {
   return Stream.periodic(
     const Duration(seconds: 1),
     (_) => DateTime.now(),
@@ -37,7 +38,7 @@ Stream<DateTime> clock(ClockRef ref) {
 /// (once per minute). Downstream widgets that render the clock should watch
 /// this, not [clockProvider], to avoid rebuilding every second.
 @Riverpod(keepAlive: true)
-Stream<String> clockDisplay(ClockDisplayRef ref) async* {
+Stream<String> clockDisplay(Ref ref) async* {
   var last = _fmt(DateTime.now());
   yield last;
 
@@ -58,7 +59,7 @@ String _fmt(DateTime t) =>
 
 /// Dashboard stats — cloud when signed in, local SharedPreferences when guest.
 @Riverpod(keepAlive: true)
-Future<DashboardStatsEntity> dashboardStats(DashboardStatsRef ref) async {
+Future<DashboardStatsEntity> dashboardStats(Ref ref) async {
   final user = ref.watch(currentUserProvider);
   final sessionRepo = ref.read(sessionRepositoryProvider);
 

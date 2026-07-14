@@ -3,10 +3,7 @@ import 'package:awaken/features/sessions/data/repositories/supabase_session_repo
 
 /// Retries syncing sessions that were saved locally while offline.
 class SessionSyncService {
-  const SessionSyncService({
-    required this.queue,
-    required this.remote,
-  });
+  const SessionSyncService({required this.queue, required this.remote});
 
   final PendingSessionQueue queue;
   final SupabaseSessionRepository remote;

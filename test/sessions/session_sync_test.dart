@@ -44,12 +44,12 @@ void main() {
   const local = LocalSessionRepository();
 
   SessionEntity sampleSession() => SessionEntity(
-        userId: 'user-1',
-        completedAt: DateTime.utc(2026, 7, 3, 8, 0),
-        repsCompleted: 12,
-        durationSeconds: 60,
-        caloriesBurned: 4,
-      );
+    userId: 'user-1',
+    completedAt: DateTime.utc(2026, 7, 3, 8, 0),
+    repsCompleted: 12,
+    durationSeconds: 60,
+    caloriesBurned: 4,
+  );
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -72,23 +72,23 @@ void main() {
     expect(pending.first.repsCompleted, session.repsCompleted);
   });
 
-  test('flushPendingSessions syncs queued sessions when remote succeeds', () async {
-    final remote = FakeRemoteSessionRepository();
-    final session = sampleSession();
+  test(
+    'flushPendingSessions syncs queued sessions when remote succeeds',
+    () async {
+      final remote = FakeRemoteSessionRepository();
+      final session = sampleSession();
 
-    await queue.enqueue(session);
+      await queue.enqueue(session);
 
-    final syncService = SessionSyncService(
-      queue: queue,
-      remote: remote,
-    );
+      final syncService = SessionSyncService(queue: queue, remote: remote);
 
-    await syncService.flushPendingSessions();
+      await syncService.flushPendingSessions();
 
-    expect(remote.recorded, hasLength(1));
-    expect(remote.recorded.first.userId, session.userId);
-    expect(await queue.peek(), isEmpty);
-  });
+      expect(remote.recorded, hasLength(1));
+      expect(remote.recorded.first.userId, session.userId);
+      expect(await queue.peek(), isEmpty);
+    },
+  );
 
   test('flushPendingSessions keeps failed sessions in the queue', () async {
     final remote = FakeRemoteSessionRepository(failNext: 1);
@@ -96,10 +96,7 @@ void main() {
 
     await queue.enqueue(session);
 
-    final syncService = SessionSyncService(
-      queue: queue,
-      remote: remote,
-    );
+    final syncService = SessionSyncService(queue: queue, remote: remote);
 
     await syncService.flushPendingSessions();
 
@@ -114,10 +111,7 @@ void main() {
     await queue.enqueue(session);
     await queue.markAttemptFailed(session, now: DateTime.now());
 
-    final syncService = SessionSyncService(
-      queue: queue,
-      remote: remote,
-    );
+    final syncService = SessionSyncService(queue: queue, remote: remote);
 
     await syncService.flushPendingSessions();
 
@@ -137,10 +131,7 @@ void main() {
       local: local,
       queue: queue,
     );
-    final syncService = SessionSyncService(
-      queue: queue,
-      remote: remote,
-    );
+    final syncService = SessionSyncService(queue: queue, remote: remote);
     final session = sampleSession();
 
     await repository.recordSession(session);

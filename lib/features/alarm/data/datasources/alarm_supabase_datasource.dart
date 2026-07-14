@@ -23,10 +23,6 @@ class AlarmSupabaseDatasource {
   }
 
   Future<void> deleteAlarm(String id) async {
-    await _client
-        .from('alarms')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', _userId);
+    await _client.from('alarms').delete().eq('id', id).eq('user_id', _userId);
   }
 }

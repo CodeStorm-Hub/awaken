@@ -54,7 +54,8 @@ class HighKneesCounterService implements ExerciseCounter {
     final lk = pose.landmarks[PoseLandmarkType.leftKnee];
     final rk = pose.landmarks[PoseLandmarkType.rightKnee];
 
-    final hasKneesAndHips = lh != null &&
+    final hasKneesAndHips =
+        lh != null &&
         rh != null &&
         lk != null &&
         rk != null &&

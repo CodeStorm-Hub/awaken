@@ -18,8 +18,7 @@ class HudThemePicker extends ConsumerWidget {
     final unlocked = ref.watch(unlockedHudThemesProvider);
     final selected = ref.watch(selectedHudThemeIdProvider);
     final isPro = ref.watch(isProEntitledProvider);
-    final streak =
-        ref.watch(dashboardStatsProvider).valueOrNull?.currentStreak ?? 0;
+    final streak = ref.watch(dashboardStatsProvider).value?.currentStreak ?? 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,8 +134,8 @@ class HudThemePicker extends ConsumerWidget {
         content: Text(
           ok
               ? (kDebugMode
-                  ? 'Pro unlocked — Acid/Mono still need streak 30/90'
-                  : 'Opening store…')
+                    ? 'Pro unlocked — Acid/Mono still need streak 30/90'
+                    : 'Opening store…')
               : 'Store unavailable — configure ${IapConfig.productMonthly}',
         ),
       ),
@@ -187,9 +186,7 @@ class _ThemeChip extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: theme.primary,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: theme.glow, blurRadius: 6),
-                    ],
+                    boxShadow: [BoxShadow(color: theme.glow, blurRadius: 6)],
                   ),
                 ),
                 const SizedBox(width: 6),

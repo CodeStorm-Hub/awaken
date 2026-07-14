@@ -117,8 +117,9 @@ class ActiveRunState {
           currentSegmentAnchorIndex ?? this.currentSegmentAnchorIndex,
       result: result ?? this.result,
       sessionCaptureResult: sessionCaptureResult ?? this.sessionCaptureResult,
-      errorMessage:
-          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -218,7 +219,10 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     try {
       await _ensureTrackingPermissions();
     } on LocationAccessException catch (e) {
-      state = state.copyWith(status: RunSessionStatus.error, errorMessage: e.message);
+      state = state.copyWith(
+        status: RunSessionStatus.error,
+        errorMessage: e.message,
+      );
       return;
     }
 
@@ -246,8 +250,10 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
       debugPrint('[ActiveRun] notification permission skipped: $error');
     }
     await LocationPermissionHelper.ensureLocationAccess(
-      serviceDisabledMessage: 'Turn on location services to start a territory run.',
-      permissionDeniedMessage: 'Allow location access so we can track your run.',
+      serviceDisabledMessage:
+          'Turn on location services to start a territory run.',
+      permissionDeniedMessage:
+          'Allow location access so we can track your run.',
     );
   }
 
@@ -269,29 +275,30 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   void _startPositionStream() {
     _positionSubscription?.cancel();
     _isListening = true;
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: _runLocationSettings(),
-    ).listen(
-      _onPosition,
-      onError: (Object error, StackTrace stackTrace) {
-        debugPrint('[ActiveRun] position stream error: $error');
-        // Keep the session — pause + checkpoint so a reopen can resume.
-        _positionSubscription = null;
-        _isListening = false;
-        if (state.status == RunSessionStatus.tracking ||
-            state.status == RunSessionStatus.paused) {
-          state = state.copyWith(
-            status: RunSessionStatus.paused,
-            errorMessage:
-                'Location briefly interrupted. Resume when ready — your run is saved.',
-          );
-          unawaited(_persistCheckpoint());
-        }
-      },
-      onDone: () {
-        _isListening = false;
-      },
-    );
+    _positionSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: _runLocationSettings(),
+        ).listen(
+          _onPosition,
+          onError: (Object error, StackTrace stackTrace) {
+            debugPrint('[ActiveRun] position stream error: $error');
+            // Keep the session — pause + checkpoint so a reopen can resume.
+            _positionSubscription = null;
+            _isListening = false;
+            if (state.status == RunSessionStatus.tracking ||
+                state.status == RunSessionStatus.paused) {
+              state = state.copyWith(
+                status: RunSessionStatus.paused,
+                errorMessage:
+                    'Location briefly interrupted. Resume when ready — your run is saved.',
+              );
+              unawaited(_persistCheckpoint());
+            }
+          },
+          onDone: () {
+            _isListening = false;
+          },
+        );
   }
 
   LocationSettings _runLocationSettings() {
@@ -343,7 +350,8 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     // Prefer displacement over GPS speed — many devices report speed 0 on
     // walking fixes, which would false-trigger traffic grace.
     const stationaryRadiusMeters = 2.5;
-    final looksStationary = movedMeters <= stationaryRadiusMeters &&
+    final looksStationary =
+        movedMeters <= stationaryRadiusMeters &&
         speed <= AppConstants.runGracePauseSpeedMps;
 
     if (state.status == RunSessionStatus.tracking && looksStationary) {
@@ -419,10 +427,7 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
   void pauseRun({bool auto = false}) {
     if (state.status != RunSessionStatus.tracking) return;
     _stationarySince = null;
-    state = state.copyWith(
-      status: RunSessionStatus.paused,
-      speedKmh: 0,
-    );
+    state = state.copyWith(status: RunSessionStatus.paused, speedKmh: 0);
     unawaited(_persistCheckpoint());
   }
 
@@ -485,7 +490,10 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
     final rawPoints = state.points;
     final simplifiedFullPath = rawPoints.length < 3
         ? rawPoints
-        : RdpSimplifier.simplify(rawPoints, AppConstants.rdpSimplificationEpsilonMeters);
+        : RdpSimplifier.simplify(
+            rawPoints,
+            AppConstants.rdpSimplificationEpsilonMeters,
+          );
 
     // Prefer live-detected loops when finish-time re-extraction finds none —
     // the HUD "loop closed" pill is driven by pendingLoops, and ignoring them
@@ -542,17 +550,14 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
           outcome = rejectedTooSmall > 0
               ? RunOutcome.invalidatedTooSmall
               : rejectedTooFast > 0
-                  ? RunOutcome.invalidatedSpeedCap
-                  : RunOutcome.loopNotClosed;
+              ? RunOutcome.invalidatedSpeedCap
+              : RunOutcome.loopNotClosed;
         } else {
-          final zones =
-              await ref.read(bountyZonesProvider.future).catchError(
-                    (_) => const <BountyZoneEntity>[],
-                  );
+          final zones = await ref
+              .read(bountyZonesProvider.future)
+              .catchError((_) => const <BountyZoneEntity>[]);
           final bounty = BountyCaptureService.evaluate(
-            loops: [
-              for (final segment in loopSegments) segment.points,
-            ],
+            loops: [for (final segment in loopSegments) segment.points],
             zones: zones,
           );
           sessionCaptureResult = SessionCaptureResultEntity(
@@ -587,7 +592,8 @@ class ActiveRunNotifier extends Notifier<ActiveRunState> {
         }
       }
 
-      if (outcome != RunOutcome.territoryClaimed && outcome != RunOutcome.invalidatedSpeedCap) {
+      if (outcome != RunOutcome.territoryClaimed &&
+          outcome != RunOutcome.invalidatedSpeedCap) {
         try {
           await repo.touchDefense(simplifiedFullPath);
         } on Object catch (_) {
@@ -792,7 +798,7 @@ final rivalConflictProvider = Provider<bool>((ref) {
   if (points.isEmpty) return false;
   final current = points.last;
 
-  final territories = ref.watch(territoryListProvider).valueOrNull;
+  final territories = ref.watch(territoryListProvider).value;
   if (territories == null) return false;
 
   for (final territory in territories) {

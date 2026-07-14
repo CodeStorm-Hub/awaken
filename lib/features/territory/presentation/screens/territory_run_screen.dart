@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:awaken/core/constants/app_constants.dart';
@@ -27,6 +28,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// StateProvider moved to legacy.dart in Riverpod 3.
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
@@ -83,9 +86,10 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _pulseAnim = Tween<double>(
+      begin: 0.6,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
     ref.listenManual<bool>(territoryMapReadyProvider, (previous, ready) {
       if (ready) _ensureInitialLocationCenter();
@@ -95,22 +99,28 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       if (index == 1) _ensureInitialLocationCenter();
     }, fireImmediately: true);
 
-    ref.listenManual<AsyncValue<Position?>>(myLocationProvider, (previous, next) {
+    ref.listenManual<AsyncValue<Position?>>(myLocationProvider, (
+      previous,
+      next,
+    ) {
       next.whenData((position) {
         if (position == null || !mounted) return;
         ref.read(mapLastKnownPositionProvider.notifier).state = position;
         // Reveal a small patch around the user the first time we get a fix
         // so the fog clears at the starting position.
-        if (previous?.valueOrNull == null) {
+        if (previous?.value == null) {
           final store = ref.read(exploredCellsStoreProvider);
           store
-              .revealAround(position.latitude, position.longitude,
-                  radiusCells: 5)
+              .revealAround(
+                position.latitude,
+                position.longitude,
+                radiusCells: 5,
+              )
               .then((_) {
-            if (!mounted) return;
-            // ignore: avoid_manual_providers_as_generated_provider_dependency
-            ref.read(exploredCellsVersionProvider.notifier).state++;
-          });
+                if (!mounted) return;
+                // ignore: avoid_manual_providers_as_generated_provider_dependency
+                ref.read(exploredCellsVersionProvider.notifier).state++;
+              });
         }
         if (!_didAutoCenterFromStream && ref.read(_followMeProvider)) {
           _didAutoCenterFromStream = true;
@@ -273,24 +283,28 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
   @override
   Widget build(BuildContext context) {
     final status = ref.watch(activeRunProvider.select((s) => s.status));
-    final errorMessage = ref.watch(activeRunProvider.select((s) => s.errorMessage));
+    final errorMessage = ref.watch(
+      activeRunProvider.select((s) => s.errorMessage),
+    );
     final points = ref.watch(activeRunProvider.select((s) => s.points));
-    final anchorIndex =
-        ref.watch(activeRunProvider.select((s) => s.currentSegmentAnchorIndex));
-    final pendingLoopCount =
-        ref.watch(activeRunProvider.select((s) => s.pendingLoops.length));
+    final anchorIndex = ref.watch(
+      activeRunProvider.select((s) => s.currentSegmentAnchorIndex),
+    );
+    final pendingLoopCount = ref.watch(
+      activeRunProvider.select((s) => s.pendingLoops.length),
+    );
     final followMe = ref.watch(_followMeProvider);
     final bountyVisible = ref.watch(bountyZonesVisibleProvider);
     final rivalConflict = ref.watch(rivalConflictProvider);
     final mapZoom = ref.watch(territoryMapZoomProvider);
     final atMaxZoom = mapZoom >= AppConstants.territoryMapMaxZoom - 0.01;
     final atMinZoom = mapZoom <= AppConstants.territoryMapMinZoom + 0.01;
-    final mapVisible = ref.watch(territoryShellTabIndexProvider) == 1 ||
+    final mapVisible =
+        ref.watch(territoryShellTabIndexProvider) == 1 ||
         ref.watch(territoryRunGpsKeepAliveProvider);
 
     // Distance from current position back to active segment anchor.
-    final distToSegmentStart = points.length >= 2 &&
-            anchorIndex < points.length
+    final distToSegmentStart = points.length >= 2 && anchorIndex < points.length
         ? GeoUtils.haversineMeters(points[anchorIndex], points.last)
         : double.infinity;
     final isNearClose =
@@ -323,7 +337,8 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
     });
 
     final isPaused = status == RunSessionStatus.paused;
-    final isTracking = status == RunSessionStatus.tracking ||
+    final isTracking =
+        status == RunSessionStatus.tracking ||
         isPaused ||
         status == RunSessionStatus.finishing;
     final isFinishing = status == RunSessionStatus.finishing;
@@ -338,306 +353,319 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: Stack(
-          children: [
-            // ── Map ────────────────────────────────────────────────────────
-            Visibility(
-              visible: mapVisible,
-              maintainState: true,
-              maintainAnimation: true,
-              child: _TerritoryMapView(
-                mapController: _mapController,
-                onMapMoved: () {
-                  if (ref.read(_followMeProvider)) {
-                    ref.read(_followMeProvider.notifier).state = false;
-                  }
-                },
-                onZoomChanged: (zoom) {
-                  ref.read(territoryMapZoomProvider.notifier).state = zoom;
-                },
+        // The stats HUD, GPS-quality chip, and status pills are absolutely
+        // positioned and can't reflow around large system font scaling
+        // without clipping or overlapping the map controls — clamp rather
+        // than ignore the setting entirely.
+        body: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.3,
+          child: Stack(
+            children: [
+              // ── Map ────────────────────────────────────────────────────────
+              Visibility(
+                visible: mapVisible,
+                maintainState: true,
+                maintainAnimation: true,
+                child: _TerritoryMapView(
+                  mapController: _mapController,
+                  onMapMoved: () {
+                    if (ref.read(_followMeProvider)) {
+                      ref.read(_followMeProvider.notifier).state = false;
+                    }
+                  },
+                  onZoomChanged: (zoom) {
+                    ref.read(territoryMapZoomProvider.notifier).state = zoom;
+                  },
+                ),
               ),
-            ),
 
-            // ── Locating overlay (GPS only — map loading is separate) ─────
-            if (_locatingPhase != _LocatingPhase.hidden &&
-                status == RunSessionStatus.idle)
-              Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: _locatingPhase != _LocatingPhase.failed,
-                  child: Center(
-                    child: _LocatingIndicator(
-                      phase: _locatingPhase,
-                      errorMessage: _locationErrorMessage,
-                      onRetry: () =>
-                          _centerOnCurrentLocation(userInitiated: true),
-                      onOpenSettings: switch (_locationErrorKind) {
-                        LocationAccessKind.serviceDisabled ||
-                        LocationAccessKind.permissionDeniedForever =>
-                          () => LocationPermissionHelper.openSettingsFor(
-                                _locationErrorKind!,
-                              ),
-                        _ => null,
-                      },
+              // ── Locating overlay (GPS only — map loading is separate) ─────
+              if (_locatingPhase != _LocatingPhase.hidden &&
+                  status == RunSessionStatus.idle)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: _locatingPhase != _LocatingPhase.failed,
+                    child: Center(
+                      child: _LocatingIndicator(
+                        phase: _locatingPhase,
+                        errorMessage: _locationErrorMessage,
+                        onRetry: () =>
+                            _centerOnCurrentLocation(userInitiated: true),
+                        onOpenSettings: switch (_locationErrorKind) {
+                          LocationAccessKind.serviceDisabled ||
+                          LocationAccessKind.permissionDeniedForever =>
+                            () => LocationPermissionHelper.openSettingsFor(
+                              _locationErrorKind!,
+                            ),
+                          _ => null,
+                        },
+                      ),
                     ),
+                  ),
+                ),
+
+              // ── Map style/tile load failure ────────────────────────────────
+              const Positioned.fill(child: TerritoryMapStatusOverlay()),
+
+              // ── Top bar: back arrow + title ────────────────────────────────
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _CircleIconButton(
+                            icon: Icons.arrow_back_ios_new_rounded,
+                            onTap: _leaveTerritory,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _RunHeader(
+                              status: status,
+                              isTracking: isTracking,
+                              hasPoints: points.isNotEmpty,
+                            ),
+                          ),
+                          if (isTracking && pendingLoopCount > 0) ...[
+                            const SizedBox(width: 8),
+                            _LoopClosedPill(count: pendingLoopCount),
+                          ],
+                          if (isTracking &&
+                              isNearClose &&
+                              points.length >= 2) ...[
+                            const SizedBox(width: 12),
+                            _PulseCloseIndicator(animation: _pulseAnim),
+                          ],
+                          if (!isTracking) ...[
+                            const SizedBox(width: 12),
+                            _CircleIconButton(
+                              icon: Icons.bar_chart_rounded,
+                              onTap: () =>
+                                  context.push(AppRoutes.territoryOverview),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (isTracking && rivalConflict) ...[
+                        const SizedBox(height: 8),
+                        const Padding(
+                          padding: EdgeInsets.only(left: 48),
+                          child: _ConflictPill(),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
 
-            // ── Map style/tile load failure ────────────────────────────────
-            const Positioned.fill(child: TerritoryMapStatusOverlay()),
-
-            // ── Top bar: back arrow + title ────────────────────────────────
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _CircleIconButton(
-                          icon: Icons.arrow_back_ios_new_rounded,
-                          onTap: _leaveTerritory,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _RunHeader(
-                            status: status,
-                            isTracking: isTracking,
-                            hasPoints: points.isNotEmpty,
-                          ),
-                        ),
-                        if (isTracking && pendingLoopCount > 0) ...[
-                          const SizedBox(width: 8),
-                          _LoopClosedPill(count: pendingLoopCount),
-                        ],
-                        if (isTracking && isNearClose && points.length >= 2) ...[
-                          const SizedBox(width: 12),
-                          _PulseCloseIndicator(animation: _pulseAnim),
-                        ],
-                        if (!isTracking) ...[
-                          const SizedBox(width: 12),
-                          _CircleIconButton(
-                            icon: Icons.bar_chart_rounded,
-                            onTap: () => context.push(AppRoutes.territoryOverview),
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (isTracking && rivalConflict) ...[
+              // ── Right rail: zoom + follow-me ──────────────────────────────
+              Positioned(
+                right: 16,
+                top: 0,
+                bottom: 0,
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _CircleIconButton(
+                        icon: followMe
+                            ? Icons.my_location_rounded
+                            : Icons.location_searching_rounded,
+                        onTap: () {
+                          final next = !ref.read(_followMeProvider);
+                          ref.read(_followMeProvider.notifier).state = next;
+                          if (!next) return;
+                          if (points.isNotEmpty && isTracking) {
+                            _animateTo(
+                              LatLng(
+                                points.last.latitude,
+                                points.last.longitude,
+                              ),
+                            );
+                          } else {
+                            unawaited(
+                              _centerOnCurrentLocation(userInitiated: true),
+                            );
+                          }
+                        },
+                        tint: followMe ? AppColors.primary : null,
+                      ),
                       const SizedBox(height: 8),
-                      const Padding(
-                        padding: EdgeInsets.only(left: 48),
-                        child: _ConflictPill(),
+                      _CircleIconButton(
+                        icon: bountyVisible
+                            ? Icons.workspace_premium_rounded
+                            : Icons.hide_source_rounded,
+                        onTap: () {
+                          ref.read(bountyZonesVisibleProvider.notifier).state =
+                              !bountyVisible;
+                        },
+                        tint: bountyVisible ? AppColors.accent : null,
+                        tooltip: bountyVisible
+                            ? 'Hide bounty zones'
+                            : 'Show bounty zones',
+                      ),
+                      const SizedBox(height: 8),
+                      _CircleIconButton(
+                        icon: Icons.add_rounded,
+                        onTap: atMaxZoom ? null : _zoomIn,
+                        enabled: !atMaxZoom,
+                      ),
+                      const SizedBox(height: 6),
+                      _CircleIconButton(
+                        icon: Icons.remove_rounded,
+                        onTap: atMinZoom ? null : _zoomOut,
+                        enabled: !atMinZoom,
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Right rail: zoom + follow-me ──────────────────────────────
-            Positioned(
-              right: 16,
-              top: 0,
-              bottom: 0,
-              child: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _CircleIconButton(
-                      icon: followMe
-                          ? Icons.my_location_rounded
-                          : Icons.location_searching_rounded,
-                      onTap: () {
-                        final next = !ref.read(_followMeProvider);
-                        ref.read(_followMeProvider.notifier).state = next;
-                        if (!next) return;
-                        if (points.isNotEmpty && isTracking) {
-                          _animateTo(
-                            LatLng(
-                              points.last.latitude,
-                              points.last.longitude,
-                            ),
-                          );
-                        } else {
-                          unawaited(_centerOnCurrentLocation(userInitiated: true));
-                        }
-                      },
-                      tint: followMe ? AppColors.primary : null,
-                    ),
-                    const SizedBox(height: 8),
-                    _CircleIconButton(
-                      icon: bountyVisible
-                          ? Icons.workspace_premium_rounded
-                          : Icons.hide_source_rounded,
-                      onTap: () {
-                        ref.read(bountyZonesVisibleProvider.notifier).state =
-                            !bountyVisible;
-                      },
-                      tint: bountyVisible ? AppColors.accent : null,
-                      tooltip: bountyVisible
-                          ? 'Hide bounty zones'
-                          : 'Show bounty zones',
-                    ),
-                    const SizedBox(height: 8),
-                    _CircleIconButton(
-                      icon: Icons.add_rounded,
-                      onTap: atMaxZoom ? null : _zoomIn,
-                      enabled: !atMaxZoom,
-                    ),
-                    const SizedBox(height: 6),
-                    _CircleIconButton(
-                      icon: Icons.remove_rounded,
-                      onTap: atMinZoom ? null : _zoomOut,
-                      enabled: !atMinZoom,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Grace pause dim + label ───────────────────────────────────
-            if (isPaused)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: ColoredBox(
-                    color: Colors.black.withValues(alpha: 0.45),
-                    child: const Center(
-                      child: Text(
-                        'GRACE',
-                        style: TextStyle(
-                          color: AppColors.foreground,
-                          fontSize: 42,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 6,
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ),
 
-            // ── Stats HUD ─────────────────────────────────────────────────
-            if (isTracking)
-              Positioned(
-                left: AppConstants.screenPaddingH,
-                right: 56, // clear the right rail
-                bottom: 110,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isPaused)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.card.withValues(alpha: 0.92),
-                          borderRadius:
-                              BorderRadius.circular(AppConstants.chipRadius),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Text(
-                          'PAUSED · TRAFFIC GRACE',
-                          textAlign: TextAlign.center,
+              // ── Grace pause dim + label ───────────────────────────────────
+              if (isPaused)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      child: const Center(
+                        child: Text(
+                          'GRACE',
                           style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
+                            color: AppColors.foreground,
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 6,
                           ),
                         ),
                       ),
-                    const _RunStatsSheetConsumer(),
-                  ],
+                    ),
+                  ),
                 ),
-              ),
 
-            // ── Territory color key (idle map) ────────────────────────────
-            if (!isTracking)
-              const Positioned(
-                left: AppConstants.screenPaddingH,
-                bottom: 118,
-                child: _TerritoryMapLegend(),
-              ),
+              // ── Stats HUD ─────────────────────────────────────────────────
+              if (isTracking)
+                Positioned(
+                  left: AppConstants.screenPaddingH,
+                  right: 56, // clear the right rail
+                  bottom: 110,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isPaused)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.card.withValues(alpha: 0.92),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.chipRadius,
+                            ),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Text(
+                            'PAUSED · TRAFFIC GRACE',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                      const _RunStatsSheetConsumer(),
+                    ],
+                  ),
+                ),
 
-            // ── Outdoor safety strip ──────────────────────────────────────
-            if (isTracking)
+              // ── Territory color key (idle map) ────────────────────────────
+              if (!isTracking)
+                const Positioned(
+                  left: AppConstants.screenPaddingH,
+                  bottom: 118,
+                  child: _TerritoryMapLegend(),
+                ),
+
+              // ── Outdoor safety strip ──────────────────────────────────────
+              if (isTracking)
+                Positioned(
+                  left: AppConstants.screenPaddingH,
+                  right: AppConstants.screenPaddingH,
+                  bottom: 72,
+                  child: Text(
+                    'Stay aware of traffic and surroundings',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.mutedForeground.withValues(alpha: 0.85),
+                      fontSize: 10,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+
+              // ── Error banner ───────────────────────────────────────────────
+              if (status == RunSessionStatus.error)
+                Positioned(
+                  left: AppConstants.screenPaddingH,
+                  right: AppConstants.screenPaddingH,
+                  bottom: 110,
+                  child: _ErrorBanner(
+                    message: errorMessage ?? 'Something went wrong.',
+                  ),
+                ),
+
+              // ── Result banner (post-run) ────────────────────────────────────
+              if (_resultMessage != null)
+                Positioned(
+                  left: AppConstants.screenPaddingH,
+                  right: AppConstants.screenPaddingH,
+                  bottom: 110,
+                  child: _ResultBanner(message: _resultMessage!),
+                ),
+
+              // ── Bounty explainer (idle) ───────────────────────────────────
+              if (!isTracking && !isFinishing)
+                const Positioned(
+                  left: AppConstants.screenPaddingH,
+                  right: AppConstants.screenPaddingH,
+                  bottom: 76,
+                  child: SafeArea(top: false, child: BountyZonesLegendCard()),
+                ),
+
+              // ── Start / Stop control ───────────────────────────────────────
               Positioned(
                 left: AppConstants.screenPaddingH,
                 right: AppConstants.screenPaddingH,
-                bottom: 72,
-                child: Text(
-                  'Stay aware of traffic and surroundings',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.mutedForeground.withValues(alpha: 0.85),
-                    fontSize: 10,
-                    letterSpacing: 0.6,
+                bottom: 12,
+                child: SafeArea(
+                  top: false,
+                  minimum: EdgeInsets.zero,
+                  child: RunControls(
+                    isTracking: status == RunSessionStatus.tracking || isPaused,
+                    isPaused: isPaused,
+                    isFinishing: isFinishing,
+                    onStart: () => _onStartPressed(context),
+                    onPause: () =>
+                        ref.read(activeRunProvider.notifier).pauseRun(),
+                    onResume: () =>
+                        ref.read(activeRunProvider.notifier).resumeRun(),
+                    onStop: () =>
+                        ref.read(activeRunProvider.notifier).finishRun(),
                   ),
                 ),
               ),
-
-            // ── Error banner ───────────────────────────────────────────────
-            if (status == RunSessionStatus.error)
-              Positioned(
-                left: AppConstants.screenPaddingH,
-                right: AppConstants.screenPaddingH,
-                bottom: 110,
-                child: _ErrorBanner(
-                  message: errorMessage ?? 'Something went wrong.',
-                ),
-              ),
-
-            // ── Result banner (post-run) ────────────────────────────────────
-            if (_resultMessage != null)
-              Positioned(
-                left: AppConstants.screenPaddingH,
-                right: AppConstants.screenPaddingH,
-                bottom: 110,
-                child: _ResultBanner(message: _resultMessage!),
-              ),
-
-            // ── Bounty explainer (idle) ───────────────────────────────────
-            if (!isTracking && !isFinishing)
-              const Positioned(
-                left: AppConstants.screenPaddingH,
-                right: AppConstants.screenPaddingH,
-                bottom: 76,
-                child: SafeArea(
-                  top: false,
-                  child: BountyZonesLegendCard(),
-                ),
-              ),
-
-            // ── Start / Stop control ───────────────────────────────────────
-            Positioned(
-              left: AppConstants.screenPaddingH,
-              right: AppConstants.screenPaddingH,
-              bottom: 12,
-              child: SafeArea(
-                top: false,
-                minimum: EdgeInsets.zero,
-                child: RunControls(
-                  isTracking: status == RunSessionStatus.tracking || isPaused,
-                  isPaused: isPaused,
-                  isFinishing: isFinishing,
-                  onStart: () => _onStartPressed(context),
-                  onPause: () =>
-                      ref.read(activeRunProvider.notifier).pauseRun(),
-                  onResume: () =>
-                      ref.read(activeRunProvider.notifier).resumeRun(),
-                  onStop: () =>
-                      ref.read(activeRunProvider.notifier).finishRun(),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -695,7 +723,8 @@ class _TerritoryRunScreenState extends ConsumerState<TerritoryRunScreen>
 
       if (!mounted) return;
       final runPoints = state.result?.points ?? const <GeoPointEntity>[];
-      final distanceMeters = state.result?.distanceMeters ?? state.distanceMeters;
+      final distanceMeters =
+          state.result?.distanceMeters ?? state.distanceMeters;
       final elapsed = state.result?.duration ?? state.elapsed;
       ref.read(activeRunProvider.notifier).reset();
       CaptureResultSheet.show(
@@ -777,7 +806,9 @@ class _TerritoryMapView extends StatelessWidget {
         minZoom: AppConstants.territoryMapMinZoom,
         maxZoom: AppConstants.territoryMapMaxZoom,
         interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all,
+          // Rotation excluded: there is no compass/reset-north control, so a
+          // two-finger twist mid-run would leave the map stuck at an angle.
+          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
           enableMultiFingerGestureRace: true,
         ),
         onMapEvent: (event) {
@@ -794,7 +825,9 @@ class _TerritoryMapView extends StatelessWidget {
         },
       ),
       children: const [
-        TerritoryVectorTileLayer(key: ValueKey('territory-vector-tile-layer-widget')),
+        TerritoryVectorTileLayer(
+          key: ValueKey('territory-vector-tile-layer-widget'),
+        ),
         _TerritoryPolygonsLayer(),
         _PendingLoopLayer(),
         _RunTrailGlowLayer(),
@@ -809,7 +842,10 @@ class _TerritoryMapView extends StatelessWidget {
           attributions: [
             TextSourceAttribution(
               '© OpenStreetMap · OpenFreeMap',
-              textStyle: TextStyle(color: AppColors.mutedForeground, fontSize: 10),
+              textStyle: TextStyle(
+                color: AppColors.mutedForeground,
+                fontSize: 10,
+              ),
             ),
           ],
         ),
@@ -835,8 +871,9 @@ class _PendingLoopLayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pendingLoops =
-        ref.watch(activeRunProvider.select((s) => s.pendingLoops));
+    final pendingLoops = ref.watch(
+      activeRunProvider.select((s) => s.pendingLoops),
+    );
     if (pendingLoops.isEmpty) return const SizedBox.shrink();
 
     final polygons = <Polygon>[];
@@ -860,9 +897,7 @@ class _PendingLoopLayer extends ConsumerWidget {
 
     if (polygons.isEmpty) return const SizedBox.shrink();
 
-    return RepaintBoundary(
-      child: PolygonLayer(polygons: polygons),
-    );
+    return RepaintBoundary(child: PolygonLayer(polygons: polygons));
   }
 }
 
@@ -874,10 +909,8 @@ class _TerritoryPolygonsLayer extends ConsumerWidget {
     final territoriesAsync = ref.watch(territoryListProvider);
     final mapZoom = ref.watch(territoryMapZoomProvider);
     return territoriesAsync.when(
-      data: (territories) => TerritoryPolygonLayer(
-        territories: territories,
-        mapZoom: mapZoom,
-      ),
+      data: (territories) =>
+          TerritoryPolygonLayer(territories: territories, mapZoom: mapZoom),
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
     );
@@ -890,7 +923,8 @@ class _RunTrailGlowLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(activeRunProvider.select((s) => s.status));
-    final isLive = status == RunSessionStatus.tracking ||
+    final isLive =
+        status == RunSessionStatus.tracking ||
         status == RunSessionStatus.paused;
     if (!isLive) return const SizedBox.shrink();
 
@@ -898,8 +932,9 @@ class _RunTrailGlowLayer extends ConsumerWidget {
     if (points.length < 2) return const SizedBox.shrink();
 
     final displayPoints = decimateTrailForDisplay(points);
-    final latLngPoints =
-        displayPoints.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    final latLngPoints = displayPoints
+        .map((p) => LatLng(p.latitude, p.longitude))
+        .toList();
     return RepaintBoundary(
       child: PolylineLayer(
         polylines: [
@@ -921,7 +956,8 @@ class _RunTrailCoreLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(activeRunProvider.select((s) => s.status));
-    final isLive = status == RunSessionStatus.tracking ||
+    final isLive =
+        status == RunSessionStatus.tracking ||
         status == RunSessionStatus.paused;
     if (!isLive) return const SizedBox.shrink();
 
@@ -929,8 +965,9 @@ class _RunTrailCoreLayer extends ConsumerWidget {
     if (points.length < 2) return const SizedBox.shrink();
 
     final displayPoints = decimateTrailForDisplay(points);
-    final latLngPoints =
-        displayPoints.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    final latLngPoints = displayPoints
+        .map((p) => LatLng(p.latitude, p.longitude))
+        .toList();
     return RepaintBoundary(
       child: PolylineLayer(
         polylines: [
@@ -952,8 +989,9 @@ class _RunStartMarkerLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final points = ref.watch(activeRunProvider.select((s) => s.points));
-    final anchorIndex =
-        ref.watch(activeRunProvider.select((s) => s.currentSegmentAnchorIndex));
+    final anchorIndex = ref.watch(
+      activeRunProvider.select((s) => s.currentSegmentAnchorIndex),
+    );
     if (points.isEmpty || anchorIndex >= points.length) {
       return const SizedBox.shrink();
     }
@@ -978,7 +1016,8 @@ class _MyLocationMarkerLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(activeRunProvider.select((s) => s.status));
-    final isTracking = status == RunSessionStatus.tracking ||
+    final isTracking =
+        status == RunSessionStatus.tracking ||
         status == RunSessionStatus.paused ||
         status == RunSessionStatus.finishing;
 
@@ -995,7 +1034,8 @@ class _MyLocationMarkerLayer extends ConsumerWidget {
 
     // Idle map, or run just started before the first GPS path point arrives.
     if (point == null) {
-      final myLocation = ref.watch(myLocationProvider).valueOrNull ??
+      final myLocation =
+          ref.watch(myLocationProvider).value ??
           ref.watch(mapLastKnownPositionProvider);
       if (myLocation != null) {
         point = LatLng(myLocation.latitude, myLocation.longitude);
@@ -1029,25 +1069,26 @@ class _RunStatsSheetConsumer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final distanceMeters =
-        ref.watch(activeRunProvider.select((s) => s.distanceMeters));
-    final elapsed =
-        ref.watch(activeRunProvider.select((s) => s.elapsed));
-    final isOverSpeed =
-        ref.watch(activeRunProvider.select((s) => s.isOverSpeed));
-    final speedKmh =
-        ref.watch(activeRunProvider.select((s) => s.speedKmh));
-    final points =
-        ref.watch(activeRunProvider.select((s) => s.points));
-    final anchorIndex =
-        ref.watch(activeRunProvider.select((s) => s.currentSegmentAnchorIndex));
-    final pendingLoopCount =
-        ref.watch(activeRunProvider.select((s) => s.pendingLoops.length));
-    final gpsAccuracyMeters =
-        ref.watch(activeRunProvider.select((s) => s.gpsAccuracyMeters));
+    final distanceMeters = ref.watch(
+      activeRunProvider.select((s) => s.distanceMeters),
+    );
+    final elapsed = ref.watch(activeRunProvider.select((s) => s.elapsed));
+    final isOverSpeed = ref.watch(
+      activeRunProvider.select((s) => s.isOverSpeed),
+    );
+    final speedKmh = ref.watch(activeRunProvider.select((s) => s.speedKmh));
+    final points = ref.watch(activeRunProvider.select((s) => s.points));
+    final anchorIndex = ref.watch(
+      activeRunProvider.select((s) => s.currentSegmentAnchorIndex),
+    );
+    final pendingLoopCount = ref.watch(
+      activeRunProvider.select((s) => s.pendingLoops.length),
+    );
+    final gpsAccuracyMeters = ref.watch(
+      activeRunProvider.select((s) => s.gpsAccuracyMeters),
+    );
 
-    final distToSegmentStart = points.length >= 2 &&
-            anchorIndex < points.length
+    final distToSegmentStart = points.length >= 2 && anchorIndex < points.length
         ? GeoUtils.haversineMeters(points[anchorIndex], points.last)
         : double.infinity;
 
@@ -1056,8 +1097,9 @@ class _RunStatsSheetConsumer extends ConsumerWidget {
       elapsed: elapsed,
       isOverSpeed: isOverSpeed,
       speedKmh: speedKmh,
-      distToSegmentStartMeters:
-          distToSegmentStart.isFinite ? distToSegmentStart : null,
+      distToSegmentStartMeters: distToSegmentStart.isFinite
+          ? distToSegmentStart
+          : null,
       gpsAccuracyMeters: gpsAccuracyMeters,
       pendingLoopCount: pendingLoopCount,
     );
@@ -1142,9 +1184,12 @@ class _MyLocationMarkerState extends State<_MyLocationMarker>
                 ),
               ),
               // Heading wedge — only when a real heading is available.
-              if (widget.heading != null && widget.heading! >= 0)
+              // Strictly positive: geolocator reports 0.0 both for "due
+              // north" and (far more often) "heading unavailable" — hiding
+              // the wedge at exactly 0 avoids arbitrarily pointing north.
+              if (widget.heading != null && widget.heading! > 0)
                 Transform.rotate(
-                  angle: widget.heading! * (3.14159265 / 180),
+                  angle: widget.heading! * (math.pi / 180),
                   child: Transform.translate(
                     offset: const Offset(0, -13),
                     child: const CustomPaint(
@@ -1208,18 +1253,14 @@ class _PulseCloseIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: animation,
-      builder: (context, child) => Opacity(
-        opacity: animation.value,
-        child: child,
-      ),
+      builder: (context, child) =>
+          Opacity(opacity: animation.value, child: child),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.success.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.success.withValues(alpha: 0.6),
-          ),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.6)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1284,8 +1325,7 @@ class _TerritoryMapLegend extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final territories =
-        ref.watch(territoryListProvider).valueOrNull ?? const [];
+    final territories = ref.watch(territoryListProvider).value ?? const [];
     Color yours = AppColors.territoryOwned;
     final rivalColors = <Color>[];
     for (final t in territories) {
@@ -1360,10 +1400,7 @@ class _LegendSwatch extends StatelessWidget {
               color: secondary == null ? color.withValues(alpha: 0.55) : null,
               border: Border.all(color: color, width: 1.2),
               boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.45),
-                  blurRadius: 6,
-                ),
+                BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 6),
               ],
             ),
           ),
@@ -1382,7 +1419,6 @@ class _LegendSwatch extends StatelessWidget {
     );
   }
 }
-
 
 /// "Crossing rival territory" cue shown while the runner's live position is
 /// inside a rival's owned polygon — see `rivalConflictProvider`. Purely
@@ -1440,24 +1476,42 @@ class _RunHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (title, subtitle) = switch (status) {
-      RunSessionStatus.requestingPermission =>
-        ('Waiting for permission', 'Allow location to begin tracking.'),
-      RunSessionStatus.tracking when hasPoints =>
-        ('Tracking run', 'Close your loop to claim territory.'),
-      RunSessionStatus.tracking =>
-        ('Ready to move', 'Start walking or running to draw your path.'),
-      RunSessionStatus.paused =>
-        ('Traffic grace', 'Paused — resume when you can move safely.'),
-      RunSessionStatus.finishing =>
-        ('Saving run', 'We are finishing your territory check now.'),
-      RunSessionStatus.finished =>
-        ('Run complete', 'Your result is being saved.'),
-      RunSessionStatus.error =>
-        ('Run blocked', 'Fix the permission or location issue to continue.'),
-      RunSessionStatus.idle when isTracking =>
-        ('Tracking run', 'Close your loop to claim territory.'),
-      RunSessionStatus.idle =>
-        ('Territory run', 'Start a loop, return to it, and claim the area.'),
+      RunSessionStatus.requestingPermission => (
+        'Waiting for permission',
+        'Allow location to begin tracking.',
+      ),
+      RunSessionStatus.tracking when hasPoints => (
+        'Tracking run',
+        'Close your loop to claim territory.',
+      ),
+      RunSessionStatus.tracking => (
+        'Ready to move',
+        'Start walking or running to draw your path.',
+      ),
+      RunSessionStatus.paused => (
+        'Traffic grace',
+        'Paused — resume when you can move safely.',
+      ),
+      RunSessionStatus.finishing => (
+        'Saving run',
+        'We are finishing your territory check now.',
+      ),
+      RunSessionStatus.finished => (
+        'Run complete',
+        'Your result is being saved.',
+      ),
+      RunSessionStatus.error => (
+        'Run blocked',
+        'Fix the permission or location issue to continue.',
+      ),
+      RunSessionStatus.idle when isTracking => (
+        'Tracking run',
+        'Close your loop to claim territory.',
+      ),
+      RunSessionStatus.idle => (
+        'Territory run',
+        'Start a loop, return to it, and claim the area.',
+      ),
     };
 
     return Column(
@@ -1609,20 +1663,20 @@ class _LocatingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final (title, subtitle, showSpinner) = switch (phase) {
       _LocatingPhase.requestingPermission => (
-          'Allow location access',
-          'We need your permission to center the map on you.',
-          true,
-        ),
+        'Allow location access',
+        'We need your permission to center the map on you.',
+        true,
+      ),
       _LocatingPhase.acquiringFix => (
-          'Finding your location…',
-          'We’ll center the map as soon as GPS is ready.',
-          true,
-        ),
+        'Finding your location…',
+        'We’ll center the map as soon as GPS is ready.',
+        true,
+      ),
       _LocatingPhase.failed => (
-          'Couldn’t get your location',
-          errorMessage ?? 'Check that location services are on and try again.',
-          false,
-        ),
+        'Couldn’t get your location',
+        errorMessage ?? 'Check that location services are on and try again.',
+        false,
+      ),
       _LocatingPhase.hidden => ('', '', false),
     };
 
@@ -1688,10 +1742,7 @@ class _LocatingIndicator extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 if (onRetry != null)
-                  TextButton(
-                    onPressed: onRetry,
-                    child: const Text('Retry'),
-                  ),
+                  TextButton(onPressed: onRetry, child: const Text('Retry')),
               ],
             ),
           ],

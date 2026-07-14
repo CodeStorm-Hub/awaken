@@ -13,8 +13,9 @@ class LocalSessionRepository implements SessionRepository {
     final jsonList = prefs.getStringList(_sessionsKey) ?? [];
     return jsonList
         .map(
-          (jsonStr) =>
-              SessionEntity.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>),
+          (jsonStr) => SessionEntity.fromJson(
+            jsonDecode(jsonStr) as Map<String, dynamic>,
+          ),
         )
         .toList();
   }
@@ -75,18 +76,19 @@ class LocalSessionRepository implements SessionRepository {
   @override
   Future<({int current, int best})> streakStats(String userId) async {
     final sessions = await _getSessions();
-    final days = sessions
-        .where((s) => s.userId == userId)
-        .map(
-          (s) => DateTime(
-            s.completedAt.year,
-            s.completedAt.month,
-            s.completedAt.day,
-          ),
-        )
-        .toSet()
-        .toList()
-      ..sort();
+    final days =
+        sessions
+            .where((s) => s.userId == userId)
+            .map(
+              (s) => DateTime(
+                s.completedAt.year,
+                s.completedAt.month,
+                s.completedAt.day,
+              ),
+            )
+            .toSet()
+            .toList()
+          ..sort();
 
     if (days.isEmpty) return (current: 0, best: 0);
 

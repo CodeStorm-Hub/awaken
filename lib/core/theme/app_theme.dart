@@ -115,10 +115,7 @@ abstract final class AppTheme {
       ),
 
       // ── Icon ───────────────────────────────────────────────────────
-      iconTheme: const IconThemeData(
-        color: AppColors.foreground,
-        size: 20,
-      ),
+      iconTheme: const IconThemeData(color: AppColors.foreground, size: 20),
 
       // ── Divider ────────────────────────────────────────────────────
       dividerTheme: const DividerThemeData(

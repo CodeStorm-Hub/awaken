@@ -31,6 +31,26 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
   AlarmExerciseMode _exerciseMode = AlarmExerciseMode.fixed;
   AlarmExerciseType _exerciseType = AlarmExerciseType.squats;
 
+  /// "Rings in 9h 32m" for the next occurrence of the picked time (today if
+  /// still ahead, otherwise tomorrow) — mirrors the scheduling logic.
+  String get _ringsInLabel {
+    final now = DateTime.now();
+    var scheduled = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      _time.hour,
+      _time.minute,
+    );
+    if (!scheduled.isAfter(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    final diff = scheduled.difference(now);
+    final h = diff.inHours;
+    final m = diff.inMinutes % 60;
+    return h > 0 ? 'Rings in ${h}h ${m}m' : 'Rings in ${m}m';
+  }
+
   /// Safe leave — onboarding uses [GoRouter.go], so there may be nothing to pop.
   void _leave() {
     if (context.canPop()) {
@@ -65,9 +85,10 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Title ────────────────────────────────────────────────
-              Text('SET ALARM', style: tt.eyebrow)
-                  .animate()
-                  .fadeIn(duration: 300.ms),
+              Text(
+                'SET ALARM',
+                style: tt.eyebrow,
+              ).animate().fadeIn(duration: 300.ms),
               const SizedBox(height: 32),
 
               // ── Time picker ──────────────────────────────────────────
@@ -76,6 +97,15 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
                 onTap: _pickTime,
                 typography: tt,
               ).animate().fadeIn(delay: 80.ms, duration: 300.ms),
+              const SizedBox(height: 8),
+              // Countdown makes an AM/PM mix-up obvious before arming.
+              Text(
+                _ringsInLabel,
+                style: tt.statLabel.copyWith(
+                  fontSize: 12,
+                  color: AppColors.primary,
+                ),
+              ),
 
               const SizedBox(height: 32),
 
@@ -191,9 +221,7 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
             ),
           ),
           child: MediaQuery(
-            data: mediaQueryData.copyWith(
-              textScaler: TextScaler.noScaling,
-            ),
+            data: mediaQueryData.copyWith(textScaler: TextScaler.noScaling),
             child: child!,
           ),
         );
@@ -368,10 +396,8 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
             child: const Text('Save Anyway'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(
-              context,
-              _ExactAlarmDialogAction.openSettings,
-            ),
+            onPressed: () =>
+                Navigator.pop(context, _ExactAlarmDialogAction.openSettings),
             child: const Text(
               'Open Settings',
               style: TextStyle(color: AppColors.primary),
@@ -385,11 +411,7 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
 
 // ── Sub-widgets ────────────────────────────────────────────────────────────
 
-enum _ExactAlarmDialogAction {
-  cancel,
-  openSettings,
-  saveWithoutPermission,
-}
+enum _ExactAlarmDialogAction { cancel, openSettings, saveWithoutPermission }
 
 class _TimeTile extends StatelessWidget {
   const _TimeTile({
@@ -478,10 +500,7 @@ class _RepSelector extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Decrement
-              _RepButton(
-                icon: Icons.remove_rounded,
-                onTap: onDecrement,
-              ),
+              _RepButton(icon: Icons.remove_rounded, onTap: onDecrement),
 
               // Count + label
               Column(
@@ -499,10 +518,7 @@ class _RepSelector extends StatelessWidget {
               ),
 
               // Increment
-              _RepButton(
-                icon: Icons.add_rounded,
-                onTap: onIncrement,
-              ),
+              _RepButton(icon: Icons.add_rounded, onTap: onIncrement),
             ],
           ),
           const SizedBox(height: 20),
@@ -515,7 +531,9 @@ class _RepSelector extends StatelessWidget {
               final isTarget = index == currentTickIndex;
               final dotColor = isTarget
                   ? tierColor
-                  : (isActive ? tierColor.withValues(alpha: 0.5) : AppColors.secondary);
+                  : (isActive
+                        ? tierColor.withValues(alpha: 0.5)
+                        : AppColors.secondary);
               return Expanded(
                 child: Container(
                   height: 6,
@@ -531,7 +549,7 @@ class _RepSelector extends StatelessWidget {
                               color: tierColor.withValues(alpha: 0.4),
                               blurRadius: 6,
                               spreadRadius: 1,
-                            )
+                            ),
                           ]
                         : null,
                   ),
@@ -548,7 +566,10 @@ class _RepSelector extends StatelessWidget {
             decoration: BoxDecoration(
               color: tierColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppConstants.chipRadius),
-              border: Border.all(color: tierColor.withValues(alpha: 0.3), width: 1),
+              border: Border.all(
+                color: tierColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Text(
               tierLabel,
@@ -608,9 +629,9 @@ class _LabelField extends StatelessWidget {
       style: Theme.of(context).textTheme.bodyMedium,
       decoration: InputDecoration(
         hintText: 'e.g. Morning Grind',
-        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.mutedForeground,
-            ),
+        hintStyle: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.mutedForeground),
         filled: true,
         fillColor: AppColors.card,
         contentPadding: const EdgeInsets.symmetric(

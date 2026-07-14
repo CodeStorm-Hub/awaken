@@ -82,7 +82,9 @@ class TerritorySupabaseDatasource {
     });
   }
 
-  Future<CaptureResultModel> captureTerritory(List<GeoPointEntity> loopPoints) async {
+  Future<CaptureResultModel> captureTerritory(
+    List<GeoPointEntity> loopPoints,
+  ) async {
     final result = await _client.rpc<List<dynamic>>(
       'capture_territory',
       params: {
@@ -107,7 +109,10 @@ class TerritorySupabaseDatasource {
   Future<List<LeaderboardEntryModel>> getGlobalLeaderboard() async {
     final data = await _client.from('leaderboard_global').select();
     return (data as List)
-        .map((json) => LeaderboardEntryModel.fromJson(json as Map<String, dynamic>))
+        .map(
+          (json) =>
+              LeaderboardEntryModel.fromJson(json as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -124,7 +129,10 @@ class TerritorySupabaseDatasource {
       },
     );
     return data
-        .map((json) => LeaderboardEntryModel.fromJson(json as Map<String, dynamic>))
+        .map(
+          (json) =>
+              LeaderboardEntryModel.fromJson(json as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -143,7 +151,10 @@ class TerritorySupabaseDatasource {
       },
     );
     return data
-        .map((json) => LeaderboardEntryModel.fromJson(json as Map<String, dynamic>))
+        .map(
+          (json) =>
+              LeaderboardEntryModel.fromJson(json as Map<String, dynamic>),
+        )
         .toList();
   }
 

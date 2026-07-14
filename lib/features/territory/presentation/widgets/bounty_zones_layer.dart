@@ -18,7 +18,7 @@ class BountyZonesLayer extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final zones = ref.watch(bountyZonesProvider).valueOrNull ?? const [];
+    final zones = ref.watch(bountyZonesProvider).value ?? const [];
     if (zones.isEmpty) return const SizedBox.shrink();
 
     final zoom = ref.watch(territoryMapZoomProvider);
@@ -47,8 +47,7 @@ class BountyZonesLayer extends ConsumerWidget {
               if (zone.ring.length >= 3)
                 Polyline(
                   points: [
-                    for (final p in zone.ring)
-                      LatLng(p.latitude, p.longitude),
+                    for (final p in zone.ring) LatLng(p.latitude, p.longitude),
                   ],
                   color: AppColors.accent,
                   strokeWidth: 3.5,
@@ -67,10 +66,7 @@ class BountyZonesLayer extends ConsumerWidget {
                   width: showFullLabel ? 148 : 72,
                   height: showFullLabel ? 52 : 36,
                   alignment: Alignment.center,
-                  child: _BountyZoneMarker(
-                    zone: zone,
-                    compact: !showFullLabel,
-                  ),
+                  child: _BountyZoneMarker(zone: zone, compact: !showFullLabel),
                 ),
           ],
         ),
@@ -82,7 +78,8 @@ class BountyZonesLayer extends ConsumerWidget {
     var lat = 0.0;
     var lng = 0.0;
     // Skip duplicate closing vertex if present.
-    final n = ring.length > 1 &&
+    final n =
+        ring.length > 1 &&
             ring.first.latitude == ring.last.latitude &&
             ring.first.longitude == ring.last.longitude
         ? ring.length - 1
@@ -96,19 +93,15 @@ class BountyZonesLayer extends ConsumerWidget {
 }
 
 class _BountyZoneMarker extends StatelessWidget {
-  const _BountyZoneMarker({
-    required this.zone,
-    required this.compact,
-  });
+  const _BountyZoneMarker({required this.zone, required this.compact});
 
   final BountyZoneEntity zone;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final mult = '${zone.multiplier.toStringAsFixed(
-      zone.multiplier == zone.multiplier.roundToDouble() ? 0 : 1,
-    )}×';
+    final mult =
+        '${zone.multiplier.toStringAsFixed(zone.multiplier == zone.multiplier.roundToDouble() ? 0 : 1)}×';
 
     return IgnorePointer(
       child: DecoratedBox(
@@ -186,7 +179,7 @@ class BountyZonesLegendCard extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final zones = ref.watch(bountyZonesProvider).valueOrNull ?? const [];
+    final zones = ref.watch(bountyZonesProvider).value ?? const [];
     if (zones.isEmpty) return const SizedBox.shrink();
 
     final top = [...zones]
@@ -233,7 +226,9 @@ class BountyZonesLegendCard extends ConsumerWidget {
                   message: 'Dismiss hint',
                   child: InkWell(
                     onTap: () =>
-                        ref.read(bountyZonesHintDismissedProvider.notifier).state =
+                        ref
+                                .read(bountyZonesHintDismissedProvider.notifier)
+                                .state =
                             true,
                     borderRadius: BorderRadius.circular(16),
                     child: const Padding(
@@ -272,8 +267,9 @@ class BountyZonesLegendCard extends ConsumerWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.12),
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.chipRadius),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.chipRadius,
+                      ),
                       border: Border.all(
                         color: AppColors.accent.withValues(alpha: 0.45),
                       ),

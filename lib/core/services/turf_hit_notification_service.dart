@@ -21,13 +21,14 @@ abstract final class TurfHitNotificationService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(android: android, iOS: ios),
+      settings: const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: _onTap,
     );
 
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(
           const AndroidNotificationChannel(
             _channelId,
@@ -55,10 +56,10 @@ abstract final class TurfHitNotificationService {
         : 'Reclaim within 24 h.';
 
     await _plugin.show(
-      _notificationId,
-      'TURF HIT',
-      body,
-      const NotificationDetails(
+      id: _notificationId,
+      title: 'TURF HIT',
+      body: body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
           _channelName,

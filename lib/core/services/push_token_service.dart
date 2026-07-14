@@ -28,15 +28,12 @@ abstract final class PushTokenService {
 
     final platform = Platform.isIOS ? 'ios' : 'android';
     try {
-      await client.from('push_tokens').upsert(
-        {
-          'user_id': userId,
-          'token': token,
-          'platform': platform,
-          'updated_at': DateTime.now().toIso8601String(),
-        },
-        onConflict: 'user_id,token',
-      );
+      await client.from('push_tokens').upsert({
+        'user_id': userId,
+        'token': token,
+        'platform': platform,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'user_id,token');
     } catch (e) {
       debugPrint('[PushTokenService] FCM upsert failed: $e');
     }

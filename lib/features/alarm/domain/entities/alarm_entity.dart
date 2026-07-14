@@ -49,8 +49,9 @@ class AlarmEntity {
       isActive: isActive ?? this.isActive,
       label: label ?? this.label,
       exerciseMode: exerciseMode ?? this.exerciseMode,
-      exerciseType:
-          clearExerciseType ? null : (exerciseType ?? this.exerciseType),
+      exerciseType: clearExerciseType
+          ? null
+          : (exerciseType ?? this.exerciseType),
       penaltyMultiplier: penaltyMultiplier ?? this.penaltyMultiplier,
     );
   }
@@ -71,13 +72,13 @@ class AlarmEntity {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        scheduledTime,
-        requiredReps,
-        isActive,
-        label,
-        exerciseMode,
-        exerciseType,
-        penaltyMultiplier,
-      );
+    id,
+    scheduledTime,
+    requiredReps,
+    isActive,
+    label,
+    exerciseMode,
+    exerciseType,
+    penaltyMultiplier,
+  );
 }

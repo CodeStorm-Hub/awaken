@@ -31,11 +31,11 @@ class DashboardStatsModel {
   final int nextAlarmReps;
 
   DashboardStatsEntity toEntity() => DashboardStatsEntity(
-        currentStreak: currentStreak,
-        bestStreak: bestStreak,
-        weeklyReps: weeklyReps,
-        monthlyCalories: monthlyCalories,
-        nextAlarm: nextAlarm,
-        nextAlarmReps: nextAlarmReps,
-      );
+    currentStreak: currentStreak,
+    bestStreak: bestStreak,
+    weeklyReps: weeklyReps,
+    monthlyCalories: monthlyCalories,
+    nextAlarm: nextAlarm,
+    nextAlarmReps: nextAlarmReps,
+  );
 }

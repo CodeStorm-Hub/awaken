@@ -31,7 +31,9 @@ class ProIapService {
     return _available;
   }
 
-  Future<void> ensureListening(void Function(bool entitled) onEntitlement) async {
+  Future<void> ensureListening(
+    void Function(bool entitled) onEntitlement,
+  ) async {
     if (_listening) return;
     _listening = true;
     _sub = _iap.purchaseStream.listen(

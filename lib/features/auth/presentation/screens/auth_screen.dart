@@ -69,7 +69,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     HapticFeedback.mediumImpact();
-    
+
     setState(() {
       _loading = true;
       _error = null;
@@ -77,13 +77,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     try {
       if (_isSignUp) {
-        await ref.read(authRepositoryProvider).signUpWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text,
-          displayName: _nameController.text.trim().isEmpty
-              ? null
-              : _nameController.text.trim(),
-        );
+        await ref
+            .read(authRepositoryProvider)
+            .signUpWithEmailAndPassword(
+              _emailController.text.trim(),
+              _passwordController.text,
+              displayName: _nameController.text.trim().isEmpty
+                  ? null
+                  : _nameController.text.trim(),
+            );
         if (mounted) {
           final currentUser = ref.read(authRepositoryProvider).currentUser;
           if (currentUser == null) {
@@ -99,10 +101,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           }
         }
       } else {
-        await ref.read(authRepositoryProvider).signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+        await ref
+            .read(authRepositoryProvider)
+            .signInWithEmailAndPassword(
+              _emailController.text.trim(),
+              _passwordController.text,
+            );
         if (mounted) {
           setState(() => _loading = false);
           context.go(AppRoutes.dashboard);
@@ -111,7 +115,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString()
+          _error = e
+              .toString()
               .replaceFirst('Exception: ', '')
               .replaceFirst('AuthException: ', '');
           _loading = false;
@@ -194,8 +199,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     child: Text(
                       'The alarm you can\'t skip.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.mutedForeground,
-                          ),
+                        color: AppColors.mutedForeground,
+                      ),
                       textAlign: TextAlign.center,
                     ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
                   ),
@@ -211,7 +216,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         color: _error!.contains('successful')
                             ? AppColors.success.withValues(alpha: 0.12)
                             : AppColors.destructive.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.chipRadius,
+                        ),
                         border: Border.all(
                           color: _error!.contains('successful')
                               ? AppColors.success.withValues(alpha: 0.3)
@@ -221,10 +228,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       child: Text(
                         _error!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: _error!.contains('successful')
-                                  ? AppColors.success
-                                  : AppColors.destructive,
-                            ),
+                          color: _error!.contains('successful')
+                              ? AppColors.success
+                              : AppColors.destructive,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -234,16 +241,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   // ── Name Field (Sign-up only) ─────────────────────────────
                   if (_isSignUp) ...[
                     TextFormField(
-                      controller: _nameController,
-                      textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: AppColors.foreground),
-                      decoration: _inputDecoration(
-                        labelText: 'Display Name',
-                        prefixIcon: Icons.person_outline,
-                      ),
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty ? 'Please enter your name' : null,
-                    ).animate().fadeIn(duration: 200.ms).slideY(begin: -0.1, end: 0, duration: 200.ms),
+                          controller: _nameController,
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(color: AppColors.foreground),
+                          decoration: _inputDecoration(
+                            labelText: 'Display Name',
+                            prefixIcon: Icons.person_outline,
+                          ),
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Please enter your name'
+                              : null,
+                        )
+                        .animate()
+                        .fadeIn(duration: 200.ms)
+                        .slideY(begin: -0.1, end: 0, duration: 200.ms),
                     const SizedBox(height: 16),
                   ],
 
@@ -282,7 +294,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       prefixIcon: Icons.lock_outline,
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
                           color: AppColors.mutedForeground,
                           size: 20,
                         ),
@@ -315,9 +329,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.black,
-                        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+                        disabledBackgroundColor: AppColors.primary.withValues(
+                          alpha: 0.5,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppConstants.chipRadius),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.chipRadius,
+                          ),
                         ),
                         elevation: 0,
                       ),
@@ -332,7 +350,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             )
                           : Text(
                               _isSignUp ? 'Create Account' : 'Sign In',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
                                   ),
@@ -355,9 +374,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             },
                       child: RichText(
                         text: TextSpan(
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.mutedForeground,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.mutedForeground),
                           children: [
                             TextSpan(
                               text: _isSignUp
@@ -382,17 +400,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   // ── Divider ───────────────────────────────────────────────
                   Row(
                     children: [
-                      const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                      const Expanded(
+                        child: Divider(color: AppColors.border, thickness: 1),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'OR',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppColors.mutedForeground,
-                              ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: AppColors.mutedForeground),
                         ),
                       ),
-                      const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                      const Expanded(
+                        child: Divider(color: AppColors.border, thickness: 1),
+                      ),
                     ],
                   ),
 
@@ -412,7 +433,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         onTap: widget.onSkip,
                         child: Text(
                           'Continue without account',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: AppColors.mutedForeground,
                                 decoration: TextDecoration.underline,
                                 decorationColor: AppColors.mutedForeground,
@@ -477,8 +499,8 @@ class _GoogleSignInButton extends StatelessWidget {
                   Text(
                     'Continue with Google',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),

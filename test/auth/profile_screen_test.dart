@@ -24,10 +24,17 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> signInWithGoogle() async {}
 
   @override
-  Future<void> signInWithEmailAndPassword(String email, String password) async {}
+  Future<void> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {}
 
   @override
-  Future<void> signUpWithEmailAndPassword(String email, String password, {String? displayName}) async {}
+  Future<void> signUpWithEmailAndPassword(
+    String email,
+    String password, {
+    String? displayName,
+  }) async {}
 
   @override
   Future<void> signOut() async {}
@@ -43,19 +50,20 @@ void main() {
     nextAlarmReps: 10,
   );
 
-  testWidgets('renders Guest mode when not signed in', (WidgetTester tester) async {
+  testWidgets('renders Guest mode when not signed in', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authRepositoryProvider.overrideWithValue(FakeAuthRepository(user: null)),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(user: null),
+          ),
           isSignedInProvider.overrideWithValue(false),
           currentUserProvider.overrideWithValue(null),
           dashboardStatsProvider.overrideWith((ref) => testStats),
         ],
-        child: MaterialApp(
-          theme: AppTheme.dark,
-          home: const ProfileScreen(),
-        ),
+        child: MaterialApp(theme: AppTheme.dark, home: const ProfileScreen()),
       ),
     );
 
@@ -74,7 +82,9 @@ void main() {
     expect(find.text('300'), findsOneWidget); // monthly energy calories
   });
 
-  testWidgets('renders authenticated profile details when signed in', (WidgetTester tester) async {
+  testWidgets('renders authenticated profile details when signed in', (
+    WidgetTester tester,
+  ) async {
     const testUser = AppUser(
       id: 'abc-123',
       email: 'alex@example.com',
@@ -84,15 +94,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authRepositoryProvider.overrideWithValue(FakeAuthRepository(user: testUser)),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(user: testUser),
+          ),
           isSignedInProvider.overrideWithValue(true),
           currentUserProvider.overrideWithValue(testUser),
           dashboardStatsProvider.overrideWith((ref) => testStats),
         ],
-        child: MaterialApp(
-          theme: AppTheme.dark,
-          home: const ProfileScreen(),
-        ),
+        child: MaterialApp(theme: AppTheme.dark, home: const ProfileScreen()),
       ),
     );
 

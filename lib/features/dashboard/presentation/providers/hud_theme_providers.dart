@@ -4,13 +4,15 @@ import 'package:awaken/features/dashboard/presentation/providers/dashboard_provi
 import 'package:awaken/features/dashboard/presentation/providers/iap_providers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// StateNotifier/StateNotifierProvider moved to legacy.dart in Riverpod 3.
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _prefKey = 'awaken_selected_hud_theme';
 
 /// Unlocked by streak; acid/mono also require Pro (local stub until RevenueCat).
 final unlockedHudThemesProvider = Provider<Set<HudThemeId>>((ref) {
-  final stats = ref.watch(dashboardStatsProvider).valueOrNull;
+  final stats = ref.watch(dashboardStatsProvider).value;
   final streak = stats?.currentStreak ?? 0;
   final isPro = ref.watch(isProEntitledProvider);
   return {
@@ -23,8 +25,8 @@ final unlockedHudThemesProvider = Provider<Set<HudThemeId>>((ref) {
 
 final selectedHudThemeIdProvider =
     StateNotifierProvider<_HudThemeIdNotifier, HudThemeId>(
-  (ref) => _HudThemeIdNotifier(ref),
-);
+      (ref) => _HudThemeIdNotifier(ref),
+    );
 
 class _HudThemeIdNotifier extends StateNotifier<HudThemeId> {
   _HudThemeIdNotifier(this._ref) : super(HudThemeId.cyan) {

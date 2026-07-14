@@ -38,10 +38,7 @@ class LeaderboardPodium extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary.withValues(alpha: 0.10),
-            AppColors.card,
-          ],
+          colors: [AppColors.primary.withValues(alpha: 0.10), AppColors.card],
         ),
         border: Border.all(color: AppColors.border),
       ),
@@ -147,11 +144,7 @@ class _SoloChampion extends StatelessWidget {
               fontSize: 22,
             ),
             const SizedBox(height: 14),
-            LeaderboardClaimMeter(
-              fraction: 1,
-              color: medal,
-              height: 8,
-            ),
+            LeaderboardClaimMeter(fraction: 1, color: medal, height: 8),
           ],
         ),
       ),
@@ -214,7 +207,9 @@ class _PodiumColumn extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 4),
             padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
               color: medal.withValues(alpha: featured ? 0.22 : 0.12),
               border: Border.all(color: medal.withValues(alpha: 0.45)),
               boxShadow: featured

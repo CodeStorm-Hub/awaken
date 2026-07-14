@@ -28,9 +28,7 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(
-        ref.read(activeRunProvider.notifier).restoreFromCheckpoint(),
-      );
+      unawaited(ref.read(activeRunProvider.notifier).restoreFromCheckpoint());
     });
   }
 
@@ -44,9 +42,7 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(sessionSyncServiceProvider).flushPendingSessions();
-      unawaited(
-        ref.read(activeRunProvider.notifier).flushPendingCaptures(),
-      );
+      unawaited(ref.read(activeRunProvider.notifier).flushPendingCaptures());
       unawaited(
         ref.read(activeRunProvider.notifier).ensureBackgroundTracking(),
       );

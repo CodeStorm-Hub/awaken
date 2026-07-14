@@ -27,50 +27,49 @@ class StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.25),
-            borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-            border: Border.all(color: AppColors.border, width: 0.8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Eyebrow row
-              Row(
+    return MergeSemantics(
+      child: Semantics(
+        label: '$label: $value $unit',
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                border: Border.all(color: AppColors.border, width: 0.8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (icon != null) ...[
-                    icon!,
-                    const SizedBox(width: 6),
-                  ],
-                  Text(label.toUpperCase(), style: tt.eyebrow),
+                  // Eyebrow row
+                  Row(
+                    children: [
+                      if (icon != null) ...[icon!, const SizedBox(width: 6)],
+                      Text(label.toUpperCase(), style: tt.eyebrow),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Value + unit
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: value,
+                          style: tt.statValue.copyWith(color: accentColor),
+                        ),
+                        TextSpan(text: ' $unit', style: tt.statLabel),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 10),
-
-              // Value + unit
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: value,
-                      style: tt.statValue.copyWith(color: accentColor),
-                    ),
-                    TextSpan(
-                      text: ' $unit',
-                      style: tt.statLabel,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

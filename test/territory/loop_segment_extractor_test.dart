@@ -65,7 +65,11 @@ void main() {
     test('C1: micro-loop under segment distance yields zero segments', () {
       final baseTime = DateTime(2026, 1, 1, 8);
       final path = densifyGpsPath([
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: baseTime),
+        GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: baseTime,
+        ),
         GeoPointEntity(
           latitude: 40.7128 + 15 / 111194.9266,
           longitude: -74.0060,
@@ -112,7 +116,11 @@ void main() {
 
       for (var n = 0; n < AppConstants.maxLoopsPerSession + 1; n++) {
         final anchor = path.isEmpty
-            ? GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: time)
+            ? GeoPointEntity(
+                latitude: 40.7128,
+                longitude: -74.0060,
+                timestamp: time,
+              )
             : path.first;
         final lap = createDenseRectangleLoop(
           startLat: anchor.latitude,
@@ -192,7 +200,11 @@ List<GeoPointEntity> _twoLapsAtSameAnchor({
   );
   final exitSouth = densifyGpsPath([
     loop1.last,
-    _extendSouth(loop1.last, meters: 40, time: startTime.add(const Duration(minutes: 5))),
+    _extendSouth(
+      loop1.last,
+      meters: 40,
+      time: startTime.add(const Duration(minutes: 5)),
+    ),
   ]);
   final returnNorth = densifyGpsPath([
     exitSouth.last,

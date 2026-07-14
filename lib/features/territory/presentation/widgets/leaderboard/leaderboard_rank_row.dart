@@ -41,8 +41,8 @@ class LeaderboardRankRow extends StatelessWidget {
               color: highlight
                   ? AppColors.primary.withValues(alpha: 0.55)
                   : isTop
-                      ? medal.withValues(alpha: 0.35)
-                      : AppColors.border,
+                  ? medal.withValues(alpha: 0.35)
+                  : AppColors.border,
             ),
           ),
           child: Row(
@@ -79,8 +79,9 @@ class LeaderboardRankRow extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: AppColors.foreground,
-                              fontWeight:
-                                  highlight ? FontWeight.w800 : FontWeight.w600,
+                              fontWeight: highlight
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
                               fontSize: 14,
                             ),
                           ),
@@ -151,8 +152,11 @@ class LeaderboardClimbHint extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.trending_up_rounded,
-              color: AppColors.success, size: 18),
+          const Icon(
+            Icons.trending_up_rounded,
+            color: AppColors.success,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

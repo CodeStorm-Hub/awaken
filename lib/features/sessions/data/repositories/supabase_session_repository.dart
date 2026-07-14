@@ -24,33 +24,45 @@ class SupabaseSessionRepository implements SessionRepository {
 
   @override
   Future<int> weeklyReps(String userId, {int days = 7}) async {
-    final since = DateTime.now().subtract(Duration(days: days)).toUtc().toIso8601String();
+    final since = DateTime.now()
+        .subtract(Duration(days: days))
+        .toUtc()
+        .toIso8601String();
     final data = await _client
         .from('sessions')
         .select('reps_completed')
         .eq('user_id', userId)
         .gte('completed_at', since);
-    return (data as List)
-        .fold<int>(0, (sum, row) => sum + (row['reps_completed'] as int));
+    return (data as List).fold<int>(
+      0,
+      (sum, row) => sum + (row['reps_completed'] as int),
+    );
   }
 
   @override
   Future<int> monthlyCalories(String userId, {int days = 30}) async {
-    final since = DateTime.now().subtract(Duration(days: days)).toUtc().toIso8601String();
+    final since = DateTime.now()
+        .subtract(Duration(days: days))
+        .toUtc()
+        .toIso8601String();
     final data = await _client
         .from('sessions')
         .select('calories_burned')
         .eq('user_id', userId)
         .gte('completed_at', since);
-    return (data as List)
-        .fold<int>(0, (sum, row) => sum + (row['calories_burned'] as int));
+    return (data as List).fold<int>(
+      0,
+      (sum, row) => sum + (row['calories_burned'] as int),
+    );
   }
 
   @override
   Future<List<int>> weeklyRepsTrend(String userId, {int weeks = 4}) async {
     final now = DateTime.now();
-    final since =
-        now.subtract(Duration(days: weeks * 7)).toUtc().toIso8601String();
+    final since = now
+        .subtract(Duration(days: weeks * 7))
+        .toUtc()
+        .toIso8601String();
     final data = await _client
         .from('sessions')
         .select('reps_completed, completed_at')

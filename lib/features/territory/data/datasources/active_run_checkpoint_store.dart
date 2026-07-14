@@ -38,24 +38,23 @@ class ActiveRunCheckpoint {
   final bool loopTrackerClosureArmed;
   final double? gpsAccuracyMeters;
 
-  bool get isResumable =>
-      statusName == 'tracking' || statusName == 'paused';
+  bool get isResumable => statusName == 'tracking' || statusName == 'paused';
 
   Map<String, dynamic> toJson() => {
-        'status': statusName,
-        'distance_meters': distanceMeters,
-        'elapsed_ms': elapsed.inMilliseconds,
-        'start_time': startTime.toIso8601String(),
-        'paused_accumulated_ms': pausedAccumulated.inMilliseconds,
-        'saw_sustained_over_speed': sawSustainedOverSpeed,
-        'current_segment_anchor_index': currentSegmentAnchorIndex,
-        'loop_tracker_anchor_index': loopTrackerAnchorIndex,
-        'loop_tracker_max_dist_from_anchor': loopTrackerMaxDistFromAnchor,
-        'loop_tracker_closure_armed': loopTrackerClosureArmed,
-        if (gpsAccuracyMeters != null) 'gps_accuracy_meters': gpsAccuracyMeters,
-        'points': points.map(_pointToJson).toList(),
-        'pending_loops': pendingLoops.map(_loopToJson).toList(),
-      };
+    'status': statusName,
+    'distance_meters': distanceMeters,
+    'elapsed_ms': elapsed.inMilliseconds,
+    'start_time': startTime.toIso8601String(),
+    'paused_accumulated_ms': pausedAccumulated.inMilliseconds,
+    'saw_sustained_over_speed': sawSustainedOverSpeed,
+    'current_segment_anchor_index': currentSegmentAnchorIndex,
+    'loop_tracker_anchor_index': loopTrackerAnchorIndex,
+    'loop_tracker_max_dist_from_anchor': loopTrackerMaxDistFromAnchor,
+    'loop_tracker_closure_armed': loopTrackerClosureArmed,
+    if (gpsAccuracyMeters != null) 'gps_accuracy_meters': gpsAccuracyMeters,
+    'points': points.map(_pointToJson).toList(),
+    'pending_loops': pendingLoops.map(_loopToJson).toList(),
+  };
 
   factory ActiveRunCheckpoint.fromJson(Map<String, dynamic> json) {
     final rawPoints = json['points'] as List<dynamic>? ?? const [];
@@ -87,23 +86,24 @@ class ActiveRunCheckpoint {
   }
 
   static Map<String, dynamic> _pointToJson(GeoPointEntity p) => {
-        'lat': p.latitude,
-        'lng': p.longitude,
-        'timestamp': p.timestamp.toIso8601String(),
-      };
+    'lat': p.latitude,
+    'lng': p.longitude,
+    'timestamp': p.timestamp.toIso8601String(),
+  };
 
-  static GeoPointEntity _pointFromJson(Map<String, dynamic> m) => GeoPointEntity(
+  static GeoPointEntity _pointFromJson(Map<String, dynamic> m) =>
+      GeoPointEntity(
         latitude: (m['lat'] as num).toDouble(),
         longitude: (m['lng'] as num).toDouble(),
         timestamp: DateTime.parse(m['timestamp'] as String),
       );
 
   static Map<String, dynamic> _loopToJson(LoopSegmentEntity loop) => {
-        'start_index': loop.startIndex,
-        'end_index': loop.endIndex,
-        'closed_at': loop.closedAt.toIso8601String(),
-        'points': loop.points.map(_pointToJson).toList(),
-      };
+    'start_index': loop.startIndex,
+    'end_index': loop.endIndex,
+    'closed_at': loop.closedAt.toIso8601String(),
+    'points': loop.points.map(_pointToJson).toList(),
+  };
 
   static LoopSegmentEntity _loopFromJson(Map<String, dynamic> m) {
     final rawPoints = m['points'] as List<dynamic>? ?? const [];

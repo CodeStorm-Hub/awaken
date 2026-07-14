@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awaken/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:awaken/features/auth/domain/entities/app_user.dart';
 import 'package:awaken/features/auth/domain/repositories/auth_repository.dart';
@@ -7,14 +9,58 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 part 'auth_providers.g.dart';
 
 @Riverpod(keepAlive: true)
-AuthRepository authRepository(AuthRepositoryRef ref) {
+AuthRepository authRepository(Ref ref) {
   return SupabaseAuthRepository();
 }
 
-/// Streams every auth state change from Supabase (sign in / sign out / refresh).
+/// Every auth state change from Supabase (sign in / sign out / refresh),
+/// exposed as `AsyncValue<AuthState>` — same shape a plain `Stream<AuthState>`
+/// provider would give, but with the subscription managed by hand instead of
+/// through Riverpod's built-in `StreamNotifier`.
+///
+/// Riverpod 3's `StreamProvider`/`Stream<T> build()` machinery auto-pauses
+/// and resumes its subscription based on `TickerMode`. On Android, the
+/// transient system UI overlay from Google Sign-In's Credential Manager
+/// account picker can toggle `TickerMode` mid-frame, and the resume path
+/// synchronously calls `invalidateSelf()` — tripping a `setState() during
+/// build` framework violation on every toggle (caught by Riverpod's own
+/// error zone, but the repeated exceptions cause visible jank). This is an
+/// open upstream bug: https://github.com/rrousselGit/riverpod/issues/4381
+/// (still unresolved as of riverpod 3.3.2). A manually-managed subscription
+/// inside an `AsyncNotifier.build()` isn't subject to that auto-pause
+/// behavior at all, sidestepping the issue entirely.
 @Riverpod(keepAlive: true)
-Stream<AuthState> authState(AuthStateRef ref) {
-  return ref.read(authRepositoryProvider).authStateChanges;
+class AuthStateNotifier extends _$AuthStateNotifier {
+  StreamSubscription<AuthState>? _sub;
+
+  @override
+  Future<AuthState> build() {
+    final repo = ref.watch(authRepositoryProvider);
+    final firstEvent = Completer<AuthState>();
+    var gotFirstEvent = false;
+
+    _sub = repo.authStateChanges.listen(
+      (event) {
+        if (!gotFirstEvent) {
+          gotFirstEvent = true;
+          firstEvent.complete(event);
+        } else {
+          state = AsyncData(event);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!gotFirstEvent) {
+          gotFirstEvent = true;
+          firstEvent.completeError(error, stackTrace);
+        } else {
+          state = AsyncError(error, stackTrace);
+        }
+      },
+    );
+    ref.onDispose(() => _sub?.cancel());
+
+    return firstEvent.future;
+  }
 }
 
 /// True when a valid Supabase session exists.
@@ -32,7 +78,7 @@ bool _hasSupabaseSession() {
 }
 
 @Riverpod(keepAlive: true)
-bool isSignedIn(IsSignedInRef ref) {
+bool isSignedIn(Ref ref) {
   final authAsync = ref.watch(authStateProvider);
   return authAsync.when(
     data: (state) => state.session != null,
@@ -43,7 +89,7 @@ bool isSignedIn(IsSignedInRef ref) {
 
 /// The currently signed-in user, or null when not authenticated.
 @Riverpod(keepAlive: true)
-AppUser? currentUser(CurrentUserRef ref) {
+AppUser? currentUser(Ref ref) {
   // Re-derive any time auth state changes
   ref.watch(authStateProvider);
   return ref.read(authRepositoryProvider).currentUser;

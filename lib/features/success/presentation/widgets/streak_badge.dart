@@ -5,11 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 /// Streak badge with optional previous→current delta (e.g. "4 → 5").
 class StreakBadge extends StatelessWidget {
-  const StreakBadge({
-    super.key,
-    required this.streak,
-    this.previousStreak,
-  });
+  const StreakBadge({super.key, required this.streak, this.previousStreak});
 
   final int streak;
   final int? previousStreak;
@@ -18,7 +14,9 @@ class StreakBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final showDelta =
-        previousStreak != null && previousStreak! >= 0 && previousStreak! < streak;
+        previousStreak != null &&
+        previousStreak! >= 0 &&
+        previousStreak! < streak;
     final streakLabel = showDelta ? '$previousStreak → $streak' : '$streak';
 
     return RepaintBoundary(
@@ -26,29 +24,29 @@ class StreakBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.success.withValues(alpha: 0.12),
-              border: Border.all(
-                color: AppColors.success.withValues(alpha: 0.5),
-                width: 2,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppColors.successGlow,
-                  blurRadius: 24,
-                  spreadRadius: 4,
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.success.withValues(alpha: 0.12),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.successGlow,
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: AppColors.success,
-              size: 40,
-            ),
-          )
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: AppColors.success,
+                  size: 40,
+                ),
+              )
               .animate()
               .scale(
                 begin: const Offset(0, 0),
@@ -61,17 +59,17 @@ class StreakBadge extends StatelessWidget {
           const SizedBox(height: 20),
 
           Text.rich(
-            TextSpan(
-              style: tt.hudRepCounter.copyWith(fontSize: 48),
-              children: [
-                TextSpan(text: streakLabel),
-                const TextSpan(
-                  text: ' 🔥',
-                  style: TextStyle(color: AppColors.success, fontSize: 36),
+                TextSpan(
+                  style: tt.hudRepCounter.copyWith(fontSize: 48),
+                  children: [
+                    TextSpan(text: streakLabel),
+                    const TextSpan(
+                      text: ' 🔥',
+                      style: TextStyle(color: AppColors.success, fontSize: 36),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )
+              )
               .animate(delay: 250.ms)
               .fadeIn(duration: 400.ms)
               .slideY(

@@ -61,12 +61,8 @@ void main() {
   });
 
   test('dequeueAll returns all sessions and clears the queue', () async {
-    final first = sampleSession(
-      completedAt: DateTime.utc(2026, 7, 3, 8, 0),
-    );
-    final second = sampleSession(
-      completedAt: DateTime.utc(2026, 7, 3, 9, 0),
-    );
+    final first = sampleSession(completedAt: DateTime.utc(2026, 7, 3, 8, 0));
+    final second = sampleSession(completedAt: DateTime.utc(2026, 7, 3, 9, 0));
 
     await queue.enqueue(first);
     await queue.enqueue(second);

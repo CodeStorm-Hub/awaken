@@ -41,10 +41,8 @@ class RunStatsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final hud = Theme.of(context).extension<AwakenTypography>()!;
 
-    final minutes =
-        elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds =
-        elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final minutes = elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
 
     final distKm = formatDistanceKm(distanceMeters);
     final speedLabel = formatSpeedKmh(speedKmh);
@@ -53,10 +51,10 @@ class RunStatsSheet extends StatelessWidget {
     final guidance = isOverSpeed
         ? 'Vehicle speed detected — this run will not be claimed.'
         : pendingLoopCount > 0
-            ? '$pendingLoopCount loop${pendingLoopCount == 1 ? '' : 's'} ready — keep running or stop to claim.'
-            : closureLabel != null
-                ? 'Return to your segment start to close the loop.'
-                : 'Keep moving to close the loop.';
+        ? '$pendingLoopCount loop${pendingLoopCount == 1 ? '' : 's'} ready — keep running or stop to claim.'
+        : closureLabel != null
+        ? 'Return to your segment start to close the loop.'
+        : 'Keep moving to close the loop.';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppConstants.cardRadius),
@@ -81,11 +79,7 @@ class RunStatsSheet extends StatelessWidget {
                       spacing: 18,
                       runSpacing: 8,
                       children: [
-                        _Stat(
-                          label: 'Distance',
-                          value: distKm,
-                          hud: hud,
-                        ),
+                        _Stat(label: 'Distance', value: distKm, hud: hud),
                         _Stat(
                           label: 'Time',
                           value: '$minutes:$seconds',
@@ -242,10 +236,7 @@ class _Stat extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           value,
-          style: hud.statValue.copyWith(
-            fontSize: 18,
-            color: valueColor,
-          ),
+          style: hud.statValue.copyWith(fontSize: 18, color: valueColor),
         ),
       ],
     );

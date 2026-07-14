@@ -122,10 +122,7 @@ class LeaderboardClaimMeter extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      color.withValues(alpha: 0.55),
-                      color,
-                    ],
+                    colors: [color.withValues(alpha: 0.55), color],
                   ),
                 ),
               ),

@@ -7,21 +7,36 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// Uses the platform account picker (no Firebase / browser redirect).
 /// [SupabaseConfig.googleOAuthClientIdForSupabase] is the Web client ID
 /// (`client_type: 3`) so Google issues an ID token Supabase can verify.
+///
+/// google_sign_in 7 replaced the per-instance `GoogleSignIn(...)` constructor
+/// with a process-wide [GoogleSignIn.instance] singleton that must be
+/// [GoogleSignIn.initialize]d exactly once before any other call — done
+/// lazily here on first use so callers don't need their own init step.
 abstract final class GoogleAuthService {
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-    serverClientId: SupabaseConfig.googleOAuthClientIdForSupabase,
-  );
+  static final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  static Future<void>? _initFuture;
+
+  static Future<void> _ensureInitialized() {
+    return _initFuture ??= _googleSignIn.initialize(
+      serverClientId: SupabaseConfig.googleOAuthClientIdForSupabase,
+    );
+  }
 
   static Future<({String idToken, String? accessToken})>
-      signInAndGetGoogleTokens() async {
-    final account = await _googleSignIn.signIn();
-    if (account == null) {
-      throw const GoogleSignInCanceledException();
+  signInAndGetGoogleTokens() async {
+    await _ensureInitialized();
+
+    final GoogleSignInAccount account;
+    try {
+      account = await _googleSignIn.authenticate();
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        throw const GoogleSignInCanceledException();
+      }
+      rethrow;
     }
 
-    final auth = await account.authentication;
-    final idToken = auth.idToken;
+    final idToken = account.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
       throw Exception(
         'Google sign-in returned no ID token. '
@@ -30,11 +45,33 @@ abstract final class GoogleAuthService {
       );
     }
 
-    return (idToken: idToken, accessToken: auth.accessToken);
+    // accessToken is optional for Supabase's signInWithIdToken — request it
+    // non-interactively first (silent, no extra prompt); only fall back to
+    // an interactive authorization if the basic email/profile scopes weren't
+    // already granted as part of authenticate() above.
+    String? accessToken;
+    try {
+      final authorization =
+          await account.authorizationClient.authorizationForScopes([
+            'email',
+            'profile',
+          ]) ??
+          await account.authorizationClient.authorizeScopes([
+            'email',
+            'profile',
+          ]);
+      accessToken = authorization.accessToken;
+    } on GoogleSignInException {
+      // Non-fatal — Supabase can verify identity from the ID token alone.
+      accessToken = null;
+    }
+
+    return (idToken: idToken, accessToken: accessToken);
   }
 
   /// Clears the ephemeral Google session after Supabase has the tokens.
   static Future<void> signOut() async {
+    await _ensureInitialized();
     await _googleSignIn.signOut();
   }
 }

@@ -30,13 +30,19 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('isExpectedAsyncCancellation', () {
-    test('matches executor_lib CancellationException with Cancelled message', () {
-      expect(isExpectedAsyncCancellation(CancellationException()), isTrue);
-    });
+    test(
+      'matches executor_lib CancellationException with Cancelled message',
+      () {
+        expect(isExpectedAsyncCancellation(CancellationException()), isTrue);
+      },
+    );
 
     test('rejects other exceptions even when message is Cancelled', () {
       expect(isExpectedAsyncCancellation(Exception('Cancelled')), isFalse);
-      expect(isExpectedAsyncCancellation(StateError('Network failed')), isFalse);
+      expect(
+        isExpectedAsyncCancellation(StateError('Network failed')),
+        isFalse,
+      );
     });
   });
 
@@ -81,29 +87,30 @@ void main() {
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('dexterous.com/flutter/local_notifications'),
-        (MethodCall methodCall) {
-          if (methodCall.method == 'initialize' || methodCall.method == 'show') {
-            return Future<bool>.value(true);
-          }
-          return Future<dynamic>.value(null);
-        },
-      );
+            const MethodChannel('dexterous.com/flutter/local_notifications'),
+            (MethodCall methodCall) {
+              if (methodCall.method == 'initialize' ||
+                  methodCall.method == 'show') {
+                return Future<bool>.value(true);
+              }
+              return Future<dynamic>.value(null);
+            },
+          );
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('flutter.baseflow.com/geolocator'),
-        (MethodCall methodCall) {
-          if (methodCall.method == 'isLocationServiceEnabled') {
-            return Future<bool>.value(true);
-          }
-          if (methodCall.method == 'checkPermission' ||
-              methodCall.method == 'requestPermission') {
-            return Future<int>.value(3);
-          }
-          return Future<dynamic>.value(null);
-        },
-      );
+            const MethodChannel('flutter.baseflow.com/geolocator'),
+            (MethodCall methodCall) {
+              if (methodCall.method == 'isLocationServiceEnabled') {
+                return Future<bool>.value(true);
+              }
+              if (methodCall.method == 'checkPermission' ||
+                  methodCall.method == 'requestPermission') {
+                return Future<int>.value(3);
+              }
+              return Future<dynamic>.value(null);
+            },
+          );
     });
 
     testWidgets(
@@ -142,11 +149,13 @@ void main() {
           ProviderScope(
             overrides: [
               authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
-              authStateProvider.overrideWith((ref) => signedOutAuthStateStream()),
+              authStateProvider.overrideWith(SignedOutAuthStateNotifier.new),
               isSignedInProvider.overrideWith((ref) => false),
               currentUserProvider.overrideWith((ref) => null),
               alarmRepositoryProvider.overrideWithValue(FakeAlarmRepository()),
-              sessionRepositoryProvider.overrideWithValue(FakeSessionRepository()),
+              sessionRepositoryProvider.overrideWithValue(
+                FakeSessionRepository(),
+              ),
               territoryRepositoryProvider.overrideWithValue(fakeRepo),
               clockDisplayProvider.overrideWith((ref) => Stream.value('08:00')),
             ],
@@ -189,67 +198,71 @@ void main() {
       },
     );
 
-    testWidgets(
-      'opening territory tab clears locating spinner after GPS fix',
-      (WidgetTester tester) async {
-        final mockGeolocator = MockGeolocatorPlatform();
-        mockGeolocator.feedPosition(
-          Position(
-            latitude: 35.6812,
-            longitude: 139.7671,
-            timestamp: DateTime.utc(2026, 1, 1),
-            accuracy: 5,
-            altitude: 0,
-            altitudeAccuracy: 0,
-            heading: 0,
-            headingAccuracy: 0,
-            speed: 0,
-            speedAccuracy: 0,
-          ),
-        );
-        GeolocatorPlatform.instance = mockGeolocator;
+    testWidgets('opening territory tab clears locating spinner after GPS fix', (
+      WidgetTester tester,
+    ) async {
+      final mockGeolocator = MockGeolocatorPlatform();
+      mockGeolocator.feedPosition(
+        Position(
+          latitude: 35.6812,
+          longitude: 139.7671,
+          timestamp: DateTime.utc(2026, 1, 1),
+          accuracy: 5,
+          altitude: 0,
+          altitudeAccuracy: 0,
+          heading: 0,
+          headingAccuracy: 0,
+          speed: 0,
+          speedAccuracy: 0,
+        ),
+      );
+      GeolocatorPlatform.instance = mockGeolocator;
 
-        final fakeRepo = FakeTerritoryRepository();
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
-              authStateProvider.overrideWith((ref) => signedOutAuthStateStream()),
-              isSignedInProvider.overrideWith((ref) => false),
-              currentUserProvider.overrideWith((ref) => null),
-              alarmRepositoryProvider.overrideWithValue(FakeAlarmRepository()),
-              sessionRepositoryProvider.overrideWithValue(FakeSessionRepository()),
-              territoryRepositoryProvider.overrideWithValue(fakeRepo),
-              clockDisplayProvider.overrideWith((ref) => Stream.value('08:00')),
-            ],
-            child: const AwakenApp(),
-          ),
-        );
-        await tester.pumpAndSettle();
+      final fakeRepo = FakeTerritoryRepository();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+            authStateProvider.overrideWith(SignedOutAuthStateNotifier.new),
+            isSignedInProvider.overrideWith((ref) => false),
+            currentUserProvider.overrideWith((ref) => null),
+            alarmRepositoryProvider.overrideWithValue(FakeAlarmRepository()),
+            sessionRepositoryProvider.overrideWithValue(
+              FakeSessionRepository(),
+            ),
+            territoryRepositoryProvider.overrideWithValue(fakeRepo),
+            clockDisplayProvider.overrideWith((ref) => Stream.value('08:00')),
+          ],
+          child: const AwakenApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        // Territory card lives in the collapsed "More" dashboard section.
-        await tester.ensureVisible(find.text('TERRITORY, RIVALS & MORE'));
-        await tester.tap(find.text('TERRITORY, RIVALS & MORE'));
-        await tester.pumpAndSettle();
+      // Territory card lives in the collapsed "More" dashboard section.
+      await tester.ensureVisible(find.text('TERRITORY, RIVALS & MORE'));
+      await tester.tap(find.text('TERRITORY, RIVALS & MORE'));
+      await tester.pumpAndSettle();
 
-        await tester.ensureVisible(find.text('Run a loop, claim territory'));
-        await tester.tap(find.text('Run a loop, claim territory'));
-        await tester.pump();
-        await tester.pump(const Duration(seconds: 2));
-        await tester.pump(); // flush territory list Timer.run
+      await tester.ensureVisible(find.text('Run a loop, claim territory'));
+      await tester.tap(find.text('Run a loop, claim territory'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(); // flush territory list Timer.run
 
-        expect(find.text('Finding your location…'), findsNothing);
+      expect(find.text('Finding your location…'), findsNothing);
 
-        fakeRepo.close();
-      },
-    );
+      fakeRepo.close();
+    });
   });
 }
 
 class FakeAuthRepository implements AuthRepository {
   @override
-  AppUser? get currentUser =>
-      const AppUser(id: 'user-1', email: 'test@example.com', displayName: 'Player 1');
+  AppUser? get currentUser => const AppUser(
+    id: 'user-1',
+    email: 'test@example.com',
+    displayName: 'Player 1',
+  );
 
   @override
   Stream<AuthState> get authStateChanges => signedOutAuthStateStream();
@@ -258,7 +271,10 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> signInWithGoogle() async {}
 
   @override
-  Future<void> signInWithEmailAndPassword(String email, String password) async {}
+  Future<void> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {}
 
   @override
   Future<void> signUpWithEmailAndPassword(

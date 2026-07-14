@@ -39,9 +39,10 @@ class _RunControlsState extends State<RunControls>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    _glowAnim = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
-    );
+    _glowAnim = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut));
     _syncAnimation();
   }
 
@@ -127,8 +128,9 @@ class _RunControlsState extends State<RunControls>
                   borderRadius: BorderRadius.circular(AppConstants.chipRadius),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.destructive
-                          .withValues(alpha: _glowAnim.value * 0.5),
+                      color: AppColors.destructive.withValues(
+                        alpha: _glowAnim.value * 0.5,
+                      ),
                       blurRadius: 24 * _glowAnim.value,
                       spreadRadius: 2,
                     ),
@@ -173,7 +175,8 @@ class _RunControlsState extends State<RunControls>
           ),
           elevation: 0,
         ),
-        child: child ??
+        child:
+            child ??
             Text(
               label,
               style: const TextStyle(

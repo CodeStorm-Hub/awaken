@@ -43,7 +43,7 @@ abstract final class AlarmNotificationService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(android: android, iOS: ios),
+      settings: const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: _onForegroundTap,
       onDidReceiveBackgroundNotificationResponse: _onBackgroundTap,
     );
@@ -51,7 +51,8 @@ abstract final class AlarmNotificationService {
     // Android: create the alarm notification channel once
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(
           const AndroidNotificationChannel(
             _channelId,
@@ -72,7 +73,8 @@ abstract final class AlarmNotificationService {
     // iOS: request notification + critical alert
     await _plugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
+          IOSFlutterLocalNotificationsPlugin
+        >()
         ?.requestPermissions(
           alert: true,
           badge: true,
@@ -83,13 +85,15 @@ abstract final class AlarmNotificationService {
     // Android 13+: POST_NOTIFICATIONS runtime permission
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
 
     // Android 12+: SCHEDULE_EXACT_ALARM
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestExactAlarmsPermission();
   }
 
@@ -100,22 +104,25 @@ abstract final class AlarmNotificationService {
     final payload = buildPayload(alarm);
 
     await _plugin.zonedSchedule(
-      _notifId(alarm),
-      'Wake Up Tax Due!',
-      'Complete ${alarm.requiredReps} squats to dismiss your alarm.',
-      scheduledTz,
-      _buildDetails(alarm.requiredReps),
+      id: _notifId(alarm),
+      title: 'Wake Up Tax Due!',
+      body: 'Complete ${alarm.requiredReps} squats to dismiss your alarm.',
+      scheduledDate: scheduledTz,
+      notificationDetails: _buildDetails(alarm.requiredReps),
       payload: payload,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      // uiLocalNotificationDateInterpretation removed in v19 — zonedSchedule
+      // has always interpreted scheduledDate as absolute (the only behavior
+      // that parameter ever selected on iOS), so no logic changes here.
     );
 
-    debugPrint('[Alarm] Scheduled id=${_notifId(alarm)} at ${alarm.scheduledTime}');
+    debugPrint(
+      '[Alarm] Scheduled id=${_notifId(alarm)} at ${alarm.scheduledTime}',
+    );
   }
 
   static Future<void> cancelAlarm(AlarmEntity alarm) async {
-    await _plugin.cancel(_notifId(alarm));
+    await _plugin.cancel(id: _notifId(alarm));
     debugPrint('[Alarm] Cancelled id=${_notifId(alarm)}');
   }
 
@@ -158,8 +165,9 @@ abstract final class AlarmNotificationService {
     final parsed = parsePayload(payload);
     if (parsed == null) return '/alarm/active';
 
-    final scheduled =
-        Uri.encodeComponent(parsed.scheduledTime.toIso8601String());
+    final scheduled = Uri.encodeComponent(
+      parsed.scheduledTime.toIso8601String(),
+    );
     return '/alarm/active?id=${parsed.id}&reps=${parsed.reps}&scheduled=$scheduled';
   }
 

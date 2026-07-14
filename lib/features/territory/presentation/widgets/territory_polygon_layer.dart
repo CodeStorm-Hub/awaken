@@ -38,8 +38,9 @@ class TerritoryPolygonLayer extends StatelessWidget {
 
       for (final ring in territory.polygons) {
         if (ring.length < 3) continue;
-        final points =
-            ring.map((p) => LatLng(p.latitude, p.longitude)).toList();
+        final points = ring
+            .map((p) => LatLng(p.latitude, p.longitude))
+            .toList();
 
         // Soft interior wash — translucent enough for street labels.
         polygons.add(

@@ -93,10 +93,7 @@ class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
     try {
       // Start high / wide — "approach from altitude".
       _mapController.fitCamera(
-        CameraFit.bounds(
-          bounds: bounds,
-          padding: const EdgeInsets.all(72),
-        ),
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(72)),
       );
     } catch (_) {
       // Map may not be ready yet — continue to pulse/stats.
@@ -162,8 +159,8 @@ class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
     final title = stole
         ? 'Territory stolen!'
         : loopCount > 1
-            ? '$loopCount territories claimed!'
-            : 'Territory claimed!';
+        ? '$loopCount territories claimed!'
+        : 'Territory claimed!';
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
@@ -193,8 +190,9 @@ class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
                 const SizedBox(height: 16),
                 if (widget.runPoints.length >= 3)
                   ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.borderRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.borderRadius,
+                    ),
                     child: SizedBox(
                       height: _showStats ? 160 : 240,
                       width: double.infinity,
@@ -219,12 +217,12 @@ class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
                             child: Transform.scale(
                               scale: 1.0 + dive * 0.08,
                               child: _CaptureFlyoverMap(
-                              controller: _mapController,
-                              points: widget.runPoints,
-                              accent: accent,
-                              fillAlpha: 0.12 + peak * 0.38,
-                              trailProgress: t,
-                            ),
+                                controller: _mapController,
+                                points: widget.runPoints,
+                                accent: accent,
+                                fillAlpha: 0.12 + peak * 0.38,
+                                trailProgress: t,
+                              ),
                             ),
                           );
                         },
@@ -240,9 +238,7 @@ class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
                         children: [
                           const SizedBox(height: 16),
                           Icon(
-                            stole
-                                ? Icons.flash_on_rounded
-                                : Icons.flag_rounded,
+                            stole ? Icons.flash_on_rounded : Icons.flag_rounded,
                             color: accent,
                             size: 36,
                           ),
@@ -269,7 +265,8 @@ class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
                               ),
                             ),
                           ] else if (widget
-                              .sessionCaptureResult.hasPartialFailure) ...[
+                              .sessionCaptureResult
+                              .hasPartialFailure) ...[
                             const SizedBox(height: 4),
                             Text(
                               '${widget.sessionCaptureResult.loopsRejectedTooSmall} loop(s) too small to claim',
@@ -312,7 +309,9 @@ class _CaptureResultSheetState extends ConsumerState<CaptureResultSheet>
                               Expanded(
                                 child: _StatBlock(
                                   label: 'Distance',
-                                  value: formatDistanceKm(widget.distanceMeters),
+                                  value: formatDistanceKm(
+                                    widget.distanceMeters,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -482,14 +481,13 @@ class _CaptureFlyoverMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final latLngPoints =
-        points.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    final latLngPoints = points
+        .map((p) => LatLng(p.latitude, p.longitude))
+        .toList();
     final bounds = LatLngBounds.fromPoints(latLngPoints);
-    final trailEnd =
-        (latLngPoints.length * trailProgress.clamp(0.0, 1.0)).ceil().clamp(
-              2,
-              latLngPoints.length,
-            );
+    final trailEnd = (latLngPoints.length * trailProgress.clamp(0.0, 1.0))
+        .ceil()
+        .clamp(2, latLngPoints.length);
     final trail = latLngPoints.sublist(0, trailEnd);
 
     return IgnorePointer(

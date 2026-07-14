@@ -124,21 +124,21 @@ void main() {
     final counter = PushUpCounterService();
     final clock = _FakeClock();
     Pose up() => _pose({
-          PoseLandmarkType.leftShoulder: const Offset(40, 40),
-          PoseLandmarkType.leftElbow: const Offset(40, 80),
-          PoseLandmarkType.leftWrist: const Offset(40, 120),
-          PoseLandmarkType.rightShoulder: const Offset(80, 40),
-          PoseLandmarkType.rightElbow: const Offset(80, 80),
-          PoseLandmarkType.rightWrist: const Offset(80, 120),
-        });
+      PoseLandmarkType.leftShoulder: const Offset(40, 40),
+      PoseLandmarkType.leftElbow: const Offset(40, 80),
+      PoseLandmarkType.leftWrist: const Offset(40, 120),
+      PoseLandmarkType.rightShoulder: const Offset(80, 40),
+      PoseLandmarkType.rightElbow: const Offset(80, 80),
+      PoseLandmarkType.rightWrist: const Offset(80, 120),
+    });
     Pose down() => _pose({
-          PoseLandmarkType.leftShoulder: const Offset(40, 40),
-          PoseLandmarkType.leftElbow: const Offset(70, 50),
-          PoseLandmarkType.leftWrist: const Offset(40, 60),
-          PoseLandmarkType.rightShoulder: const Offset(80, 40),
-          PoseLandmarkType.rightElbow: const Offset(50, 50),
-          PoseLandmarkType.rightWrist: const Offset(80, 60),
-        });
+      PoseLandmarkType.leftShoulder: const Offset(40, 40),
+      PoseLandmarkType.leftElbow: const Offset(70, 50),
+      PoseLandmarkType.leftWrist: const Offset(40, 60),
+      PoseLandmarkType.rightShoulder: const Offset(80, 40),
+      PoseLandmarkType.rightElbow: const Offset(50, 50),
+      PoseLandmarkType.rightWrist: const Offset(80, 60),
+    });
 
     for (var i = 0; i < 8; i++) {
       counter.processPose(up(), clock.tick());
@@ -161,23 +161,23 @@ void main() {
     final counter = JumpingJackCounterService();
     final clock = _FakeClock();
     Pose closed() => _pose({
-          PoseLandmarkType.nose: const Offset(50, 10),
-          PoseLandmarkType.leftWrist: const Offset(30, 80),
-          PoseLandmarkType.rightWrist: const Offset(70, 80),
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftAnkle: const Offset(42, 180),
-          PoseLandmarkType.rightAnkle: const Offset(58, 180),
-        });
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(30, 80),
+      PoseLandmarkType.rightWrist: const Offset(70, 80),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(42, 180),
+      PoseLandmarkType.rightAnkle: const Offset(58, 180),
+    });
     Pose open() => _pose({
-          PoseLandmarkType.nose: const Offset(50, 10),
-          PoseLandmarkType.leftWrist: const Offset(20, 5),
-          PoseLandmarkType.rightWrist: const Offset(80, 5),
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftAnkle: const Offset(20, 180),
-          PoseLandmarkType.rightAnkle: const Offset(80, 180),
-        });
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(20, 5),
+      PoseLandmarkType.rightWrist: const Offset(80, 5),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(20, 180),
+      PoseLandmarkType.rightAnkle: const Offset(80, 180),
+    });
 
     for (var i = 0; i < 8; i++) {
       counter.processPose(closed(), clock.tick());
@@ -200,22 +200,22 @@ void main() {
     final counter = PushUpCounterService();
     final clock = _FakeClock();
     Pose atElbowExtended() => _pose({
-          PoseLandmarkType.leftShoulder: const Offset(0, 0),
-          PoseLandmarkType.leftElbow: const Offset(0, 50),
-          PoseLandmarkType.leftWrist: const Offset(0, 100),
-          PoseLandmarkType.rightShoulder: const Offset(100, 0),
-          PoseLandmarkType.rightElbow: const Offset(100, 50),
-          PoseLandmarkType.rightWrist: const Offset(100, 100),
-        });
+      PoseLandmarkType.leftShoulder: const Offset(0, 0),
+      PoseLandmarkType.leftElbow: const Offset(0, 50),
+      PoseLandmarkType.leftWrist: const Offset(0, 100),
+      PoseLandmarkType.rightShoulder: const Offset(100, 0),
+      PoseLandmarkType.rightElbow: const Offset(100, 50),
+      PoseLandmarkType.rightWrist: const Offset(100, 100),
+    });
     // ~110° elbow — a dip that starts but never reaches the 90° depth gate.
     Pose atShallowDip() => _pose({
-          PoseLandmarkType.leftShoulder: const Offset(0, 0),
-          PoseLandmarkType.leftElbow: const Offset(0, 50),
-          PoseLandmarkType.leftWrist: const Offset(47, 67),
-          PoseLandmarkType.rightShoulder: const Offset(100, 0),
-          PoseLandmarkType.rightElbow: const Offset(100, 50),
-          PoseLandmarkType.rightWrist: const Offset(53, 67),
-        });
+      PoseLandmarkType.leftShoulder: const Offset(0, 0),
+      PoseLandmarkType.leftElbow: const Offset(0, 50),
+      PoseLandmarkType.leftWrist: const Offset(47, 67),
+      PoseLandmarkType.rightShoulder: const Offset(100, 0),
+      PoseLandmarkType.rightElbow: const Offset(100, 50),
+      PoseLandmarkType.rightWrist: const Offset(53, 67),
+    });
 
     for (var i = 0; i < 8; i++) {
       counter.processPose(atElbowExtended(), clock.tick());
@@ -243,24 +243,24 @@ void main() {
     final counter = JumpingJackCounterService();
     final clock = _FakeClock();
     Pose closed() => _pose({
-          PoseLandmarkType.nose: const Offset(50, 10),
-          PoseLandmarkType.leftWrist: const Offset(30, 80),
-          PoseLandmarkType.rightWrist: const Offset(70, 80),
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftAnkle: const Offset(42, 180),
-          PoseLandmarkType.rightAnkle: const Offset(58, 180),
-        });
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(30, 80),
+      PoseLandmarkType.rightWrist: const Offset(70, 80),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(42, 180),
+      PoseLandmarkType.rightAnkle: const Offset(58, 180),
+    });
     // Arms already up, feet not yet out — the normal mid-jump state.
     Pose armsFirst() => _pose({
-          PoseLandmarkType.nose: const Offset(50, 10),
-          PoseLandmarkType.leftWrist: const Offset(20, 5),
-          PoseLandmarkType.rightWrist: const Offset(80, 5),
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftAnkle: const Offset(42, 180),
-          PoseLandmarkType.rightAnkle: const Offset(58, 180),
-        });
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(20, 5),
+      PoseLandmarkType.rightWrist: const Offset(80, 5),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(42, 180),
+      PoseLandmarkType.rightAnkle: const Offset(58, 180),
+    });
 
     for (var i = 0; i < 8; i++) {
       counter.processPose(closed(), clock.tick());
@@ -274,127 +274,121 @@ void main() {
     }
   });
 
-  test(
-    'jumping jack asymmetry flags bad form after ~700ms wall-clock, '
-    'not a fixed frame count',
-    () {
-      final counter = JumpingJackCounterService();
-      final clock = _FakeClock();
-      Pose closed() => _pose({
-            PoseLandmarkType.nose: const Offset(50, 10),
-            PoseLandmarkType.leftWrist: const Offset(30, 80),
-            PoseLandmarkType.rightWrist: const Offset(70, 80),
-            PoseLandmarkType.leftHip: const Offset(40, 100),
-            PoseLandmarkType.rightHip: const Offset(60, 100),
-            PoseLandmarkType.leftAnkle: const Offset(42, 180),
-            PoseLandmarkType.rightAnkle: const Offset(58, 180),
-          });
-      Pose armsFirst() => _pose({
-            PoseLandmarkType.nose: const Offset(50, 10),
-            PoseLandmarkType.leftWrist: const Offset(20, 5),
-            PoseLandmarkType.rightWrist: const Offset(80, 5),
-            PoseLandmarkType.leftHip: const Offset(40, 100),
-            PoseLandmarkType.rightHip: const Offset(60, 100),
-            PoseLandmarkType.leftAnkle: const Offset(42, 180),
-            PoseLandmarkType.rightAnkle: const Offset(58, 180),
-          });
+  test('jumping jack asymmetry flags bad form after ~700ms wall-clock, '
+      'not a fixed frame count', () {
+    final counter = JumpingJackCounterService();
+    final clock = _FakeClock();
+    Pose closed() => _pose({
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(30, 80),
+      PoseLandmarkType.rightWrist: const Offset(70, 80),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(42, 180),
+      PoseLandmarkType.rightAnkle: const Offset(58, 180),
+    });
+    Pose armsFirst() => _pose({
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(20, 5),
+      PoseLandmarkType.rightWrist: const Offset(80, 5),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(42, 180),
+      PoseLandmarkType.rightAnkle: const Offset(58, 180),
+    });
 
-      for (var i = 0; i < 8; i++) {
-        counter.processPose(closed(), clock.tick());
-      }
-      expect(counter.isCalibrated, isTrue);
+    for (var i = 0; i < 8; i++) {
+      counter.processPose(closed(), clock.tick());
+    }
+    expect(counter.isCalibrated, isTrue);
 
-      // Sustained asymmetry at the normal ~66ms throttle rate: fires once
-      // elapsed time crosses ~700ms, regardless of exact frame count.
-      DateTime? asymmetryStartedAt;
-      DateTime? firedAt;
-      for (var i = 0; i < 20 && firedAt == null; i++) {
-        final ts = clock.tick();
-        asymmetryStartedAt ??= ts;
-        final res = counter.processPose(armsFirst(), ts);
-        if (res.badForm) firedAt = ts;
-      }
-      expect(firedAt, isNotNull, reason: 'bad form never fired');
-      final elapsed = firedAt!.difference(asymmetryStartedAt!).inMilliseconds;
-      expect(
-        elapsed,
-        inInclusiveRange(700, 700 + 132),
-        reason: 'fired at $elapsed ms, expected ~700ms ±2 frames',
-      );
-    },
-  );
+    // Sustained asymmetry at the normal ~66ms throttle rate: fires once
+    // elapsed time crosses ~700ms, regardless of exact frame count.
+    DateTime? asymmetryStartedAt;
+    DateTime? firedAt;
+    for (var i = 0; i < 20 && firedAt == null; i++) {
+      final ts = clock.tick();
+      asymmetryStartedAt ??= ts;
+      final res = counter.processPose(armsFirst(), ts);
+      if (res.badForm) firedAt = ts;
+    }
+    expect(firedAt, isNotNull, reason: 'bad form never fired');
+    final elapsed = firedAt!.difference(asymmetryStartedAt!).inMilliseconds;
+    expect(
+      elapsed,
+      inInclusiveRange(700, 700 + 132),
+      reason: 'fired at $elapsed ms, expected ~700ms ±2 frames',
+    );
+  });
 
-  test(
-    'jumping jack asymmetry does not fire prematurely under a slow, '
-    'low frame-rate sequence',
-    () {
-      final counter = JumpingJackCounterService();
-      final clock = _FakeClock();
-      Pose closed() => _pose({
-            PoseLandmarkType.nose: const Offset(50, 10),
-            PoseLandmarkType.leftWrist: const Offset(30, 80),
-            PoseLandmarkType.rightWrist: const Offset(70, 80),
-            PoseLandmarkType.leftHip: const Offset(40, 100),
-            PoseLandmarkType.rightHip: const Offset(60, 100),
-            PoseLandmarkType.leftAnkle: const Offset(42, 180),
-            PoseLandmarkType.rightAnkle: const Offset(58, 180),
-          });
-      Pose armsFirst() => _pose({
-            PoseLandmarkType.nose: const Offset(50, 10),
-            PoseLandmarkType.leftWrist: const Offset(20, 5),
-            PoseLandmarkType.rightWrist: const Offset(80, 5),
-            PoseLandmarkType.leftHip: const Offset(40, 100),
-            PoseLandmarkType.rightHip: const Offset(60, 100),
-            PoseLandmarkType.leftAnkle: const Offset(42, 180),
-            PoseLandmarkType.rightAnkle: const Offset(58, 180),
-          });
+  test('jumping jack asymmetry does not fire prematurely under a slow, '
+      'low frame-rate sequence', () {
+    final counter = JumpingJackCounterService();
+    final clock = _FakeClock();
+    Pose closed() => _pose({
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(30, 80),
+      PoseLandmarkType.rightWrist: const Offset(70, 80),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(42, 180),
+      PoseLandmarkType.rightAnkle: const Offset(58, 180),
+    });
+    Pose armsFirst() => _pose({
+      PoseLandmarkType.nose: const Offset(50, 10),
+      PoseLandmarkType.leftWrist: const Offset(20, 5),
+      PoseLandmarkType.rightWrist: const Offset(80, 5),
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftAnkle: const Offset(42, 180),
+      PoseLandmarkType.rightAnkle: const Offset(58, 180),
+    });
 
-      for (var i = 0; i < 8; i++) {
-        counter.processPose(closed(), clock.tick());
-      }
-      expect(counter.isCalibrated, isTrue);
+    for (var i = 0; i < 8; i++) {
+      counter.processPose(closed(), clock.tick());
+    }
+    expect(counter.isCalibrated, isTrue);
 
-      // Only 3 frames (a raw frame-count gate of 10 would never fire here),
-      // but 250ms apart — 500ms elapsed by the 3rd, still under the window.
-      for (var i = 0; i < 3; i++) {
-        final res = counter.processPose(
-          armsFirst(),
-          clock.tick(const Duration(milliseconds: 250)),
-        );
-        expect(res.badForm, isFalse, reason: 'frame $i fired prematurely');
-      }
-      // The 4th frame crosses 750ms elapsed — should now fire despite only
-      // 4 total frames, proving the gate tracks wall-clock time, not count.
+    // Only 3 frames (a raw frame-count gate of 10 would never fire here),
+    // but 250ms apart — 500ms elapsed by the 3rd, still under the window.
+    for (var i = 0; i < 3; i++) {
       final res = counter.processPose(
         armsFirst(),
         clock.tick(const Duration(milliseconds: 250)),
       );
-      expect(res.badForm, isTrue);
-    },
-  );
+      expect(res.badForm, isFalse, reason: 'frame $i fired prematurely');
+    }
+    // The 4th frame crosses 750ms elapsed — should now fire despite only
+    // 4 total frames, proving the gate tracks wall-clock time, not count.
+    final res = counter.processPose(
+      armsFirst(),
+      clock.tick(const Duration(milliseconds: 250)),
+    );
+    expect(res.badForm, isTrue);
+  });
 
   test('high-knees plant requires clear hysteresis before next rep', () {
     final counter = HighKneesCounterService();
     final clock = _FakeClock();
     Pose stand() => _pose({
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftKnee: const Offset(40, 140),
-          PoseLandmarkType.rightKnee: const Offset(60, 140),
-        });
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftKnee: const Offset(40, 140),
+      PoseLandmarkType.rightKnee: const Offset(60, 140),
+    });
     Pose leftUp() => _pose({
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftKnee: const Offset(40, 70),
-          PoseLandmarkType.rightKnee: const Offset(60, 140),
-        });
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftKnee: const Offset(40, 70),
+      PoseLandmarkType.rightKnee: const Offset(60, 140),
+    });
     // Knee hovering mid-way (~30% of thigh below hip) — not planted.
     Pose leftHover() => _pose({
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftKnee: const Offset(40, 112),
-          PoseLandmarkType.rightKnee: const Offset(60, 140),
-        });
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftKnee: const Offset(40, 112),
+      PoseLandmarkType.rightKnee: const Offset(60, 140),
+    });
 
     for (var i = 0; i < 8; i++) {
       counter.processPose(stand(), clock.tick());
@@ -425,17 +419,17 @@ void main() {
     final counter = HighKneesCounterService();
     final clock = _FakeClock();
     Pose stand() => _pose({
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftKnee: const Offset(40, 140),
-          PoseLandmarkType.rightKnee: const Offset(60, 140),
-        });
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftKnee: const Offset(40, 140),
+      PoseLandmarkType.rightKnee: const Offset(60, 140),
+    });
     Pose leftUp() => _pose({
-          PoseLandmarkType.leftHip: const Offset(40, 100),
-          PoseLandmarkType.rightHip: const Offset(60, 100),
-          PoseLandmarkType.leftKnee: const Offset(40, 70),
-          PoseLandmarkType.rightKnee: const Offset(60, 140),
-        });
+      PoseLandmarkType.leftHip: const Offset(40, 100),
+      PoseLandmarkType.rightHip: const Offset(60, 100),
+      PoseLandmarkType.leftKnee: const Offset(40, 70),
+      PoseLandmarkType.rightKnee: const Offset(60, 140),
+    });
 
     for (var i = 0; i < 8; i++) {
       counter.processPose(stand(), clock.tick());

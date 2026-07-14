@@ -39,11 +39,11 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
     super.initState();
     _repsCompleted = ref.read(repCountProvider);
     _usedAccessibilityMode = ref.read(accessibilitySessionProvider);
-    _streakBefore =
-        ref.read(dashboardStatsProvider).valueOrNull?.currentStreak ?? 0;
+    _streakBefore = ref.read(dashboardStatsProvider).value?.currentStreak ?? 0;
     final startTime = ref.read(sessionStartTimeProvider);
-    _durationSeconds =
-        startTime != null ? DateTime.now().difference(startTime).inSeconds : 0;
+    _durationSeconds = startTime != null
+        ? DateTime.now().difference(startTime).inSeconds
+        : 0;
     _caloriesBurned = SessionEntity.estimateCalories(_repsCompleted);
 
     // Record session to Supabase if signed in (fire-and-forget — don't block UI)
@@ -59,7 +59,9 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
 
     try {
       // Persist workout first so a notification cancel failure cannot drop it.
-      await ref.read(sessionRepositoryProvider).recordSession(
+      await ref
+          .read(sessionRepositoryProvider)
+          .recordSession(
             SessionEntity(
               userId: userId,
               alarmId: widget.alarm?.id,
@@ -96,109 +98,113 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).extension<AwakenTypography>()!;
     final statsAsync = ref.watch(dashboardStatsProvider);
-    final currentStreak = statsAsync.valueOrNull?.currentStreak ?? 0;
+    final currentStreak = statsAsync.value?.currentStreak ?? 0;
 
     return PopScope(
       canPop: false,
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.screenPaddingH,
-            vertical: AppConstants.screenPaddingV,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 24),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.screenPaddingH,
+              vertical: AppConstants.screenPaddingV,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 24),
 
-              // ── Streak badge ───────────────────────────────────────
-              if (_isSaving)
-                const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))
-              else
-                StreakBadge(
-                  streak: currentStreak,
-                  previousStreak: _streakBefore,
+                // ── Streak badge ───────────────────────────────────────
+                if (_isSaving)
+                  const SizedBox(
+                    height: 100,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else
+                  StreakBadge(
+                    streak: currentStreak,
+                    previousStreak: _streakBefore,
+                  ),
+
+                if (_usedAccessibilityMode && !_isSaving) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Some reps were counted in accessibility mode',
+                    textAlign: TextAlign.center,
+                    style: tt.statLabel.copyWith(
+                      color: AppColors.mutedForeground,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 48),
+
+                // ── Divider ───────────────────────────────────────────
+                const Divider(color: AppColors.border, height: 1),
+                const SizedBox(height: 28),
+
+                // ── Session stats — staggered reveal ──────────────────
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('SESSION SUMMARY', style: tt.eyebrow),
+                ),
+                const SizedBox(height: 16),
+
+                StatRevealItem(
+                  icon: Icons.fitness_center_rounded,
+                  label: 'Squats completed',
+                  targetValue: _repsCompleted,
+                  unit: 'reps',
+                  delay: AppConstants.floatUpDelay0,
+                ),
+                const SizedBox(height: 14),
+
+                StatRevealItem(
+                  icon: Icons.local_fire_department_rounded,
+                  label: 'Calories burned',
+                  targetValue: _caloriesBurned,
+                  unit: 'kcal',
+                  delay: AppConstants.floatUpDelay1,
+                  accentColor: AppColors.accent,
+                ),
+                const SizedBox(height: 14),
+
+                StatRevealItem(
+                  icon: Icons.timer_outlined,
+                  label: 'Wake-up time',
+                  targetValue: _durationSeconds,
+                  unit: 'sec',
+                  delay: AppConstants.floatUpDelay2,
+                  accentColor: AppColors.success,
                 ),
 
-              if (_usedAccessibilityMode && !_isSaving) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Some reps were counted in accessibility mode',
-                  textAlign: TextAlign.center,
-                  style: tt.statLabel.copyWith(
-                    color: AppColors.mutedForeground,
-                    fontSize: 12,
+                const SizedBox(height: 40),
+
+                // ── Motivational quote ────────────────────────────────
+                const _MotivationalQuote(delay: AppConstants.floatUpDelay3),
+
+                const SizedBox(height: 40),
+
+                // ── CTA ───────────────────────────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _startMyDay,
+                    child: const Text('Start My Day'),
                   ),
                 ),
+
+                const SizedBox(height: 16),
               ],
-
-              const SizedBox(height: 48),
-
-              // ── Divider ───────────────────────────────────────────
-              const Divider(color: AppColors.border, height: 1),
-              const SizedBox(height: 28),
-
-              // ── Session stats — staggered reveal ──────────────────
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('SESSION SUMMARY', style: tt.eyebrow),
-              ),
-              const SizedBox(height: 16),
-
-              StatRevealItem(
-                icon: Icons.fitness_center_rounded,
-                label: 'Squats completed',
-                targetValue: _repsCompleted,
-                unit: 'reps',
-                delay: AppConstants.floatUpDelay0,
-              ),
-              const SizedBox(height: 14),
-
-              StatRevealItem(
-                icon: Icons.local_fire_department_rounded,
-                label: 'Calories burned',
-                targetValue: _caloriesBurned,
-                unit: 'kcal',
-                delay: AppConstants.floatUpDelay1,
-                accentColor: AppColors.accent,
-              ),
-              const SizedBox(height: 14),
-
-              StatRevealItem(
-                icon: Icons.timer_outlined,
-                label: 'Wake-up time',
-                targetValue: _durationSeconds,
-                unit: 'sec',
-                delay: AppConstants.floatUpDelay2,
-                accentColor: AppColors.success,
-              ),
-
-              const SizedBox(height: 40),
-
-              // ── Motivational quote ────────────────────────────────
-              const _MotivationalQuote(delay: AppConstants.floatUpDelay3),
-
-              const SizedBox(height: 40),
-
-              // ── CTA ───────────────────────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _startMyDay,
-                  child: const Text('Start My Day'),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -234,14 +240,12 @@ class _MotivationalQuoteState extends State<_MotivationalQuote>
     _quote = '"${_quotes[idx]}"';
 
     final duration = Duration(milliseconds: _quote.length * 30);
-    _charCtrl = AnimationController(
-      vsync: this,
-      duration: duration,
-    );
+    _charCtrl = AnimationController(vsync: this, duration: duration);
 
-    _charCountAnim = IntTween(begin: 0, end: _quote.length).animate(
-      CurvedAnimation(parent: _charCtrl, curve: Curves.linear),
-    );
+    _charCountAnim = IntTween(
+      begin: 0,
+      end: _quote.length,
+    ).animate(CurvedAnimation(parent: _charCtrl, curve: Curves.linear));
 
     _charCountAnim.addListener(() {
       final current = _charCountAnim.value;
@@ -283,10 +287,10 @@ class _MotivationalQuoteState extends State<_MotivationalQuote>
           return Text(
             visibleText,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.mutedForeground,
-                  height: 1.6,
-                ),
+              fontStyle: FontStyle.italic,
+              color: AppColors.mutedForeground,
+              height: 1.6,
+            ),
             textAlign: TextAlign.center,
           );
         },

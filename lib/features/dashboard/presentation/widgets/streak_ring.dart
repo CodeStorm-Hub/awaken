@@ -26,7 +26,8 @@ class StreakRing extends StatefulWidget {
   State<StreakRing> createState() => _StreakRingState();
 }
 
-class _StreakRingState extends State<StreakRing> with SingleTickerProviderStateMixin {
+class _StreakRingState extends State<StreakRing>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
 
   @override
@@ -81,7 +82,9 @@ class _StreakRingState extends State<StreakRing> with SingleTickerProviderStateM
           RepaintBoundary(
             child: CustomPaint(
               size: const Size(130, 130),
-              painter: _StreakRingPainter(progress: widget.progress.clamp(0.0, 1.0)),
+              painter: _StreakRingPainter(
+                progress: widget.progress.clamp(0.0, 1.0),
+              ),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

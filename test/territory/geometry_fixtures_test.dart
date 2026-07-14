@@ -123,11 +123,15 @@ void main() {
       await repo.captureTerritory(loop2);
 
       final territories = await repo.getAllTerritories();
-      final userTerritory =
-          territories.firstWhere((t) => t.userId == 'local-user');
+      final userTerritory = territories.firstWhere(
+        (t) => t.userId == 'local-user',
+      );
 
       expect(userTerritory.polygons.length, equals(1));
-      expect(userTerritory.areaSqMeters, greaterThan(areaCalculator.calculatePolygonArea(loop1)));
+      expect(
+        userTerritory.areaSqMeters,
+        greaterThan(areaCalculator.calculatePolygonArea(loop1)),
+      );
     });
 
     test('overlap steal (ST_Difference equivalent)', () async {
@@ -151,44 +155,87 @@ void main() {
       await repo.captureTerritory(userLoop);
 
       final territories = await repo.getAllTerritories();
-      final updatedRival =
-          territories.firstWhere((t) => t.userId == 'rival-1');
+      final updatedRival = territories.firstWhere((t) => t.userId == 'rival-1');
 
       expect(updatedRival.areaSqMeters, lessThan(rivalArea));
       expect(updatedRival.areaSqMeters, greaterThan(1.0));
     });
 
-    test('split rival into multiple polygons when claim cuts through middle', () async {
-      final rivalLoop = [
-        GeoPointEntity(latitude: 40.7120, longitude: -74.0060, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7130, longitude: -74.0060, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7150, longitude: -74.0060, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7170, longitude: -74.0060, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7180, longitude: -74.0060, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7180, longitude: -74.0058, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7170, longitude: -74.0058, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7150, longitude: -74.0058, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7130, longitude: -74.0058, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7120, longitude: -74.0058, timestamp: epoch),
-      ];
-      final repo = await repoWithRivals([
-        rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: 10000),
-      ]);
+    test(
+      'split rival into multiple polygons when claim cuts through middle',
+      () async {
+        final rivalLoop = [
+          GeoPointEntity(
+            latitude: 40.7120,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7130,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7150,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7170,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7180,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7180,
+            longitude: -74.0058,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7170,
+            longitude: -74.0058,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7150,
+            longitude: -74.0058,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7130,
+            longitude: -74.0058,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7120,
+            longitude: -74.0058,
+            timestamp: epoch,
+          ),
+        ];
+        final repo = await repoWithRivals([
+          rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: 10000),
+        ]);
 
-      final userLoop = rectangleLoop(
-        startLat: 40.7140,
-        startLng: -74.0065,
-        widthMeters: 100,
-        heightMeters: 220,
-      );
-      await repo.captureTerritory(userLoop);
+        final userLoop = rectangleLoop(
+          startLat: 40.7140,
+          startLng: -74.0065,
+          widthMeters: 100,
+          heightMeters: 220,
+        );
+        await repo.captureTerritory(userLoop);
 
-      final territories = await repo.getAllTerritories();
-      final updatedRival =
-          territories.firstWhere((t) => t.userId == 'rival-1');
+        final territories = await repo.getAllTerritories();
+        final updatedRival = territories.firstWhere(
+          (t) => t.userId == 'rival-1',
+        );
 
-      expect(updatedRival.polygons.length, greaterThan(1));
-    });
+        expect(updatedRival.polygons.length, greaterThan(1));
+      },
+    );
 
     test('sliver cleanup keeps exactly 1.0 m² rival when untouched', () async {
       final rivalLoop = rectangleLoop(
@@ -216,104 +263,179 @@ void main() {
       expect(territories.any((t) => t.userId == 'rival-1'), isTrue);
     });
 
-    test('sliver cleanup deletes exactly 0.99 m² rival when fully consumed', () async {
-      final rivalLoop = rectangleLoop(
-        startLat: 40.7128,
-        startLng: -74.0060,
-        widthMeters: 0.99,
-        heightMeters: 1.0,
-      );
-      final rivalArea = areaCalculator.calculatePolygonArea(rivalLoop);
-      expect(rivalArea, lessThan(1.0));
+    test(
+      'sliver cleanup deletes exactly 0.99 m² rival when fully consumed',
+      () async {
+        final rivalLoop = rectangleLoop(
+          startLat: 40.7128,
+          startLng: -74.0060,
+          widthMeters: 0.99,
+          heightMeters: 1.0,
+        );
+        final rivalArea = areaCalculator.calculatePolygonArea(rivalLoop);
+        expect(rivalArea, lessThan(1.0));
 
-      final repo = await repoWithRivals([
-        rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: rivalArea),
-      ]);
+        final repo = await repoWithRivals([
+          rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: rivalArea),
+        ]);
 
-      final engulfingClaim = rectangleLoop(
-        startLat: 40.7125,
-        startLng: -74.0062,
-        widthMeters: 100,
-        heightMeters: 100,
-      );
-      await repo.captureTerritory(engulfingClaim);
+        final engulfingClaim = rectangleLoop(
+          startLat: 40.7125,
+          startLng: -74.0062,
+          widthMeters: 100,
+          heightMeters: 100,
+        );
+        await repo.captureTerritory(engulfingClaim);
 
-      final territories = await repo.getAllTerritories();
-      expect(territories.where((t) => t.userId == 'rival-1'), isEmpty);
-    });
+        final territories = await repo.getAllTerritories();
+        expect(territories.where((t) => t.userId == 'rival-1'), isEmpty);
+      },
+    );
 
-    test('partial cut keeps concave rival when bbox overlap equals full area', () async {
-      // C-shaped rival: modest area but a large bbox. Old bbox math treated
-      // overlap as the entire polygon and deleted it outright.
-      final rivalLoop = [
-        GeoPointEntity(latitude: 40.7120, longitude: -74.0060, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7120, longitude: -74.0050, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7135, longitude: -74.0050, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7135, longitude: -74.0056, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7125, longitude: -74.0056, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7125, longitude: -74.0054, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7135, longitude: -74.0054, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7135, longitude: -74.0060, timestamp: epoch),
-      ];
-      final rivalArea = areaCalculator.calculatePolygonArea(rivalLoop);
-      final repo = await repoWithRivals([
-        rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: rivalArea),
-      ]);
+    test(
+      'partial cut keeps concave rival when bbox overlap equals full area',
+      () async {
+        // C-shaped rival: modest area but a large bbox. Old bbox math treated
+        // overlap as the entire polygon and deleted it outright.
+        final rivalLoop = [
+          GeoPointEntity(
+            latitude: 40.7120,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7120,
+            longitude: -74.0050,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7135,
+            longitude: -74.0050,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7135,
+            longitude: -74.0056,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7125,
+            longitude: -74.0056,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7125,
+            longitude: -74.0054,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7135,
+            longitude: -74.0054,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7135,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+        ];
+        final rivalArea = areaCalculator.calculatePolygonArea(rivalLoop);
+        final repo = await repoWithRivals([
+          rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: rivalArea),
+        ]);
 
-      final userLoop = rectangleLoop(
-        startLat: 40.7123,
-        startLng: -74.0057,
-        widthMeters: 55,
-        heightMeters: 55,
-      );
-      await repo.captureTerritory(userLoop);
+        final userLoop = rectangleLoop(
+          startLat: 40.7123,
+          startLng: -74.0057,
+          widthMeters: 55,
+          heightMeters: 55,
+        );
+        await repo.captureTerritory(userLoop);
 
-      final territories = await repo.getAllTerritories();
-      expect(territories.any((t) => t.userId == 'rival-1'), isTrue);
+        final territories = await repo.getAllTerritories();
+        expect(territories.any((t) => t.userId == 'rival-1'), isTrue);
 
-      final updatedRival =
-          territories.firstWhere((t) => t.userId == 'rival-1');
-      expect(updatedRival.areaSqMeters, greaterThanOrEqualTo(1.0));
-      expect(updatedRival.areaSqMeters, lessThan(rivalArea));
-    });
+        final updatedRival = territories.firstWhere(
+          (t) => t.userId == 'rival-1',
+        );
+        expect(updatedRival.areaSqMeters, greaterThanOrEqualTo(1.0));
+        expect(updatedRival.areaSqMeters, lessThan(rivalArea));
+      },
+    );
 
-    test('split fragments below 1.0 m² are dropped after partial cut', () async {
-      // Concave C-shape: a partial cut can leave a tiny tip fragment.
-      final rivalLoop = [
-        GeoPointEntity(latitude: 40.7120, longitude: -74.0060, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7120, longitude: -74.0050, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0050, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0056, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7122, longitude: -74.0056, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7122, longitude: -74.0054, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0054, timestamp: epoch),
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: epoch),
-      ];
-      final rivalArea = areaCalculator.calculatePolygonArea(rivalLoop);
-      final repo = await repoWithRivals([
-        rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: rivalArea),
-      ]);
+    test(
+      'split fragments below 1.0 m² are dropped after partial cut',
+      () async {
+        // Concave C-shape: a partial cut can leave a tiny tip fragment.
+        final rivalLoop = [
+          GeoPointEntity(
+            latitude: 40.7120,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7120,
+            longitude: -74.0050,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7128,
+            longitude: -74.0050,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7128,
+            longitude: -74.0056,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7122,
+            longitude: -74.0056,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7122,
+            longitude: -74.0054,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7128,
+            longitude: -74.0054,
+            timestamp: epoch,
+          ),
+          GeoPointEntity(
+            latitude: 40.7128,
+            longitude: -74.0060,
+            timestamp: epoch,
+          ),
+        ];
+        final rivalArea = areaCalculator.calculatePolygonArea(rivalLoop);
+        final repo = await repoWithRivals([
+          rival(id: 'rival-t', polygons: rivalLoop, areaSqMeters: rivalArea),
+        ]);
 
-      final userLoop = rectangleLoop(
-        startLat: 40.71215,
-        startLng: -74.00555,
-        widthMeters: 35,
-        heightMeters: 8,
-      );
-      await repo.captureTerritory(userLoop);
+        final userLoop = rectangleLoop(
+          startLat: 40.71215,
+          startLng: -74.00555,
+          widthMeters: 35,
+          heightMeters: 8,
+        );
+        await repo.captureTerritory(userLoop);
 
-      final territories = await repo.getAllTerritories();
-      final rivalTerritories =
-          territories.where((t) => t.userId == 'rival-1').toList();
+        final territories = await repo.getAllTerritories();
+        final rivalTerritories = territories
+            .where((t) => t.userId == 'rival-1')
+            .toList();
 
-      for (final fragment in rivalTerritories) {
-        for (final ring in fragment.polygons) {
-          expect(
-            areaCalculator.calculatePolygonArea(ring),
-            greaterThanOrEqualTo(1.0),
-          );
+        for (final fragment in rivalTerritories) {
+          for (final ring in fragment.polygons) {
+            expect(
+              areaCalculator.calculatePolygonArea(ring),
+              greaterThanOrEqualTo(1.0),
+            );
+          }
         }
-      }
-    });
+      },
+    );
   });
 }

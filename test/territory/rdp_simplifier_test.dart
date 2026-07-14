@@ -38,7 +38,11 @@ void main() {
 
     test('collapses collinear path to endpoints only', () {
       final points = [
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: baseTime),
+        GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: baseTime,
+        ),
         GeoPointEntity(
           latitude: 40.7133,
           longitude: -74.0060,
@@ -63,7 +67,11 @@ void main() {
 
     test('flattens zig-zag with deviation under epsilon', () {
       final points = [
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: baseTime),
+        GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: baseTime,
+        ),
         GeoPointEntity(
           latitude: 40.712800005,
           longitude: -74.006000005,
@@ -80,7 +88,11 @@ void main() {
 
     test('retains zig-zag vertices when deviation exceeds epsilon', () {
       final points = [
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: baseTime),
+        GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: baseTime,
+        ),
         GeoPointEntity(
           latitude: 40.7132,
           longitude: -74.0060,
@@ -95,37 +107,40 @@ void main() {
       expect(RdpSimplifier.simplify(points, epsilon).length, equals(3));
     });
 
-    test('epsilon boundary: 2.99m deviation simplified, 3.01m deviation kept', () {
-      final ptStart = GeoPointEntity(
-        latitude: 40.7128,
-        longitude: -74.0060,
-        timestamp: baseTime,
-      );
-      final ptEnd = GeoPointEntity(
-        latitude: 40.7128,
-        longitude: -74.0080,
-        timestamp: baseTime.add(const Duration(seconds: 60)),
-      );
-      final ptMidUnder = GeoPointEntity(
-        latitude: 40.7128 + 0.0000268,
-        longitude: -74.0070,
-        timestamp: baseTime.add(const Duration(seconds: 30)),
-      );
-      final ptMidOver = GeoPointEntity(
-        latitude: 40.7128 + 0.0000271,
-        longitude: -74.0070,
-        timestamp: baseTime.add(const Duration(seconds: 30)),
-      );
+    test(
+      'epsilon boundary: 2.99m deviation simplified, 3.01m deviation kept',
+      () {
+        final ptStart = GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: baseTime,
+        );
+        final ptEnd = GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0080,
+          timestamp: baseTime.add(const Duration(seconds: 60)),
+        );
+        final ptMidUnder = GeoPointEntity(
+          latitude: 40.7128 + 0.0000268,
+          longitude: -74.0070,
+          timestamp: baseTime.add(const Duration(seconds: 30)),
+        );
+        final ptMidOver = GeoPointEntity(
+          latitude: 40.7128 + 0.0000271,
+          longitude: -74.0070,
+          timestamp: baseTime.add(const Duration(seconds: 30)),
+        );
 
-      expect(
-        RdpSimplifier.simplify([ptStart, ptMidUnder, ptEnd], epsilon).length,
-        equals(2),
-      );
-      expect(
-        RdpSimplifier.simplify([ptStart, ptMidOver, ptEnd], epsilon).length,
-        equals(3),
-      );
-    });
+        expect(
+          RdpSimplifier.simplify([ptStart, ptMidUnder, ptEnd], epsilon).length,
+          equals(2),
+        );
+        expect(
+          RdpSimplifier.simplify([ptStart, ptMidOver, ptEnd], epsilon).length,
+          equals(3),
+        );
+      },
+    );
 
     test('preserves start and end vertices on closed loop', () {
       final loop = _createRectangleLoop(
@@ -144,11 +159,13 @@ void main() {
       final points = <GeoPointEntity>[];
       for (var i = 0; i < 16; i++) {
         final angle = (i * 2 * math.pi) / 16;
-        points.add(GeoPointEntity(
-          latitude: 40.7128 + 0.00018 * math.sin(angle),
-          longitude: -74.0060 + 0.00018 * math.cos(angle),
-          timestamp: baseTime.add(Duration(seconds: i)),
-        ));
+        points.add(
+          GeoPointEntity(
+            latitude: 40.7128 + 0.00018 * math.sin(angle),
+            longitude: -74.0060 + 0.00018 * math.cos(angle),
+            timestamp: baseTime.add(Duration(seconds: i)),
+          ),
+        );
       }
       final simplified = RdpSimplifier.simplify(points, epsilon);
       expect(simplified.length, greaterThan(3));
@@ -173,7 +190,11 @@ List<GeoPointEntity> _createRectangleLoop({
   final dLon = widthMeters / metersPerDegreeLon;
 
   return [
-    GeoPointEntity(latitude: startLat, longitude: startLng, timestamp: startTime),
+    GeoPointEntity(
+      latitude: startLat,
+      longitude: startLng,
+      timestamp: startTime,
+    ),
     GeoPointEntity(
       latitude: startLat + dLat,
       longitude: startLng,

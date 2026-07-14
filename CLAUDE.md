@@ -57,7 +57,7 @@ Key providers worth knowing before touching the alarm flow:
 - `nextAlarmProvider` — derived next upcoming active alarm
 - `clockDisplayProvider` — `StreamProvider<String>` that only yields when the HH:MM string changes (once per minute), so the digital clock does not rebuild every second
 
-Territory run state lives in `activeRunProvider` and map readiness in `territoryMapReadyProvider` (`active_run_providers.dart`, `territory_providers.dart`). Tab switches away from an active run prompt discard confirmation via `_ShellScaffold` in `app_router.dart`.
+Territory run state lives in `activeRunProvider` and map readiness in `territoryMapReadyProvider` (`active_run_providers.dart`, `territory_providers.dart`). Tab switches away from an active run do NOT stop or prompt about GPS tracking — the run keeps recording (a red live dot on the Territory tab indicates it) and only the Stop control ends the session.
 
 ### Local vs cloud repository switching
 

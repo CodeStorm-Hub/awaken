@@ -72,20 +72,11 @@ abstract final class LocationFixService {
     Duration? timeLimit,
   }) {
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return AndroidSettings(
-        accuracy: accuracy,
-        timeLimit: timeLimit,
-      );
+      return AndroidSettings(accuracy: accuracy, timeLimit: timeLimit);
     }
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return AppleSettings(
-        accuracy: accuracy,
-        timeLimit: timeLimit,
-      );
+      return AppleSettings(accuracy: accuracy, timeLimit: timeLimit);
     }
-    return LocationSettings(
-      accuracy: accuracy,
-      timeLimit: timeLimit,
-    );
+    return LocationSettings(accuracy: accuracy, timeLimit: timeLimit);
   }
 }

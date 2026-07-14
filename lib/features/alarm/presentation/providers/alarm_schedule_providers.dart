@@ -15,7 +15,7 @@ part 'alarm_schedule_providers.g.dart';
 ///   - Signed in  → Supabase (cloud-synced)
 ///   - Signed out → SharedPreferences (local-only)
 @Riverpod(keepAlive: true)
-AlarmRepository alarmRepository(AlarmRepositoryRef ref) {
+AlarmRepository alarmRepository(Ref ref) {
   final signedIn = ref.watch(isSignedInProvider);
   if (signedIn) {
     return const AlarmSupabaseRepositoryImpl(AlarmSupabaseDatasource());
@@ -52,8 +52,24 @@ class AlarmList extends _$AlarmList {
     final repo = ref.read(alarmRepositoryProvider);
     await repo.saveAlarm(alarm);
     await AlarmNotificationService.scheduleAlarm(alarm);
-    state = AsyncData([...state.valueOrNull ?? [], alarm]
-      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime)));
+    state = AsyncData(
+      [...state.value ?? [], alarm]
+        ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime)),
+    );
+  }
+
+  /// Re-adds a just-deleted alarm (swipe-to-delete undo). Unlike [addAlarm],
+  /// only reschedules the notification when the alarm was actually active.
+  Future<void> restoreAlarm(AlarmEntity alarm) async {
+    final repo = ref.read(alarmRepositoryProvider);
+    await repo.saveAlarm(alarm);
+    if (alarm.isActive) {
+      await AlarmNotificationService.scheduleAlarm(alarm);
+    }
+    state = AsyncData(
+      [...state.value ?? [], alarm]
+        ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime)),
+    );
   }
 
   Future<void> removeAlarm(AlarmEntity alarm) async {
@@ -61,7 +77,7 @@ class AlarmList extends _$AlarmList {
     await repo.deleteAlarm(alarm.id);
     await AlarmNotificationService.cancelAlarm(alarm);
     state = AsyncData(
-      (state.valueOrNull ?? []).where((a) => a.id != alarm.id).toList(),
+      (state.value ?? []).where((a) => a.id != alarm.id).toList(),
     );
   }
 
@@ -77,7 +93,7 @@ class AlarmList extends _$AlarmList {
     }
 
     state = AsyncData(
-      (state.valueOrNull ?? []).map((a) => a.id == alarm.id ? updated : a).toList(),
+      (state.value ?? []).map((a) => a.id == alarm.id ? updated : a).toList(),
     );
   }
 
@@ -93,7 +109,7 @@ class AlarmList extends _$AlarmList {
     }
 
     state = AsyncData(
-      (state.valueOrNull ?? []).map((a) => a.id == alarm.id ? updated : a).toList(),
+      (state.value ?? []).map((a) => a.id == alarm.id ? updated : a).toList(),
     );
   }
 }
@@ -101,12 +117,11 @@ class AlarmList extends _$AlarmList {
 // ── Derived: next upcoming active alarm ──────────────────────────────────────
 
 @Riverpod(keepAlive: true)
-AlarmEntity? nextAlarm(NextAlarmRef ref) {
-  final alarms = ref.watch(alarmListProvider).valueOrNull ?? [];
+AlarmEntity? nextAlarm(Ref ref) {
+  final alarms = ref.watch(alarmListProvider).value ?? [];
   final now = DateTime.now();
-  final upcoming = alarms
-      .where((a) => a.isActive && a.scheduledTime.isAfter(now))
-      .toList()
-    ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+  final upcoming =
+      alarms.where((a) => a.isActive && a.scheduledTime.isAfter(now)).toList()
+        ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
   return upcoming.isEmpty ? null : upcoming.first;
 }

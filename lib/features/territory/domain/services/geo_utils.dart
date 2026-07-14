@@ -15,8 +15,12 @@ abstract final class GeoUtils {
     final dLat = _toRadians(b.latitude - a.latitude);
     final dLon = _toRadians(b.longitude - a.longitude);
 
-    final h = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1) * math.cos(lat2) * math.sin(dLon / 2) * math.sin(dLon / 2);
+    final h =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
     final c = 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h));
     return _earthRadiusMeters * c;
   }
@@ -79,7 +83,10 @@ abstract final class GeoUtils {
   /// but sufficient for lat/lng at the scale of a single territory: no
   /// projection is applied, matching how territory rings are stored and
   /// rendered elsewhere in this feature.
-  static bool isPointInPolygon(GeoPointEntity point, List<GeoPointEntity> ring) {
+  static bool isPointInPolygon(
+    GeoPointEntity point,
+    List<GeoPointEntity> ring,
+  ) {
     var inside = false;
     for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
       final xi = ring[i].longitude;
@@ -87,7 +94,8 @@ abstract final class GeoUtils {
       final xj = ring[j].longitude;
       final yj = ring[j].latitude;
 
-      final crossesRay = (yi > point.latitude) != (yj > point.latitude) &&
+      final crossesRay =
+          (yi > point.latitude) != (yj > point.latitude) &&
           point.longitude < (xj - xi) * (point.latitude - yi) / (yj - yi) + xi;
       if (crossesRay) inside = !inside;
     }

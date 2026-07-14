@@ -117,10 +117,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Redirect bare '/' to '/dashboard' ────────────────────────────────
-      GoRoute(
-        path: '/',
-        redirect: (_, _) => AppRoutes.dashboard,
-      ),
+      GoRoute(path: '/', redirect: (_, _) => AppRoutes.dashboard),
     ],
   );
 });
@@ -143,9 +140,13 @@ class _ActiveAlarmRoute extends ConsumerWidget {
     final id = params['id']!;
     final reps = int.tryParse(params['reps'] ?? '10') ?? 10;
     final scheduledRaw = params['scheduled'];
-    final scheduledTime = scheduledRaw != null && scheduledRaw.isNotEmpty
-        ? DateTime.parse(Uri.decodeComponent(scheduledRaw))
-        : DateTime.now();
+    // tryParse: a corrupted notification payload or malformed deep link must
+    // not crash route building — the alarm still fires with "now" semantics.
+    final scheduledTime =
+        (scheduledRaw != null && scheduledRaw.isNotEmpty
+            ? DateTime.tryParse(Uri.decodeComponent(scheduledRaw))
+            : null) ??
+        DateTime.now();
 
     return AlarmEntity(
       id: id,
@@ -161,7 +162,7 @@ class _ActiveAlarmRoute extends ConsumerWidget {
 
     if (alarm == null && state.uri.queryParameters.containsKey('id')) {
       final id = state.uri.queryParameters['id']!;
-      final alarms = ref.watch(alarmListProvider).valueOrNull;
+      final alarms = ref.watch(alarmListProvider).value;
       alarm = alarms != null ? _alarmFromList(alarms, id) : null;
       alarm ??= _alarmFromQueryParams(state.uri.queryParameters);
     }
@@ -221,7 +222,8 @@ class _ShellScaffoldState extends ConsumerState<_ShellScaffold> {
     });
 
     final runStatus = ref.watch(activeRunProvider.select((s) => s.status));
-    final runActive = runStatus == RunSessionStatus.tracking ||
+    final runActive =
+        runStatus == RunSessionStatus.tracking ||
         runStatus == RunSessionStatus.paused ||
         runStatus == RunSessionStatus.finishing;
 
@@ -324,53 +326,64 @@ class _NavItem extends StatelessWidget {
     final color = selected ? accent : muted;
 
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: selected
-                    ? accent.withValues(alpha: 0.14)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(icon, color: color, size: 22),
-                  if (showLiveDot)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: AppColors.destructive,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.card, width: 1.5),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: '$label tab${showLiveDot ? ', run in progress' : ''}',
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? accent.withValues(alpha: 0.14)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, color: color, size: 22),
+                    if (showLiveDot)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: AppColors.destructive,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.card,
+                              width: 1.5,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

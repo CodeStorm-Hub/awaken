@@ -50,15 +50,9 @@ class _MateProgress extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _magenta.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: _magenta.withValues(alpha: 0.4)),
         boxShadow: const [
-          BoxShadow(
-            color: _magentaGlow,
-            blurRadius: 8,
-            spreadRadius: 0,
-          ),
+          BoxShadow(color: _magentaGlow, blurRadius: 8, spreadRadius: 0),
         ],
       ),
       child: Column(
@@ -98,9 +92,7 @@ class _MateProgress extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.bottomCenter,
                 children: [
-                  Container(
-                    color: AppColors.muted.withValues(alpha: 0.5),
-                  ),
+                  Container(color: AppColors.muted.withValues(alpha: 0.5)),
                   FractionallySizedBox(
                     heightFactor: mate.progress,
                     child: Container(color: _magenta),

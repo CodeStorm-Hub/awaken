@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 
 class MockGeolocatorPlatform extends GeolocatorPlatform {
-  final StreamController<Position> _positionStreamController = StreamController<Position>.broadcast();
+  final StreamController<Position> _positionStreamController =
+      StreamController<Position>.broadcast();
   Position? _currentPosition;
   bool isLocationServiceEnabledValue = true;
   LocationPermission permissionValue = LocationPermission.whileInUse;
@@ -32,7 +33,9 @@ class MockGeolocatorPlatform extends GeolocatorPlatform {
   }
 
   @override
-  Future<Position?> getLastKnownPosition({bool forceLocationManager = false}) async {
+  Future<Position?> getLastKnownPosition({
+    bool forceLocationManager = false,
+  }) async {
     return _currentPosition;
   }
 
@@ -59,9 +62,7 @@ class MockGeolocatorPlatform extends GeolocatorPlatform {
   }
 
   @override
-  Stream<Position> getPositionStream({
-    LocationSettings? locationSettings,
-  }) {
+  Stream<Position> getPositionStream({LocationSettings? locationSettings}) {
     return _positionStreamController.stream;
   }
 }

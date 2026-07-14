@@ -19,17 +19,17 @@ void main() {
   });
 
   Position positionAt(double lat, double lng) => Position(
-        latitude: lat,
-        longitude: lng,
-        timestamp: DateTime.now(),
-        accuracy: 10,
-        altitude: 0,
-        altitudeAccuracy: 0,
-        heading: 0,
-        headingAccuracy: 0,
-        speed: 0,
-        speedAccuracy: 0,
-      );
+    latitude: lat,
+    longitude: lng,
+    timestamp: DateTime.now(),
+    accuracy: 10,
+    altitude: 0,
+    altitudeAccuracy: 0,
+    heading: 0,
+    headingAccuracy: 0,
+    speed: 0,
+    speedAccuracy: 0,
+  );
 
   test('returns current position when available', () async {
     mock.feedPosition(positionAt(43.65, -79.38));

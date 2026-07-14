@@ -24,10 +24,13 @@ void main() {
       expect(RunValidationService.isSustainedOverSpeed(points), isFalse);
     });
 
-    test('returns true when rolling window has 6 consecutive over-speed segments', () {
-      final points = _pointsAtSpeedKmh(30.0, count: 7);
-      expect(RunValidationService.isSustainedOverSpeed(points), isTrue);
-    });
+    test(
+      'returns true when rolling window has 6 consecutive over-speed segments',
+      () {
+        final points = _pointsAtSpeedKmh(30.0, count: 7);
+        expect(RunValidationService.isSustainedOverSpeed(points), isTrue);
+      },
+    );
 
     test('returns false at exact boundary speed of 25.0 km/h', () {
       final points = _pointsAtSpeedKmh(24.99, count: 7);
@@ -46,49 +49,70 @@ void main() {
         timestamp: DateTime.now(),
       );
       final points = [base];
-      points.add(_movePointBySpeed(points.last, 10.0, const Duration(seconds: 1)));
+      points.add(
+        _movePointBySpeed(points.last, 10.0, const Duration(seconds: 1)),
+      );
       for (var i = 0; i < 4; i++) {
-        points.add(_movePointBySpeed(points.last, 30.0, const Duration(seconds: 1)));
+        points.add(
+          _movePointBySpeed(points.last, 30.0, const Duration(seconds: 1)),
+        );
       }
       expect(points.length, equals(AppConstants.speedRollingWindowSize));
       expect(RunValidationService.isSustainedOverSpeed(points), isFalse);
     });
 
     test('returns true with exactly 6 over-speed segments in window', () {
-      final points = _pointsAtSpeedKmh(30.0, count: AppConstants.speedRollingWindowSize);
+      final points = _pointsAtSpeedKmh(
+        30.0,
+        count: AppConstants.speedRollingWindowSize,
+      );
       expect(RunValidationService.isSustainedOverSpeed(points), isTrue);
     });
 
-    test('returns false when a single spike is surrounded by slow segments', () {
-      final base = GeoPointEntity(
-        latitude: 40.7128,
-        longitude: -74.0060,
-        timestamp: DateTime.now(),
-      );
-      final points = [base];
-      points.add(_movePointBySpeed(points.last, 40.0, const Duration(seconds: 1)));
-      for (var i = 0; i < 5; i++) {
-        points.add(_movePointBySpeed(points.last, 8.0, const Duration(seconds: 1)));
-      }
-      expect(RunValidationService.isSustainedOverSpeed(points), isFalse);
-    });
+    test(
+      'returns false when a single spike is surrounded by slow segments',
+      () {
+        final base = GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: DateTime.now(),
+        );
+        final points = [base];
+        points.add(
+          _movePointBySpeed(points.last, 40.0, const Duration(seconds: 1)),
+        );
+        for (var i = 0; i < 5; i++) {
+          points.add(
+            _movePointBySpeed(points.last, 8.0, const Duration(seconds: 1)),
+          );
+        }
+        expect(RunValidationService.isSustainedOverSpeed(points), isFalse);
+      },
+    );
 
-    test('uses only the trailing rolling window when more points are provided', () {
-      final base = GeoPointEntity(
-        latitude: 40.7128,
-        longitude: -74.0060,
-        timestamp: DateTime.now(),
-      );
-      final points = [base];
-      for (var i = 0; i < 4; i++) {
-        points.add(_movePointBySpeed(points.last, 8.0, const Duration(seconds: 1)));
-      }
-      for (var i = 0; i < 5; i++) {
-        points.add(_movePointBySpeed(points.last, 30.0, const Duration(seconds: 1)));
-      }
-      expect(points.length, greaterThan(AppConstants.speedRollingWindowSize));
-      expect(RunValidationService.isSustainedOverSpeed(points), isTrue);
-    });
+    test(
+      'uses only the trailing rolling window when more points are provided',
+      () {
+        final base = GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: DateTime.now(),
+        );
+        final points = [base];
+        for (var i = 0; i < 4; i++) {
+          points.add(
+            _movePointBySpeed(points.last, 8.0, const Duration(seconds: 1)),
+          );
+        }
+        for (var i = 0; i < 5; i++) {
+          points.add(
+            _movePointBySpeed(points.last, 30.0, const Duration(seconds: 1)),
+          );
+        }
+        expect(points.length, greaterThan(AppConstants.speedRollingWindowSize));
+        expect(RunValidationService.isSustainedOverSpeed(points), isTrue);
+      },
+    );
   });
 
   group('RunValidationService.isClosedLoop', () {
@@ -102,24 +126,27 @@ void main() {
       expect(RunValidationService.isClosedLoop([pt]), isFalse);
     });
 
-    test('returns true when start/end distance is within 50.0m closure radius', () {
-      final pt1 = GeoPointEntity(
-        latitude: 40.7128,
-        longitude: -74.0060,
-        timestamp: DateTime.now(),
-      );
-      // Slightly under 50m to avoid floating-point edge on the exact bound.
-      final pt2 = GeoPointEntity(
-        latitude: 40.7128 + 49.9 / 111194.9266,
-        longitude: -74.0060,
-        timestamp: DateTime.now(),
-      );
-      expect(
-        GeoUtils.haversineMeters(pt1, pt2),
-        lessThanOrEqualTo(AppConstants.loopClosureRadiusMeters),
-      );
-      expect(RunValidationService.isClosedLoop([pt1, pt2]), isTrue);
-    });
+    test(
+      'returns true when start/end distance is within 50.0m closure radius',
+      () {
+        final pt1 = GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: DateTime.now(),
+        );
+        // Slightly under 50m to avoid floating-point edge on the exact bound.
+        final pt2 = GeoPointEntity(
+          latitude: 40.7128 + 49.9 / 111194.9266,
+          longitude: -74.0060,
+          timestamp: DateTime.now(),
+        );
+        expect(
+          GeoUtils.haversineMeters(pt1, pt2),
+          lessThanOrEqualTo(AppConstants.loopClosureRadiusMeters),
+        );
+        expect(RunValidationService.isClosedLoop([pt1, pt2]), isTrue);
+      },
+    );
 
     test('returns false when start/end distance exceeds 50.0m', () {
       final pt1 = GeoPointEntity(
@@ -211,7 +238,11 @@ void main() {
       final baseTime = DateTime.now();
       // End ~80m from start — outside loopClosureRadiusMeters (50).
       final openPath = [
-        GeoPointEntity(latitude: 40.7128, longitude: -74.0060, timestamp: baseTime),
+        GeoPointEntity(
+          latitude: 40.7128,
+          longitude: -74.0060,
+          timestamp: baseTime,
+        ),
         GeoPointEntity(
           latitude: 40.7138,
           longitude: -74.0060,
@@ -239,25 +270,28 @@ void main() {
       );
     });
 
-    test('returns territoryClaimed for valid closed loop meeting all thresholds', () {
-      final baseTime = DateTime.now();
-      final loop = _createRectangleLoop(
-        startLat: 40.7128,
-        startLng: -74.0060,
-        widthMeters: 60,
-        heightMeters: 60,
-        startTime: baseTime,
-      );
-      expect(
-        RunValidationService.classify(
-          points: loop,
-          distanceMeters: GeoUtils.pathDistanceMeters(loop),
-          duration: const Duration(minutes: 2),
-          wasInvalidatedBySpeed: false,
-        ),
-        equals(RunOutcome.territoryClaimed),
-      );
-    });
+    test(
+      'returns territoryClaimed for valid closed loop meeting all thresholds',
+      () {
+        final baseTime = DateTime.now();
+        final loop = _createRectangleLoop(
+          startLat: 40.7128,
+          startLng: -74.0060,
+          widthMeters: 60,
+          heightMeters: 60,
+          startTime: baseTime,
+        );
+        expect(
+          RunValidationService.classify(
+            points: loop,
+            distanceMeters: GeoUtils.pathDistanceMeters(loop),
+            duration: const Duration(minutes: 2),
+            wasInvalidatedBySpeed: false,
+          ),
+          equals(RunOutcome.territoryClaimed),
+        );
+      },
+    );
 
     test('accepts exact boundary duration and distance', () {
       final loop = _createRectangleLoop(
@@ -288,7 +322,9 @@ List<GeoPointEntity> _pointsAtSpeedKmh(double speedKmh, {required int count}) {
   );
   final points = [base];
   for (var i = 1; i < count; i++) {
-    points.add(_movePointBySpeed(points.last, speedKmh, const Duration(seconds: 1)));
+    points.add(
+      _movePointBySpeed(points.last, speedKmh, const Duration(seconds: 1)),
+    );
   }
   return points;
 }
@@ -325,7 +361,11 @@ List<GeoPointEntity> _createRectangleLoop({
   final dLon = widthMeters / metersPerDegreeLon;
 
   return [
-    GeoPointEntity(latitude: startLat, longitude: startLng, timestamp: startTime),
+    GeoPointEntity(
+      latitude: startLat,
+      longitude: startLng,
+      timestamp: startTime,
+    ),
     GeoPointEntity(
       latitude: startLat + dLat,
       longitude: startLng,
