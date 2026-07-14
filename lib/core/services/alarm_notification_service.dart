@@ -95,6 +95,17 @@ abstract final class AlarmNotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.requestExactAlarmsPermission();
+
+    // Android 14+ (and OEM skins like One UI that enforce this earlier):
+    // USE_FULL_SCREEN_INTENT in the manifest is no longer sufficient on its
+    // own — the user must also grant it via Settings, or the alarm's
+    // notification sound/vibration fires but ActiveAlarmScreen never launches
+    // over the lock screen.
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestFullScreenIntentPermission();
   }
 
   // ── Schedule / Cancel ─────────────────────────────────────────────
