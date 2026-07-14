@@ -13,7 +13,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class AlarmSetupScreen extends ConsumerStatefulWidget {
@@ -92,10 +91,11 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
               const SizedBox(height: 32),
 
               // ── Time picker ──────────────────────────────────────────
-              _TimeTile(
+              _TimeWheelPicker(
                 time: _time,
-                onTap: _pickTime,
-                typography: tt,
+                onChanged: (newTime) {
+                  setState(() => _time = newTime);
+                },
               ).animate().fadeIn(delay: 80.ms, duration: 300.ms),
               const SizedBox(height: 8),
               // Countdown makes an AM/PM mix-up obvious before arming.
@@ -121,6 +121,9 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
                 onIncrement: () {
                   HapticFeedback.lightImpact();
                   setState(() => _reps = (_reps + 5).clamp(5, 50));
+                },
+                onChanged: (newReps) {
+                  setState(() => _reps = newReps.clamp(5, 50));
                 },
               ).animate().fadeIn(delay: 140.ms, duration: 300.ms),
 
@@ -148,8 +151,8 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
               const SizedBox(height: 10),
               Text(
                 _exerciseMode == AlarmExerciseMode.roulette
-                    ? 'Roulette picks at wake. No negotiating.'
-                    : 'Camera verifies every rep.',
+                ? 'Roulette picks at wake. No negotiating.'
+                : 'Camera verifies every rep.',
                 style: tt.statLabel.copyWith(fontSize: 12),
               ),
               if (_exerciseMode == AlarmExerciseMode.fixed) ...[
@@ -166,6 +169,28 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
                           HapticFeedback.selectionClick();
                           setState(() => _exerciseType = type);
                         },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                            topRight: Radius.circular(4),
+                            bottomLeft: Radius.circular(4),
+                          ),
+                          side: BorderSide(
+                            color: _exerciseType == type
+                            ? AppColors.primary
+                            : AppColors.border,
+                            width: 1.5,
+                          ),
+                        ),
+                        selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.card,
+                        labelStyle: TextStyle(
+                          color: _exerciseType == type
+                          ? AppColors.primary
+                          : AppColors.mutedForeground,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                   ],
                 ),
@@ -196,41 +221,7 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
     );
   }
 
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _time,
-      helpText: 'SELECT ALARM TIME',
-      builder: (context, child) {
-        final mediaQueryData = MediaQuery.of(context);
-        final baseTheme = Theme.of(context);
-        final hourMinuteStyle = GoogleFonts.spaceGrotesk(
-          fontSize: 56,
-          fontWeight: FontWeight.w700,
-          height: 1.05,
-        );
 
-        return Theme(
-          data: baseTheme.copyWith(
-            materialTapTargetSize: MaterialTapTargetSize.padded,
-            timePickerTheme: baseTheme.timePickerTheme.copyWith(
-              hourMinuteTextStyle: hourMinuteStyle,
-            ),
-            textTheme: baseTheme.textTheme.copyWith(
-              displayMedium: hourMinuteStyle,
-            ),
-          ),
-          child: MediaQuery(
-            data: mediaQueryData.copyWith(textScaler: TextScaler.noScaling),
-            child: child!,
-          ),
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _time = picked);
-    }
-  }
 
   Future<void> _save() async {
     if (_saving) return;
@@ -413,54 +404,163 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
 
 enum _ExactAlarmDialogAction { cancel, openSettings, saveWithoutPermission }
 
-class _TimeTile extends StatelessWidget {
-  const _TimeTile({
+class _TimeWheelPicker extends StatefulWidget {
+  const _TimeWheelPicker({
     required this.time,
-    required this.onTap,
-    required this.typography,
+    required this.onChanged,
   });
 
   final TimeOfDay time;
-  final VoidCallback onTap;
-  final AwakenTypography typography;
+  final ValueChanged<TimeOfDay> onChanged;
+
+  @override
+  State<_TimeWheelPicker> createState() => _TimeWheelPickerState();
+}
+
+class _TimeWheelPickerState extends State<_TimeWheelPicker> {
+  late final FixedExtentScrollController _hourController;
+  late final FixedExtentScrollController _minuteController;
+  late final FixedExtentScrollController _periodController;
+
+  @override
+  void initState() {
+    super.initState();
+    final h = widget.time.hourOfPeriod;
+    _hourController = FixedExtentScrollController(initialItem: h - 1);
+    _minuteController = FixedExtentScrollController(initialItem: widget.time.minute);
+    _periodController = FixedExtentScrollController(
+      initialItem: widget.time.period == DayPeriod.am ? 0 : 1,
+    );
+  }
+
+  @override
+  void dispose() {
+    _hourController.dispose();
+    _minuteController.dispose();
+    _periodController.dispose();
+    super.dispose();
+  }
+
+  void _updateTime() {
+    if (!_hourController.hasClients || !_minuteController.hasClients || !_periodController.hasClients) return;
+    final hSelected = _hourController.selectedItem + 1; // 1 to 12
+    final mSelected = _minuteController.selectedItem; // 0 to 59
+    final isPm = _periodController.selectedItem == 1;
+
+    final hour24 = isPm
+        ? (hSelected == 12 ? 12 : hSelected + 12)
+        : (hSelected == 12 ? 0 : hSelected);
+
+    widget.onChanged(TimeOfDay(hour: hour24, minute: mSelected));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final hour = time.hourOfPeriod.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '$hour:$minute',
-              style: typography.hudClock.copyWith(fontSize: 64),
-            ),
-            const SizedBox(width: 12),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                period,
-                style: typography.statValue.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 22,
-                ),
+    return Container(
+      height: 140,
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Hour Wheel
+          Expanded(
+            child: ListWheelScrollView.useDelegate(
+              controller: _hourController,
+              itemExtent: 42,
+              physics: const FixedExtentScrollPhysics(),
+              onSelectedItemChanged: (_) {
+                HapticFeedback.selectionClick();
+                _updateTime();
+              },
+              childDelegate: ListWheelChildLoopingListDelegate(
+                children: List.generate(12, (index) {
+                  final text = (index + 1).toString().padLeft(2, '0');
+                  return Center(
+                    child: Text(
+                      text,
+                      style: const TextStyle(
+                        fontFamily: 'SpaceMono',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.foreground,
+                      ),
+                    ),
+                  );
+                }),
               ),
             ),
-          ],
-        ),
+          ),
+          const Text(':', style: TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.bold)),
+          // Minute Wheel
+          Expanded(
+            child: ListWheelScrollView.useDelegate(
+              controller: _minuteController,
+              itemExtent: 42,
+              physics: const FixedExtentScrollPhysics(),
+              onSelectedItemChanged: (_) {
+                HapticFeedback.selectionClick();
+                _updateTime();
+              },
+              childDelegate: ListWheelChildLoopingListDelegate(
+                children: List.generate(60, (index) {
+                  final text = index.toString().padLeft(2, '0');
+                  return Center(
+                    child: Text(
+                      text,
+                      style: const TextStyle(
+                        fontFamily: 'SpaceMono',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.foreground,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+          // AM/PM Wheel
+          Expanded(
+            child: ListWheelScrollView(
+              controller: _periodController,
+              itemExtent: 42,
+              physics: const FixedExtentScrollPhysics(),
+              onSelectedItemChanged: (_) {
+                HapticFeedback.selectionClick();
+                _updateTime();
+              },
+              children: [
+                Center(
+                  child: Text(
+                    'AM',
+                    style: TextStyle(
+                      fontFamily: 'SpaceGrotesk',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: widget.time.period == DayPeriod.am ? AppColors.primary : AppColors.mutedForeground,
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Text(
+                    'PM',
+                    style: TextStyle(
+                      fontFamily: 'SpaceGrotesk',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: widget.time.period == DayPeriod.pm ? AppColors.primary : AppColors.mutedForeground,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -471,11 +571,13 @@ class _RepSelector extends StatelessWidget {
     required this.value,
     required this.onDecrement,
     required this.onIncrement,
+    required this.onChanged,
   });
 
   final int value;
   final VoidCallback onDecrement;
   final VoidCallback onIncrement;
+  final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -499,10 +601,7 @@ class _RepSelector extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Decrement
               _RepButton(icon: Icons.remove_rounded, onTap: onDecrement),
-
-              // Count + label
               Column(
                 children: [
                   AnimatedSwitcher(
@@ -516,12 +615,32 @@ class _RepSelector extends StatelessWidget {
                   Text('squats', style: tt.statLabel),
                 ],
               ),
-
-              // Increment
               _RepButton(icon: Icons.add_rounded, onTap: onIncrement),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Neon slider
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: tierColor,
+              inactiveTrackColor: AppColors.border,
+              thumbColor: tierColor,
+              overlayColor: tierColor.withValues(alpha: 0.15),
+              valueIndicatorColor: tierColor,
+            ),
+            child: Slider(
+              value: value.toDouble(),
+              min: 5,
+              max: 50,
+              divisions: 9,
+              onChanged: (v) {
+                HapticFeedback.selectionClick();
+                onChanged(v.round());
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
 
           // Segmented Ticks Visualizer
           Row(

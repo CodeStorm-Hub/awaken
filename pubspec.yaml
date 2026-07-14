@@ -120,3 +120,4 @@ flutter:
   assets:
     - assets/audio/
     - assets/map_styles/
+    - assets/google_fonts/

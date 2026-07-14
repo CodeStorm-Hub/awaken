@@ -46,8 +46,13 @@ abstract final class AppTheme {
         shadowColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(24)),
-          side: BorderSide(color: AppColors.border, width: 1),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            bottomRight: Radius.circular(32),
+            topRight: Radius.circular(12),
+            bottomLeft: Radius.circular(12),
+          ),
+          side: BorderSide(color: AppColors.border, width: 0.8),
         ),
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
@@ -80,7 +85,12 @@ abstract final class AppTheme {
           shadowColor: Colors.transparent,
           minimumSize: const Size.fromHeight(56),
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+              topRight: Radius.circular(8),
+              bottomLeft: Radius.circular(8),
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           textStyle: const TextStyle(
@@ -106,10 +116,15 @@ abstract final class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.foreground,
-          side: const BorderSide(color: AppColors.border),
+          side: const BorderSide(color: AppColors.border, width: 0.8),
           minimumSize: const Size.fromHeight(56),
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+              topRight: Radius.circular(8),
+              bottomLeft: Radius.circular(8),
+            ),
           ),
         ),
       ),
@@ -137,10 +152,8 @@ abstract final class AppTheme {
       // ── Chip ───────────────────────────────────────────────────────
       chipTheme: const ChipThemeData(
         backgroundColor: AppColors.secondary,
-        side: BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
+        side: BorderSide(color: AppColors.border, width: 0.8),
+        shape: StadiumBorder(),
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       ),
 
@@ -149,8 +162,13 @@ abstract final class AppTheme {
         backgroundColor: AppColors.card,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(24)),
-          side: BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            bottomRight: Radius.circular(32),
+            topRight: Radius.circular(12),
+            bottomLeft: Radius.circular(12),
+          ),
+          side: BorderSide(color: AppColors.border, width: 0.8),
         ),
       ),
 

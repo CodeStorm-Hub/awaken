@@ -238,162 +238,184 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // ── Name Field (Sign-up only) ─────────────────────────────
-                  if (_isSignUp) ...[
-                    TextFormField(
-                          controller: _nameController,
+                  // ── Glassmorphic Form Card ───────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
+                        topRight: Radius.circular(12),
+                        bottomLeft: Radius.circular(12),
+                      ),
+                      border: Border.all(color: AppColors.border, width: 0.8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── Name Field (Sign-up only) ─────────────────────────────
+                        if (_isSignUp) ...[
+                          TextFormField(
+                            controller: _nameController,
+                            textInputAction: TextInputAction.next,
+                            style: const TextStyle(color: AppColors.foreground),
+                            decoration: _inputDecoration(
+                              labelText: 'Display Name',
+                              prefixIcon: Icons.person_outline,
+                            ),
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
+                                ? 'Please enter your name'
+                                : null,
+                          )
+                          .animate()
+                          .fadeIn(duration: 200.ms)
+                          .slideY(begin: -0.1, end: 0, duration: 200.ms),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // ── Email Field ───────────────────────────────────────────
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           style: const TextStyle(color: AppColors.foreground),
                           decoration: _inputDecoration(
-                            labelText: 'Display Name',
-                            prefixIcon: Icons.person_outline,
+                            labelText: 'Email Address',
+                            prefixIcon: Icons.email_outlined,
                           ),
-                          validator: (value) =>
-                              value == null || value.trim().isEmpty
-                              ? 'Please enter your name'
-                              : null,
-                        )
-                        .animate()
-                        .fadeIn(duration: 200.ms)
-                        .slideY(begin: -0.1, end: 0, duration: 200.ms),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // ── Email Field ───────────────────────────────────────────
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    style: const TextStyle(color: AppColors.foreground),
-                    decoration: _inputDecoration(
-                      labelText: 'Email Address',
-                      prefixIcon: Icons.email_outlined,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // ── Password Field ────────────────────────────────────────
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    textInputAction: TextInputAction.done,
-                    style: const TextStyle(color: AppColors.foreground),
-                    decoration: _inputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icons.lock_outline,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.mutedForeground,
-                          size: 20,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                            if (!emailRegex.hasMatch(value.trim())) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
 
-                  const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
-                  // ── Submit Button ─────────────────────────────────────────
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.black,
-                        disabledBackgroundColor: AppColors.primary.withValues(
-                          alpha: 0.5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.chipRadius,
-                          ),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _loading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.black,
+                        // ── Password Field ────────────────────────────────────────
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          style: const TextStyle(color: AppColors.foreground),
+                          decoration: _inputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icons.lock_outline,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: AppColors.mutedForeground,
+                                size: 20,
                               ),
-                            )
-                          : Text(
-                              _isSignUp ? 'Create Account' : 'Sign In',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                          onFieldSubmitted: (_) => _submit(),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // ── Submit Button ─────────────────────────────────────────
+                        SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.black,
+                              disabledBackgroundColor: AppColors.primary.withValues(
+                                alpha: 0.5,
+                              ),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(24),
+                                  bottomRight: Radius.circular(24),
+                                  topRight: Radius.circular(8),
+                                  bottomLeft: Radius.circular(8),
+                                ),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.black,
+                                    ),
+                                  )
+                                : Text(
+                                    _isSignUp ? 'Create Account' : 'Sign In',
+                                    style: Theme.of(context).textTheme.bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
                                   ),
-                            ),
-                    ),
-                  ),
+                          ),
+                        ),
 
-                  const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                  // ── Toggle Link ───────────────────────────────────────────
-                  Center(
-                    child: TextButton(
-                      onPressed: _loading
-                          ? null
-                          : () {
-                              setState(() {
-                                _isSignUp = !_isSignUp;
-                                _error = null;
-                              });
-                            },
-                      child: RichText(
-                        text: TextSpan(
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppColors.mutedForeground),
-                          children: [
-                            TextSpan(
-                              text: _isSignUp
-                                  ? 'Already have an account? '
-                                  : 'Don\'t have an account? ',
-                            ),
-                            TextSpan(
-                              text: _isSignUp ? 'Sign In' : 'Sign Up',
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
+                        // ── Toggle Link ───────────────────────────────────────────
+                        Center(
+                          child: TextButton(
+                            onPressed: _loading
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _isSignUp = !_isSignUp;
+                                      _error = null;
+                                    });
+                                  },
+                            child: RichText(
+                              text: TextSpan(
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: AppColors.mutedForeground),
+                                children: [
+                                  TextSpan(
+                                    text: _isSignUp
+                                        ? 'Already have an account? '
+                                        : 'Don\'t have an account? ',
+                                  ),
+                                  TextSpan(
+                                    text: _isSignUp ? 'Sign In' : 'Sign Up',
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ),
+                  ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
 
                   const SizedBox(height: 16),
 

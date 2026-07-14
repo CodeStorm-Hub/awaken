@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/territory/domain/entities/leaderboard_entry_entity.dart';
@@ -46,22 +48,32 @@ class LeaderboardAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final medal = rank != null ? medalColorForRank(rank!) : AppColors.primary;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: medal.withValues(alpha: 0.14),
-        border: Border.all(color: medal.withValues(alpha: 0.55), width: 1.5),
+    return CustomPaint(
+      painter: DecagonBorderPainter(
+        color: medal.withValues(alpha: 0.55),
+        strokeWidth: 1.5,
       ),
-      alignment: Alignment.center,
-      child: Text(
-        leaderboardInitials(displayName),
-        style: TextStyle(
-          color: medal,
-          fontSize: size * 0.32,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
+      child: Container(
+        width: size,
+        height: size,
+        padding: const EdgeInsets.all(2),
+        child: ClipPath(
+          clipper: const DecagonClipper(),
+          child: ColoredBox(
+            color: medal.withValues(alpha: 0.14),
+            child: Align(
+              alignment: Alignment.center,
+              child: Text(
+                leaderboardInitials(displayName),
+                style: TextStyle(
+                  color: medal,
+                  fontSize: size * 0.32,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -139,4 +151,68 @@ extension LeaderboardEntryUi on LeaderboardEntryEntity {
     if (maxAreaSqMeters <= 0) return 0;
     return (totalAreaSqMeters / maxAreaSqMeters).clamp(0.0, 1.0);
   }
+}
+
+class DecagonClipper extends CustomClipper<Path> {
+  const DecagonClipper();
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final radius = size.width / 2;
+
+    for (int i = 0; i < 10; i++) {
+      final angle = (i * 2 * math.pi / 10) - (math.pi / 2);
+      final x = centerX + radius * math.cos(angle);
+      final y = centerY + radius * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class DecagonBorderPainter extends CustomPainter {
+  const DecagonBorderPainter({required this.color, required this.strokeWidth});
+
+  final Color color;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final radius = (size.width - strokeWidth) / 2;
+
+    for (int i = 0; i < 10; i++) {
+      final angle = (i * 2 * math.pi / 10) - (math.pi / 2);
+      final x = centerX + radius * math.cos(angle);
+      final y = centerY + radius * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

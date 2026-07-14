@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/services/google_auth_service.dart';
@@ -177,58 +179,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     children: [
                       // Avatar Image/Silhouette
                       Center(
-                        child: Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black.withValues(alpha: 0.3),
-                            border: Border.all(
-                              color: isSignedIn
-                                  ? AppColors.primary
-                                  : AppColors.border,
-                              width: 2.0,
-                            ),
-                            boxShadow: isSignedIn
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.15,
-                                      ),
-                                      blurRadius: 16,
-                                      spreadRadius: 2,
-                                    ),
-                                  ]
-                                : null,
+                        child: CustomPaint(
+                          painter: DecagonBorderPainter(
+                            color: isSignedIn ? AppColors.primary : AppColors.border,
+                            strokeWidth: 2.0,
                           ),
-                          child: ClipOval(
-                            child:
-                                (isSignedIn &&
-                                    user?.avatarUrl != null &&
-                                    user!.avatarUrl!.isNotEmpty)
-                                ? Image.network(
-                                    user.avatarUrl!,
-                                    fit: BoxFit.cover,
-                                    // Renders at ~96px — decode small instead
-                                    // of at full source resolution.
-                                    cacheWidth: 288,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
+                          child: Container(
+                            width: 96,
+                            height: 96,
+                            padding: const EdgeInsets.all(4),
+                            child: ClipPath(
+                              clipper: const DecagonClipper(),
+                              child: ColoredBox(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                child: (isSignedIn &&
+                                        user?.avatarUrl != null &&
+                                        user!.avatarUrl!.isNotEmpty)
+                                    ? Image.network(
+                                        user.avatarUrl!,
+                                        fit: BoxFit.cover,
+                                        cacheWidth: 288,
+                                        errorBuilder: (context, error, stackTrace) =>
                                             const Icon(
-                                              Icons.person_rounded,
-                                              size: 48,
-                                              color: AppColors.mutedForeground,
-                                            ),
-                                  )
-                                : Icon(
-                                    isSignedIn
-                                        ? Icons.person_rounded
-                                        : Icons.person_outline_rounded,
-                                    size: 48,
-                                    color: isSignedIn
-                                        ? AppColors.primary
-                                        : AppColors.mutedForeground,
-                                  ),
+                                          Icons.person_rounded,
+                                          size: 48,
+                                          color: AppColors.mutedForeground,
+                                        ),
+                                      )
+                                    : Icon(
+                                        isSignedIn
+                                            ? Icons.person_rounded
+                                            : Icons.person_outline_rounded,
+                                        size: 48,
+                                        color: isSignedIn
+                                            ? AppColors.primary
+                                            : AppColors.mutedForeground,
+                                      ),
+                              ),
+                            ),
                           ),
                         ),
                       ).animate().scale(
@@ -595,4 +583,69 @@ class _StatItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class DecagonClipper extends CustomClipper<Path> {
+  const DecagonClipper();
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final radius = size.width / 2;
+
+    for (int i = 0; i < 10; i++) {
+      final angle = (i * 2 * math.pi / 10) - (math.pi / 2);
+      final x = centerX + radius * math.cos(angle);
+      final y = centerY + radius * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class DecagonBorderPainter extends CustomPainter {
+  const DecagonBorderPainter({required this.color, required this.strokeWidth});
+
+  final Color color;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    // slightly inset the border radius so it doesn't get clipped at the edges
+    final radius = (size.width - strokeWidth) / 2;
+
+    for (int i = 0; i < 10; i++) {
+      final angle = (i * 2 * math.pi / 10) - (math.pi / 2);
+      final x = centerX + radius * math.cos(angle);
+      final y = centerY + radius * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

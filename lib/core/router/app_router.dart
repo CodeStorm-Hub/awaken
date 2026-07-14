@@ -4,13 +4,18 @@ import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/alarm/presentation/screens/active_alarm_screen.dart';
 import 'package:awaken/features/alarm/presentation/screens/alarm_setup_screen.dart';
+import 'package:awaken/features/alarm/presentation/screens/squads_hub_screen.dart';
 import 'package:awaken/features/auth/presentation/screens/auth_screen.dart';
+import 'package:awaken/features/auth/presentation/screens/customization_screen.dart';
 import 'package:awaken/features/auth/presentation/screens/profile_screen.dart';
 import 'package:awaken/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:awaken/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:awaken/features/sessions/presentation/screens/analytics_history_screen.dart';
 import 'package:awaken/features/success/presentation/screens/success_screen.dart';
 import 'package:awaken/features/territory/presentation/providers/active_run_providers.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
+import 'package:awaken/features/territory/presentation/screens/rivalry_details_screen.dart';
+import 'package:awaken/features/territory/presentation/screens/run_details_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_leaderboard_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_overview_screen.dart';
 import 'package:awaken/features/territory/presentation/screens/territory_run_screen.dart';
@@ -33,6 +38,13 @@ abstract final class AppRoutes {
   static const String alarmSetup = '/alarm/setup';
   static const String success = '/alarm/success';
   static const String onboarding = '/onboarding';
+
+  // Modular feature screens routes
+  static const String squads = '/squads';
+  static const String analytics = '/analytics';
+  static const String customization = '/profile/customization';
+  static const String runDetails = '/territory/run-details';
+  static const String rivalry = '/territory/rivalry';
 
   // Legacy aliases kept so existing code using these still compiles.
   static const String territoryRun = '/territory';
@@ -114,6 +126,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.squads,
+        builder: (context, state) => const SquadsHubScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.analytics,
+        builder: (context, state) => const AnalyticsHistoryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.customization,
+        builder: (context, state) => const CustomizationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.runDetails,
+        builder: (context, state) => RunDetailsScreen(runId: state.extra as String?),
+      ),
+      GoRoute(
+        path: AppRoutes.rivalry,
+        builder: (context, state) => const RivalryDetailsScreen(),
       ),
 
       // ── Redirect bare '/' to '/dashboard' ────────────────────────────────

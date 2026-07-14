@@ -1,0 +1,2710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awaken — Material 3 Expressive Mockup</title>
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,-50..200" rel="stylesheet" />
+  
+  <style>
+    /* Design Tokens */
+    :root {
+      /* Theme Presets */
+      --cyan-primary: #00F0FF;
+      --cyan-glow: rgba(0, 240, 255, 0.45);
+      
+      --magenta-primary: #D633FF;
+      --magenta-glow: rgba(214, 51, 255, 0.45);
+      
+      --acid-primary: #39FF14;
+      --acid-glow: rgba(57, 255, 20, 0.45);
+      
+      --mono-primary: #FAFAFA;
+      --mono-glow: rgba(250, 250, 250, 0.45);
+
+      /* Active theme variables */
+      --primary: var(--cyan-primary);
+      --primary-glow: var(--cyan-glow);
+      --secondary: #A259FF;
+      --secondary-glow: rgba(162, 89, 255, 0.4);
+      --success: #39FF14;
+      --success-glow: rgba(57, 255, 20, 0.3);
+      --destructive: #FF3366;
+      --destructive-glow: rgba(255, 51, 102, 0.35);
+      
+      --background-start: #08080C;
+      --background-end: #0F1015;
+      
+      --card-bg: rgba(25, 26, 32, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #FAFAFA;
+      --text-muted: #9E9E9E;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #040406;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* Outer Demo Frame */
+    .container {
+      display: flex;
+      gap: 30px;
+      max-width: 1200px;
+      width: 100%;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .info-panel {
+      flex: 1;
+      max-width: 450px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 30px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .info-panel h1 {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--primary);
+      margin-bottom: 12px;
+      text-shadow: 0 0 10px var(--primary-glow);
+      transition: all 0.3s ease;
+    }
+
+    .info-panel h2 {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .info-panel p {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .control-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .theme-selector {
+      display: flex;
+      gap: 10px;
+    }
+
+    .theme-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .theme-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .theme-btn.active {
+      border-color: #ffffff;
+      transform: scale(1.05);
+    }
+
+    .theme-btn-cyan { background-color: var(--cyan-primary); box-shadow: 0 0 8px var(--cyan-glow); }
+    .theme-btn-magenta { background-color: var(--magenta-primary); box-shadow: 0 0 8px var(--magenta-glow); }
+    .theme-btn-acid { background-color: var(--acid-primary); box-shadow: 0 0 8px var(--acid-glow); }
+    .theme-btn-mono { background-color: #FAFAFA; box-shadow: 0 0 8px rgba(255,255,255,0.4); }
+
+    /* Phone Device Mockup */
+    .device-mockup {
+      width: 380px;
+      height: 800px;
+      background: #000;
+      border-radius: 50px;
+      padding: 12px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 0 2px 2px rgba(255, 255, 255, 0.15);
+      border: 4px solid #2d2d30;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* Screen Frame */
+    .screen {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--background-start), var(--background-end));
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Notch / Dynamic Island */
+    .notch {
+      width: 110px;
+      height: 28px;
+      background: #000000;
+      border-radius: 20px;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-lens {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #111122;
+      border: 1px solid #333344;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      height: 44px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      z-index: 99;
+      position: relative;
+    }
+
+    .status-right {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* Active screen content */
+    .screen-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 20px 70px 20px;
+      scrollbar-width: none; /* Hide scrollbar for layout */
+    }
+    
+    .screen-content::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Navigation Bar */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 98;
+      padding-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      gap: 4px;
+    }
+
+    .nav-item .material-symbols-rounded {
+      font-size: 22px;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+      text-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .nav-item.active .material-symbols-rounded {
+      transform: scale(1.1);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: absolute;
+      top: 60px;
+      left: 20px;
+      right: 20px;
+      background: rgba(25, 26, 32, 0.95);
+      border: 1px solid var(--primary);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), 0 0 12px var(--primary-glow);
+      border-radius: 16px;
+      padding: 12px 16px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateY(-150%);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    .toast-icon {
+      color: var(--primary);
+      font-size: 20px;
+    }
+
+    .toast-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Common Card Styling - M3 Expressive Asymmetrical Corners */
+    .asym-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 32px 12px 32px 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .asym-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Page Header */
+    .page-header {
+      margin-bottom: 24px;
+      margin-top: 10px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-top: 4px;
+    }
+
+    /* --- SCREEN 1: DASHBOARD --- */
+    .clock-container {
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .clock-time {
+      font-family: 'Space Mono', monospace;
+      font-size: 72px;
+      font-weight: 700;
+      letter-spacing: -2px;
+      line-height: 1;
+      text-shadow: 0 0 15px rgba(255,255,255,0.1);
+    }
+
+    .clock-date {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    /* Active Alarm Card */
+    .active-alarm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--primary);
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--primary);
+      margin-bottom: 12px;
+      animation: pulse 2s infinite;
+    }
+
+    .alarm-time-large {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .alarm-details-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    .exercise-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .alarm-countdown {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Gamified Streak Card Grid */
+    .streak-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .streak-card-circle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .streak-ring-svg {
+      width: 90px;
+      height: 90px;
+      transform: rotate(-90deg);
+      position: relative;
+    }
+
+    .streak-ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.05);
+      stroke-width: 8;
+    }
+
+    .streak-ring-progress {
+      fill: none;
+      stroke: url(#streakGrad);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 251;
+      stroke-dashoffset: 75; /* 70% complete */
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .streak-ring-text {
+      position: absolute;
+      font-family: 'Space Mono', monospace;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .streak-ring-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .dashboard-tile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .dashboard-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dashboard-tile:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .dashboard-tile-header {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+
+    .dashboard-tile-icon {
+      color: var(--primary);
+    }
+
+    .dashboard-tile-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .dashboard-tile-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .start-run-panel {
+      background: linear-gradient(135deg, rgba(162, 89, 255, 0.15), rgba(0, 240, 255, 0.1));
+      border: 1px solid var(--secondary);
+      border-radius: 24px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 30px rgba(162, 89, 255, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    .start-run-panel:hover {
+      box-shadow: 0 12px 35px rgba(162, 89, 255, 0.25);
+      border-color: var(--primary);
+    }
+
+    .start-run-btn {
+      background: var(--text);
+      color: #000;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      margin-top: 12px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(255,255,255,0.2);
+    }
+
+    /* --- SCREEN 2: ACTIVE RUN (MAP) --- */
+    .map-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, #1b1625, #08080C);
+      z-index: 1;
+    }
+
+    /* Grid overlay to look like coordinates */
+    .map-grid {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-size: 40px 40px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    }
+
+    /* Simulating Map elements */
+    .map-polygon {
+      position: absolute;
+      background: rgba(0, 240, 255, 0.15);
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+      border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; /* Expressive organic shape */
+      width: 180px;
+      height: 160px;
+      top: 150px;
+      left: 30px;
+      animation: morphPolygon 10s infinite alternate;
+    }
+
+    .map-rival-polygon {
+      position: absolute;
+      background: rgba(255, 51, 102, 0.12);
+      border: 2px dashed var(--destructive);
+      width: 120px;
+      height: 140px;
+      top: 80px;
+      right: -20px;
+      border-radius: 50% 50% 30% 70% / 50% 60% 40% 50%;
+    }
+
+    .map-bounty-zone {
+      position: absolute;
+      background: rgba(162, 89, 255, 0.18);
+      border: 2px solid var(--secondary);
+      box-shadow: 0 0 20px var(--secondary-glow);
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      bottom: 220px;
+      right: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: heartbeat 2.5s infinite;
+    }
+
+    .map-gps-trail {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    .user-marker {
+      width: 16px;
+      height: 16px;
+      background: #ffffff;
+      border: 3px solid var(--primary);
+      border-radius: 50%;
+      position: absolute;
+      top: 250px;
+      left: 120px;
+      box-shadow: 0 0 15px #ffffff, 0 0 30px var(--primary-glow);
+      z-index: 5;
+    }
+
+    .user-marker-pulse {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      top: -15px;
+      left: -15px;
+      opacity: 0;
+      animation: ping 2s infinite;
+    }
+
+    /* Floating Glassmorphic HUD overlay */
+    .run-hud-overlay {
+      position: absolute;
+      top: 70px;
+      left: 16px;
+      right: 16px;
+      background: rgba(10, 10, 14, 0.75);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 16px;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .run-hud-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .run-hud-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .run-hud-lbl {
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    /* Loop Closure HUD */
+    .loop-closure-progress {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .loop-closure-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      margin: 0 12px;
+      overflow: hidden;
+    }
+
+    .loop-closure-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(to right, var(--secondary), var(--primary));
+      border-radius: 10px;
+      transition: width 0.5s ease;
+    }
+
+    /* Map Controls Floating Right */
+    .map-controls {
+      position: absolute;
+      right: 16px;
+      top: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .map-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(10, 10, 14, 0.75);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+    }
+
+    .map-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Run Control Panel Bottom */
+    .run-controls-bottom {
+      position: absolute;
+      bottom: 80px;
+      left: 16px;
+      right: 16px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .main-run-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: var(--text);
+      color: #000000;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(255,255,255,0.25), 0 0 15px rgba(255,255,255,0.1);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .main-run-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .main-run-btn.active {
+      background: var(--destructive);
+      color: var(--text);
+      box-shadow: 0 10px 25px rgba(255, 51, 102, 0.35);
+    }
+
+    .active-run-buttons {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .map-alert-bar {
+      background: rgba(255, 176, 32, 0.15);
+      border: 1px solid #FFB020;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #FFB020;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    /* --- SCREEN 3: RANKS (LEADERBOARD) --- */
+    .filter-tabs {
+      display: flex;
+      background: rgba(0,0,0,0.2);
+      border-radius: 100px;
+      padding: 4px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 12px;
+    }
+
+    .filter-tab {
+      flex: 1;
+      text-align: center;
+      padding: 6px 0;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border-radius: 100px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+
+    .filter-tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Podium */
+    .podium-container {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px;
+      margin: 24px 0;
+      height: 180px;
+    }
+
+    .podium-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .podium-avatar-wrap {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .podium-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #25262c;
+      border: 2px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .podium-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .podium-avatar-1 { border-color: var(--medal-gold, #E8C547); box-shadow: 0 0 12px rgba(232,197,71,0.4); width: 56px; height: 56px;}
+    .podium-avatar-2 { border-color: var(--medal-silver, #B8C0CC); }
+    .podium-avatar-3 { border-color: var(--medal-bronze, #C47A3A); }
+
+    .podium-rank-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rank-gold { background: #E8C547; }
+    .rank-silver { background: #B8C0CC; }
+    .rank-bronze { background: #C47A3A; }
+
+    .podium-block {
+      width: 100%;
+      background: linear-gradient(to top, rgba(25, 26, 32, 0.4), rgba(25, 26, 32, 0.8));
+      border: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 6px;
+      gap: 4px;
+      transition: height 0.5s ease;
+    }
+
+    .podium-block-1 { height: 100px; border-radius: 12px 12px 0 0; border-top-color: var(--medal-gold, #E8C547); }
+    .podium-block-2 { height: 75px; border-radius: 12px 12px 0 0; border-top-color: var(--medal-silver, #B8C0CC); }
+    .podium-block-3 { height: 55px; border-radius: 12px 12px 0 0; border-top-color: var(--medal-bronze, #C47A3A); }
+
+    .podium-name {
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 80px;
+    }
+
+    .podium-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Standings Rows */
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .rank-row {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .rank-row:hover {
+      border-color: var(--primary);
+    }
+
+    .rank-row.highlight {
+      border-color: var(--primary-glow);
+      background: rgba(0, 240, 255, 0.05);
+    }
+
+    .rank-row-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .rank-number {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      width: 20px;
+    }
+
+    .rank-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #25262c;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rank-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .rank-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .rank-row-right {
+      text-align: right;
+    }
+
+    .rank-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .rank-value-lbl {
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .climb-hint-bar {
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid var(--primary-glow);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+
+    /* --- SCREEN 4: ALARM ACTIVE SQUAT FLOW --- */
+    .camera-frame {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: radial-gradient(circle, #2a2c3a, #0d0f1a);
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+    }
+
+    /* Custom skeleton wireframe drawer */
+    .skeleton-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* telemetries */
+    .hud-telemetry {
+      position: absolute;
+      background: rgba(10,10,14,0.85);
+      border: 1px solid var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      z-index: 5;
+    }
+
+    .hud-telemetry-left {
+      top: 40%;
+      left: 20px;
+    }
+
+    .hud-telemetry-right {
+      top: 40%;
+      right: 20px;
+    }
+
+    .hud-telemetry-val {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .out-of-frame-banner {
+      background: rgba(255, 51, 102, 0.2);
+      border: 1px solid var(--destructive);
+      padding: 8px 16px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--destructive);
+      font-weight: 600;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      animation: pulse 1.5s infinite;
+      margin-top: 30px;
+      z-index: 5;
+    }
+
+    /* Active Alarm Center display */
+    .active-rep-hud {
+      text-align: center;
+      z-index: 5;
+      margin-top: auto;
+      margin-bottom: auto;
+      pointer-events: none;
+    }
+
+    .active-rep-counter {
+      font-family: 'Space Mono', monospace;
+      font-size: 76px;
+      font-weight: 700;
+      letter-spacing: -2px;
+      line-height: 1;
+      text-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+    }
+
+    .active-rep-fraction {
+      color: var(--text-muted);
+      font-size: 32px;
+      font-weight: 400;
+    }
+
+    .active-rep-cue {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--primary);
+      text-shadow: 0 0 10px var(--primary-glow);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    /* Tap anywhere instruction */
+    .tap-anywhere-hint {
+      position: absolute;
+      bottom: 120px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      z-index: 5;
+      pointer-events: none;
+      animation: heartbeat 2s infinite;
+    }
+
+    /* Emergency Hold Escape hatch */
+    .emergency-stop-container {
+      z-index: 5;
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hold-ring-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255, 51, 102, 0.1);
+      border: 2px solid rgba(255, 51, 102, 0.3);
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--destructive);
+      transition: all 0.2s ease;
+      touch-action: none;
+    }
+
+    .hold-ring-btn:active {
+      transform: scale(0.95);
+      background: rgba(255, 51, 102, 0.2);
+    }
+
+    .hold-svg {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      transform: rotate(-90deg);
+    }
+
+    .hold-svg-bg {
+      fill: none;
+      stroke: transparent;
+    }
+
+    .hold-svg-fill {
+      fill: none;
+      stroke: var(--destructive);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200; /* Charge progress from 200 (empty) to 0 (full) */
+      transition: stroke-dashoffset 0.1s linear;
+    }
+
+    .hold-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    /* --- SCREEN 5: SQUAD HUB --- */
+    .squad-members-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .squad-member-card {
+      background: rgba(25, 26, 32, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .squad-member-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #25262c;
+      border: 2px solid transparent;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .squad-member-avatar-asleep { border-color: var(--text-muted); }
+    .squad-member-avatar-ringing { border-color: var(--destructive); animation: shake 0.5s infinite; }
+    .squad-member-avatar-awake { border-color: var(--success); box-shadow: 0 0 8px var(--success-glow); }
+
+    .squad-member-name {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .squad-member-status {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .member-status-asleep { color: var(--text-muted); }
+    .member-status-ringing { color: var(--destructive); }
+    .member-status-awake { color: var(--success); }
+
+    .squad-actions-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .squad-action-btn {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .squad-action-btn:hover {
+      border-color: var(--primary);
+    }
+
+    /* Invite Code Panel */
+    .invite-code-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.2);
+      border-radius: 100px;
+      padding: 8px 16px;
+      border: 1px dashed var(--card-border);
+    }
+
+    .invite-code-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* --- SCREEN 6: SQUAD TAX BAILOUT RAIL (ALARM MODE Overlay) --- */
+    .squad-tax-rail {
+      position: absolute;
+      top: 50px;
+      right: 16px;
+      bottom: 200px;
+      width: 44px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .squad-rail-node {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(10,10,14,0.85);
+      border: 2px solid var(--destructive);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .squad-rail-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: var(--destructive);
+      color: #000;
+      font-size: 8px;
+      font-weight: 700;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* --- SCREEN 7: RUN RECAP DETAILS --- */
+    .recap-map {
+      height: 140px;
+      background: radial-gradient(circle, #15161c, #090a0f);
+      border-radius: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+    }
+
+    .recap-map-path {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      stroke: var(--success);
+      stroke-width: 3;
+      stroke-dasharray: 5;
+      animation: dash 5s linear infinite;
+    }
+
+    .recap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .recap-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    /* --- SCREEN 8: ANALYTICS --- */
+    .chart-container {
+      height: 160px;
+      margin-bottom: 20px;
+      padding: 10px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.15);
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+    }
+
+    .chart-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .chart-bar {
+      width: 20px;
+      background: linear-gradient(to top, var(--primary-glow), var(--primary));
+      border-radius: 4px 4px 0 0;
+      transition: height 0.5s ease;
+    }
+
+    .chart-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .achievements-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+
+    .badge-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .badge-icon.unlocked {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+      color: var(--primary);
+    }
+
+    /* --- SCREEN 9: SUCCESS APPLAUSE --- */
+    .success-celebration {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding-top: 30px;
+    }
+
+    .success-gem {
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, var(--cyan-primary), rgba(0,0,0,0));
+      clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 24px;
+      box-shadow: 0 0 30px var(--primary-glow);
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .success-gem::after {
+      content: '';
+      position: absolute;
+      width: 92px;
+      height: 92px;
+      background: #08080C;
+      clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+      z-index: 1;
+    }
+
+    .success-gem-text {
+      position: relative;
+      z-index: 2;
+      font-family: 'Space Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      text-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .success-quote-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 24px;
+      text-align: center;
+      width: 100%;
+    }
+
+    .success-quote-text {
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* --- SCREEN 10: CUSTOMIZATION SHOP --- */
+    .preview-card {
+      height: 110px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #0d0f19, #06070a);
+      border: 1px solid var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .avatar-frames-list {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .avatar-frame-item {
+      aspect-ratio: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .avatar-frame-item.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 8px var(--primary-glow);
+    }
+
+    .avatar-shape {
+      width: 36px;
+      height: 36px;
+      background: #333;
+    }
+
+    .shape-decagon { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); }
+    .shape-squircle { border-radius: 38%; }
+    .shape-bevel { clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%); }
+    .shape-gear { clip-path: polygon(50% 0%, 65% 15%, 85% 15%, 85% 35%, 100% 50%, 85% 65%, 85% 85%, 65% 85%, 50% 100%, 35% 85%, 15% 85%, 15% 65%, 0% 50%, 15% 35%, 15% 15%, 35% 15%); }
+
+    /* --- SCREEN 11: RIVALRY LOG --- */
+    .conflict-banner {
+      background: rgba(255, 176, 32, 0.1);
+      border: 1px solid #FFB020;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .conflict-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #25262c;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 2px solid #FFB020;
+    }
+
+    .steals-log {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .steal-log-item {
+      background: rgba(25, 26, 32, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .steal-log-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .steal-log-circle {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .steal-lost { background-color: var(--destructive); }
+    .steal-won { background-color: var(--success); }
+
+    .steal-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .steal-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .steal-area {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .steal-area-lost { color: var(--destructive); }
+    .steal-area-won { color: var(--success); }
+
+    /* Button CTA styling */
+    .app-btn {
+      width: 100%;
+      height: 50px;
+      border-radius: 14px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .app-btn-primary {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .app-btn-primary:hover {
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+
+    .app-btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+    }
+
+    .app-btn-outline:hover {
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    /* Screen Views controller class */
+    .screen-view {
+      display: none;
+      height: 100%;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .screen-view.active {
+      display: block;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; box-shadow: 0 0 0 0 var(--primary-glow); }
+      70% { opacity: 1; box-shadow: 0 0 0 8px transparent; }
+      100% { opacity: 0.6; box-shadow: 0 0 0 0 transparent; }
+    }
+
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      15% { transform: scale(1.05); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.05); }
+      60% { transform: scale(1); }
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+      100% { transform: translateY(0px); }
+    }
+
+    @keyframes ping {
+      0% { transform: scale(0.6); opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    @keyframes morphPolygon {
+      0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+      50% { border-radius: 50% 50% 30% 70% / 50% 60% 40% 50%; }
+      100% { border-radius: 70% 30% 50% 50% / 30% 70% 30% 70%; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      20%, 60% { transform: rotate(-5deg); }
+      40%, 80% { transform: rotate(5deg); }
+    }
+
+    @keyframes dash {
+      to { stroke-dashoffset: -40; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Side Info and Control Board -->
+  <div class="info-panel">
+    <h1>AWAKEN</h1>
+    <h2>M3 Expressive Redesign</h2>
+    <p>This interactive mockup allows you to visualize the design system changes and modular screen configurations proposed in the implementation plan.</p>
+    
+    <div class="control-group">
+      <div class="control-label">Visual Theme Accent</div>
+      <div class="theme-selector">
+        <div class="theme-btn theme-btn-cyan active" onclick="setAccent('cyan')" title="Cyan Accent (Default)"></div>
+        <div class="theme-btn theme-btn-magenta" onclick="setAccent('magenta')" title="Magenta Accent (Streak 7+)"></div>
+        <div class="theme-btn theme-btn-acid" onclick="setAccent('acid')" title="Acid Accent (Streak 30+)"></div>
+        <div class="theme-btn theme-btn-mono" onclick="setAccent('mono')" title="Mono Accent (Streak 90+)"></div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Interactive Actions</div>
+      <p style="font-size: 13px; margin-bottom: 12px;">Trigger flows inside the phone screen dynamically:</p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="app-btn app-btn-outline" style="height: 38px;" onclick="simulateRingingAlarm()">
+          <span class="material-symbols-rounded" style="font-size: 18px;">notifications_active</span> Simulate Ringing Alarm
+        </button>
+        <button class="app-btn app-btn-outline" style="height: 38px;" onclick="simulateActiveRun()">
+          <span class="material-symbols-rounded" style="font-size: 18px;">directions_run</span> Open Active Map Run
+        </button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Features Index</div>
+      <p style="font-size: 13px;">View any of the redesigned or newly modularized pages:</p>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+        <button class="app-btn app-btn-outline" style="height:32px; font-size:10px; padding:0;" onclick="navigateTo('squads')">Squads Hub</button>
+        <button class="app-btn app-btn-outline" style="height:32px; font-size:10px; padding:0;" onclick="navigateTo('analytics')">Analytics</button>
+        <button class="app-btn app-btn-outline" style="height:32px; font-size:10px; padding:0;" onclick="navigateTo('customization')">Customization</button>
+        <button class="app-btn app-btn-outline" style="height:32px; font-size:10px; padding:0;" onclick="navigateTo('rivalry')">Rivalry Log</button>
+        <button class="app-btn app-btn-outline" style="height:32px; font-size:10px; padding:0;" onclick="navigateTo('run-details')">Run Details</button>
+        <button class="app-btn app-btn-outline" style="height:32px; font-size:10px; padding:0;" onclick="navigateTo('setup')">Alarm Setup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Device -->
+  <div class="device-mockup">
+    <div class="screen">
+      
+      <!-- Top Notch -->
+      <div class="notch">
+        <div class="camera-lens"></div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-time">07:30 AM</div>
+        <div class="status-right">
+          <span class="material-symbols-rounded" style="font-size: 14px;">signal_cellular_alt</span>
+          <span class="material-symbols-rounded" style="font-size: 14px;">wifi</span>
+          <span class="material-symbols-rounded" style="font-size: 14px;">battery_full</span>
+        </div>
+      </div>
+
+      <!-- Toast Notification overlay -->
+      <div class="toast" id="nudge-toast">
+        <span class="material-symbols-rounded toast-icon">electric_bolt</span>
+        <div class="toast-text" id="nudge-toast-text">Nudge sent successfully!</div>
+      </div>
+
+      <!-- Main Scrollable Screen Content -->
+      <div class="screen-content" id="scroll-content">
+
+        <!-- ================= VIEW 1: HOME/DASHBOARD ================= -->
+        <div class="screen-view active" id="view-dashboard">
+          <div class="clock-container">
+            <div class="clock-time">07:30</div>
+            <div class="clock-date">Tue, Jul 14</div>
+          </div>
+
+          <!-- Hero: Next Armed Alarm -->
+          <div class="asym-card" style="border-color: var(--primary-glow); background: linear-gradient(135deg, rgba(25, 26, 32, 0.9), rgba(0, 240, 255, 0.04)); cursor: pointer;" onclick="simulateRingingAlarm()">
+            <div class="active-alarm-badge">
+              <span class="material-symbols-rounded" style="font-size: 10px;">lock_open</span> ARMED
+            </div>
+            <div class="alarm-time-large">07:45 AM</div>
+            <div class="alarm-details-row">
+              <div class="exercise-label">
+                <span class="material-symbols-rounded">fitness_center</span> 10 Squats
+              </div>
+              <div class="alarm-countdown">Rings in 15m</div>
+            </div>
+          </div>
+
+          <div class="dashboard-tile-grid">
+            <div class="dashboard-tile" onclick="navigateTo('squads')">
+              <div class="dashboard-tile-header">
+                <span class="dashboard-tile-title">Squad</span>
+                <span class="material-symbols-rounded dashboard-tile-icon">groups</span>
+              </div>
+              <div class="dashboard-tile-value" style="color: var(--secondary);">2 Active</div>
+            </div>
+            <div class="dashboard-tile" onclick="navigateTo('analytics')">
+              <div class="dashboard-tile-header">
+                <span class="dashboard-tile-title">Streak</span>
+                <span class="material-symbols-rounded dashboard-tile-icon">local_fire_department</span>
+              </div>
+              <div class="dashboard-tile-value" style="color: var(--primary);">12 Days</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Panel -->
+          <div class="start-run-panel" onclick="navigateTo('territory')">
+            <div class="eyebrow" style="color: var(--secondary);">Map Activity</div>
+            <h3 style="font-size: 18px; font-weight: 800; margin-top: 4px;">CLAIM NEIGHBORHOOD</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">Run closed loops to capture geographic turf and defend it from rivals.</p>
+            <button class="start-run-btn">ENTER MAP</button>
+          </div>
+
+          <!-- Feature shortcuts grid -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="asym-card" style="padding: 14px 20px; border-radius: 16px; margin: 0; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="navigateTo('customization')">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span class="material-symbols-rounded" style="color:var(--primary);">palette</span>
+                <span style="font-size:13px; font-weight:600; letter-spacing:0.5px;">HUD Theme Shop</span>
+              </div>
+              <span class="material-symbols-rounded" style="font-size:18px; color:var(--text-muted);">chevron_right</span>
+            </div>
+            <div class="asym-card" style="padding: 14px 20px; border-radius: 16px; margin: 0; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="navigateTo('rivalry')">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span class="material-symbols-rounded" style="color:var(--destructive);">swords</span>
+                <span style="font-size:13px; font-weight:600; letter-spacing:0.5px;">Rivalry Battle Logs</span>
+              </div>
+              <span class="material-symbols-rounded" style="font-size:18px; color:var(--text-muted);">chevron_right</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 2: TERRITORY MAP ================= -->
+        <div class="screen-view" id="view-territory" style="position: absolute; top:0; left:0; right:0; bottom:65px; padding:0;">
+          <div class="map-placeholder">
+            <div class="map-grid"></div>
+            <div class="map-polygon" id="sim-polygon"></div>
+            <div class="map-rival-polygon"></div>
+            <div class="map-bounty-zone">
+              <span class="material-symbols-rounded" style="color: var(--secondary); font-size: 28px;">electric_bolt</span>
+            </div>
+            <div class="user-marker" id="sim-user">
+              <div class="user-marker-pulse"></div>
+            </div>
+          </div>
+
+          <!-- Glassmorphic HUD overlay -->
+          <div class="run-hud-overlay">
+            <div class="run-hud-stats">
+              <div>
+                <div class="run-hud-val" id="hud-dist">0.00</div>
+                <div class="run-hud-lbl">Dist (km)</div>
+              </div>
+              <div style="border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08);">
+                <div class="run-hud-val" id="hud-time">00:00</div>
+                <div class="run-hud-lbl">Duration</div>
+              </div>
+              <div>
+                <div class="run-hud-val">--:--</div>
+                <div class="run-hud-lbl">Pace /km</div>
+              </div>
+            </div>
+            <div class="loop-closure-progress" id="loop-hud-closure" style="display:none;">
+              <span class="eyebrow" style="font-size:8px;">Loop Closure</span>
+              <div class="loop-closure-bar-bg">
+                <div class="loop-closure-bar-fill" id="loop-bar">0%</div>
+              </div>
+              <span class="material-symbols-rounded" style="color: var(--success); font-size:14px;">check_circle</span>
+            </div>
+          </div>
+
+          <!-- Map Controls -->
+          <div class="map-controls">
+            <div class="map-btn"><span class="material-symbols-rounded">add</span></div>
+            <div class="map-btn"><span class="material-symbols-rounded">remove</span></div>
+            <div class="map-btn" style="color: var(--primary);"><span class="material-symbols-rounded">my_location</span></div>
+          </div>
+
+          <!-- Bottom Control Bar -->
+          <div class="run-controls-bottom">
+            <div class="map-alert-bar" id="map-nudge" style="display:none;">
+              <span class="material-symbols-rounded" style="font-size:16px;">warning</span>
+              <span>Rival turf detected nearby!</span>
+            </div>
+            <button class="main-run-btn" id="run-trigger" onclick="toggleRunSimulation()">
+              <span class="material-symbols-rounded" id="run-icon" style="font-size: 32px;">play_arrow</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 3: LEADERBOARD ================= -->
+        <div class="screen-view" id="view-leaderboard">
+          <div class="page-header">
+            <div class="eyebrow">Rivals Standings</div>
+            <div class="page-title">LEADERBOARD</div>
+          </div>
+
+          <div class="filter-tabs">
+            <div class="filter-tab active">Nearby</div>
+            <div class="filter-tab">Global</div>
+          </div>
+
+          <div class="climb-hint-bar">
+            <span class="material-symbols-rounded" style="font-size: 16px;">trending_up</span>
+            <span style="font-size: 11px; font-weight: 500;">Claim 0.045 km² to pass @Nemesis01</span>
+          </div>
+
+          <!-- Podium Top 3 -->
+          <div class="podium-container">
+            <div class="podium-col">
+              <div class="podium-avatar-wrap">
+                <div class="podium-avatar podium-avatar-2">
+                  <span class="material-symbols-rounded" style="font-size: 24px; color: var(--text-muted);">person</span>
+                </div>
+                <div class="podium-rank-badge rank-silver">2</div>
+              </div>
+              <div class="podium-block podium-block-2">
+                <div class="podium-name">RunnerA</div>
+                <div class="podium-val">1.24 km²</div>
+              </div>
+            </div>
+
+            <div class="podium-col">
+              <div class="podium-avatar-wrap">
+                <div class="podium-avatar podium-avatar-1">
+                  <span class="material-symbols-rounded" style="font-size: 32px; color: var(--primary);">person</span>
+                </div>
+                <div class="podium-rank-badge rank-gold">1</div>
+              </div>
+              <div class="podium-block podium-block-1">
+                <div class="podium-name">TerritoryKing</div>
+                <div class="podium-val">2.81 km²</div>
+              </div>
+            </div>
+
+            <div class="podium-col">
+              <div class="podium-avatar-wrap">
+                <div class="podium-avatar podium-avatar-3">
+                  <span class="material-symbols-rounded" style="font-size: 20px; color: var(--text-muted);">person</span>
+                </div>
+                <div class="podium-rank-badge rank-bronze">3</div>
+              </div>
+              <div class="podium-block podium-block-3">
+                <div class="podium-name">UrbanRunner</div>
+                <div class="podium-val">0.95 km²</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Standings list -->
+          <div class="leaderboard-list">
+            <div class="rank-row highlight">
+              <div class="rank-row-left">
+                <div class="rank-number">4</div>
+                <div class="rank-avatar" style="border: 1px solid var(--primary);"><span class="material-symbols-rounded" style="color:var(--primary); font-size:18px;">person</span></div>
+                <div class="rank-name">You (Guest)</div>
+              </div>
+              <div class="rank-row-right">
+                <div class="rank-value">0.82 km²</div>
+                <div class="rank-value-lbl">Claimed</div>
+              </div>
+            </div>
+            <div class="rank-row">
+              <div class="rank-row-left">
+                <div class="rank-number">5</div>
+                <div class="rank-avatar"><span class="material-symbols-rounded" style="font-size:18px;">person</span></div>
+                <div class="rank-name">Nemesis01</div>
+              </div>
+              <div class="rank-row-right">
+                <div class="rank-value">0.78 km²</div>
+                <div class="rank-value-lbl">Claimed</div>
+              </div>
+            </div>
+            <div class="rank-row">
+              <div class="rank-row-left">
+                <div class="rank-number">6</div>
+                <div class="rank-avatar"><span class="material-symbols-rounded" style="font-size:18px;">person</span></div>
+                <div class="rank-name">Jogger_99</div>
+              </div>
+              <div class="rank-row-right">
+                <div class="rank-value">0.61 km²</div>
+                <div class="rank-value-lbl">Claimed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 4: ALARM SETUP ================= -->
+        <div class="screen-view" id="view-setup">
+          <div class="page-header">
+            <div class="eyebrow">Precision Editor</div>
+            <div class="page-title">SET ALARM</div>
+          </div>
+
+          <!-- Visual clock numbers picker -->
+          <div class="asym-card" style="text-align: center; padding: 24px;">
+            <div class="eyebrow" style="margin-bottom: 12px;">Selected Wake Time</div>
+            <div style="display:flex; justify-content:center; align-items:center; gap:12px; font-family:'Space Mono', monospace; font-size:52px; font-weight:700;">
+              <span style="color:var(--primary);">07</span>
+              <span>:</span>
+              <span style="color:var(--primary);">45</span>
+              <span style="font-size:24px; margin-left:8px; color:var(--text-muted);">AM</span>
+            </div>
+            <p style="font-size:12px; color:var(--primary); font-weight:600; margin-top:12px;">Rings in 9h 15m</p>
+          </div>
+
+          <!-- Rep count Selector -->
+          <div class="asym-card">
+            <div class="eyebrow" style="margin-bottom: 16px;">Wake Up Tax (Reps)</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <button class="map-btn" style="border-radius:50%;"><span class="material-symbols-rounded">remove</span></button>
+              <div style="text-align:center;">
+                <span style="font-family:'Space Mono', monospace; font-size:40px; font-weight:700;">10</span>
+                <div class="eyebrow" style="font-size:9px;">Squats</div>
+              </div>
+              <button class="map-btn" style="border-radius:50%;"><span class="material-symbols-rounded">add</span></button>
+            </div>
+          </div>
+
+          <!-- Mode / Chips -->
+          <div class="asym-card">
+            <div class="eyebrow" style="margin-bottom: 12px;">Exercise Verification</div>
+            <div style="display:flex; gap:10px; margin-bottom: 16px;">
+              <button class="app-btn app-btn-primary" style="flex:1; height: 38px; font-size: 11px; border-radius: 100px;">Fixed Mode</button>
+              <button class="app-btn app-btn-outline" style="flex:1; height: 38px; font-size: 11px; border-radius: 100px;">Roulette</button>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <span class="active-alarm-badge" style="margin: 0; background:rgba(0,240,255,0.1); border-color:var(--primary);">Squats</span>
+              <span class="active-alarm-badge" style="margin: 0; background:transparent; border-color:var(--card-border); color:var(--text-muted);">Pushups</span>
+              <span class="active-alarm-badge" style="margin: 0; background:transparent; border-color:var(--card-border); color:var(--text-muted);">High Knees</span>
+            </div>
+          </div>
+
+          <button class="app-btn app-btn-primary" onclick="simulateRingingAlarm()">
+            <span class="material-symbols-rounded">alarm_on</span> ARM ALARM
+          </button>
+        </div>
+
+        <!-- ================= VIEW 5: ACTIVE ALARM FLOW ================= -->
+        <div class="screen-view" id="view-active-alarm" style="position: absolute; top:0; left:0; right:0; bottom:0; padding:0; z-index:99;">
+          <div class="camera-frame" onclick="simulateRepCount()">
+            
+            <!-- Out of frame warning -->
+            <div class="out-of-frame-banner" id="alarm-warning-banner" style="display: none;">
+              <span class="material-symbols-rounded">warning</span>
+              <span>KEEP WHOLE BODY IN FRAME</span>
+            </div>
+
+            <!-- Squad Tax Bailout Assist drawer -->
+            <div class="squad-tax-rail">
+              <div class="squad-rail-node" onclick="triggerToast('Squad member assistance active!')">
+                <img src="" style="display:none;" />
+                <span class="material-symbols-rounded" style="color:var(--destructive); font-size: 20px;">groups</span>
+                <div class="squad-rail-badge">2</div>
+              </div>
+            </div>
+
+            <!-- Skeleton Wireframe overlay (Mocked) -->
+            <div class="skeleton-overlay" id="skeleton-box">
+              <svg width="100%" height="100%" style="position:absolute; top:0; left:0;">
+                <!-- joint indicators -->
+                <circle cx="190" cy="220" r="6" fill="#00F0FF" /> <!-- Head -->
+                <line x1="190" y1="220" x2="190" y2="280" stroke="#00F0FF" stroke-width="3" /> <!-- Spine -->
+                <circle cx="150" cy="250" r="5" fill="#00F0FF" /> <!-- L shoulder -->
+                <circle cx="230" cy="250" r="5" fill="#00F0FF" /> <!-- R shoulder -->
+                <line x1="150" y1="250" x2="230" y2="250" stroke="#00F0FF" stroke-width="3" />
+                
+                <!-- Knees and Hips path -->
+                <line x1="160" y1="340" x2="130" y2="420" stroke="#00F0FF" stroke-width="3" id="left-leg" />
+                <line x1="220" y1="340" x2="250" y2="420" stroke="#00F0FF" stroke-width="3" id="right-leg" />
+                <circle cx="130" cy="420" r="5" fill="#00F0FF" />
+                <circle cx="250" cy="420" r="5" fill="#00F0FF" />
+              </svg>
+            </div>
+
+            <!-- Telemetries knee angles -->
+            <div class="hud-telemetry hud-telemetry-left">
+              <span>L_KNEE: </span><span class="hud-telemetry-val" id="angle-left">162°</span>
+            </div>
+            <div class="hud-telemetry hud-telemetry-right">
+              <span>R_KNEE: </span><span class="hud-telemetry-val" id="angle-right">164°</span>
+            </div>
+
+            <!-- Big Rep HUD -->
+            <div class="active-rep-hud">
+              <div class="active-rep-counter" id="active-count-num">0 <span class="active-rep-fraction">/ 10</span></div>
+              <div class="active-rep-cue" id="active-cue-txt">Hold Stand</div>
+            </div>
+
+            <div class="tap-anywhere-hint">
+              Tap Screen to Simulate Squat Rep
+            </div>
+
+            <!-- Emergency Stop -->
+            <div class="emergency-stop-container">
+              <div class="hold-ring-btn" id="emergency-hold-btn">
+                <span class="material-symbols-rounded">power_settings_new</span>
+                <svg class="hold-svg">
+                  <circle cx="32" cy="32" r="28" class="hold-svg-bg"></circle>
+                  <circle cx="32" cy="32" r="28" class="hold-svg-fill" id="hold-charge-circle"></circle>
+                </svg>
+              </div>
+              <div class="hold-label">HOLD 3S ESCAPE</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ================= VIEW 6: SQUAD HUB ================= -->
+        <div class="screen-view" id="view-squads">
+          <div class="page-header">
+            <div class="eyebrow">Team Workout</div>
+            <div class="page-title">SQUADS</div>
+          </div>
+
+          <div class="asym-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+              <span class="eyebrow">Morning Warriors</span>
+              <span class="active-alarm-badge" style="margin:0; background:rgba(57,255,20,0.1); border-color:var(--success); color:var(--success);">ACTIVE</span>
+            </div>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom: 16px;">Make sure everyone completes their squats before 8 AM, or team gets taxed!</p>
+            
+            <div class="squad-members-grid">
+              <div class="squad-member-card" onclick="triggerNudge('Dave')">
+                <div class="squad-member-avatar squad-member-avatar-awake">
+                  <span class="material-symbols-rounded" style="color:var(--success);">person</span>
+                </div>
+                <div class="squad-member-name">Dave</div>
+                <div class="squad-member-status member-status-awake">10/10</div>
+              </div>
+              <div class="squad-member-card" onclick="triggerNudge('Sarah')">
+                <div class="squad-member-avatar squad-member-avatar-ringing">
+                  <span class="material-symbols-rounded" style="color:var(--destructive);">person</span>
+                </div>
+                <div class="squad-member-name">Sarah</div>
+                <div class="squad-member-status member-status-ringing">Ringing</div>
+              </div>
+              <div class="squad-member-card" onclick="triggerNudge('Alex')">
+                <div class="squad-member-avatar squad-member-avatar-asleep">
+                  <span class="material-symbols-rounded" style="color:var(--text-muted);">person</span>
+                </div>
+                <div class="squad-member-name">Alex</div>
+                <div class="squad-member-status member-status-asleep">Asleep</div>
+              </div>
+            </div>
+
+            <div class="squad-actions-row">
+              <button class="squad-action-btn" onclick="triggerBailout('Sarah')">
+                <span class="material-symbols-rounded" style="color:var(--primary); font-size:16px;">add_moderator</span> Bailout Sarah
+              </button>
+            </div>
+          </div>
+
+          <div class="asym-card">
+            <div class="eyebrow" style="margin-bottom: 12px;">Share Squad Link</div>
+            <div class="invite-code-panel">
+              <span class="invite-code-val">WAR-9821</span>
+              <span class="material-symbols-rounded" style="cursor:pointer; font-size:20px;" onclick="triggerToast('Invite code copied!')">content_copy</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 7: RUN RECAP DETAILS ================= -->
+        <div class="screen-view" id="view-run-details">
+          <div class="page-header">
+            <div class="eyebrow">Run Summary</div>
+            <div class="page-title">RUN RECAP</div>
+          </div>
+
+          <div class="recap-map">
+            <div class="map-grid"></div>
+            <svg class="recap-map-path" viewBox="0 0 100 100">
+              <path d="M 20 20 L 80 20 L 80 80 L 20 80 Z" fill="none" />
+            </svg>
+            <div class="user-marker" style="top: 20px; left: 20px; width: 10px; height: 10px; box-shadow:none;"></div>
+            <div class="active-alarm-badge" style="position:absolute; bottom:10px; left:10px; margin:0;">CLOSED LOOP</div>
+          </div>
+
+          <div class="recap-grid">
+            <div class="recap-tile">
+              <div class="eyebrow" style="font-size: 8px;">Claimed Area</div>
+              <div style="font-family:'Space Mono', monospace; font-size: 22px; font-weight:700; color:var(--primary); margin-top:8px;">0.075 km²</div>
+            </div>
+            <div class="recap-tile">
+              <div class="eyebrow" style="font-size: 8px;">Duration</div>
+              <div style="font-family:'Space Mono', monospace; font-size: 22px; font-weight:700; margin-top:8px;">12m 45s</div>
+            </div>
+            <div class="recap-tile">
+              <div class="eyebrow" style="font-size: 8px;">Total Distance</div>
+              <div style="font-family:'Space Mono', monospace; font-size: 22px; font-weight:700; margin-top:8px;">1.82 km</div>
+            </div>
+            <div class="recap-tile">
+              <div class="eyebrow" style="font-size: 8px;">Average Pace</div>
+              <div style="font-family:'Space Mono', monospace; font-size: 22px; font-weight:700; margin-top:8px;">6'52" /km</div>
+            </div>
+          </div>
+
+          <button class="app-btn app-btn-primary" onclick="navigateTo('dashboard')">BACK TO HOME</button>
+        </div>
+
+        <!-- ================= VIEW 8: ANALYTICS ================= -->
+        <div class="screen-view" id="view-analytics">
+          <div class="page-header">
+            <div class="eyebrow">Stats & Consistency</div>
+            <div class="page-title">ANALYTICS</div>
+          </div>
+
+          <div class="asym-card">
+            <div class="eyebrow" style="margin-bottom: 16px;">Weekly Workout Reps</div>
+            <!-- Dynamic SVG or CSS bars -->
+            <div class="chart-container">
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height: 40%;"></div>
+                <div class="chart-label">M</div>
+              </div>
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height: 70%;"></div>
+                <div class="chart-label">T</div>
+              </div>
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height: 20%;"></div>
+                <div class="chart-label">W</div>
+              </div>
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height: 90%;"></div>
+                <div class="chart-label">T</div>
+              </div>
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height: 50%;"></div>
+                <div class="chart-label">F</div>
+              </div>
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height: 80%;"></div>
+                <div class="chart-label">S</div>
+              </div>
+              <div class="chart-bar-wrap">
+                <div class="chart-bar" style="height: 0%;"></div>
+                <div class="chart-label">S</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="asym-card">
+            <div class="eyebrow" style="margin-bottom: 12px;">Achievements Shelf</div>
+            <div class="achievements-row">
+              <div class="badge-icon unlocked" title="Early Bird"><span class="material-symbols-rounded">wb_sunny</span></div>
+              <div class="badge-icon unlocked" title="Dominator"><span class="material-symbols-rounded">swords</span></div>
+              <div class="badge-icon unlocked" title="Closed Loop"><span class="material-symbols-rounded">change_circle</span></div>
+              <div class="badge-icon" title="Locked Achievement" style="opacity:0.3;"><span class="material-symbols-rounded">lock</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 9: SUCCESS APPLAUSE ================= -->
+        <div class="screen-view" id="view-success">
+          <div class="success-celebration">
+            <div class="success-gem">
+              <span class="success-gem-text" id="success-streak-num">13</span>
+            </div>
+            
+            <h2 style="font-size:24px; font-weight:900; letter-spacing:-0.5px;">WAKE UP SUCCESS!</h2>
+            <p class="eyebrow" style="color:var(--primary); margin-top:8px;">STREAK UPDATED</p>
+
+            <!-- Stagger reveal list mockup -->
+            <div style="width: 100%; margin-top: 32px; display:flex; flex-direction:column; gap:10px;">
+              <div class="asym-card" style="margin:0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <span class="exercise-label"><span class="material-symbols-rounded" style="color:var(--primary)">fitness_center</span> Squats completed</span>
+                <span style="font-family:'Space Mono', monospace; font-weight:700;">10 reps</span>
+              </div>
+              <div class="asym-card" style="margin:0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <span class="exercise-label"><span class="material-symbols-rounded" style="color:var(--secondary)">local_fire_department</span> Calories Burned</span>
+                <span style="font-family:'Space Mono', monospace; font-weight:700;">15 kcal</span>
+              </div>
+              <div class="asym-card" style="margin:0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <span class="exercise-label"><span class="material-symbols-rounded" style="color:var(--success)">timer</span> Wake-up time</span>
+                <span style="font-family:'Space Mono', monospace; font-weight:700;">45 sec</span>
+              </div>
+            </div>
+
+            <!-- Typewriter quote -->
+            <div class="success-quote-card" style="margin-top: 24px;">
+              <p class="success-quote-text">"Every rep is a vote for the person you want to become."</p>
+            </div>
+
+            <button class="app-btn app-btn-primary" onclick="navigateTo('dashboard')">START MY DAY</button>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 10: CUSTOMIZATION ================= -->
+        <div class="screen-view" id="view-customization">
+          <div class="page-header">
+            <div class="eyebrow">Theme & Identity</div>
+            <div class="page-title">HUD SHOP</div>
+          </div>
+
+          <div class="preview-card" id="theme-preview-box">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="avatar-frame-item active" style="width:48px; height:48px;">
+                <div class="avatar-shape shape-decagon" style="background:var(--primary); width:28px; height:28px;"></div>
+              </div>
+              <div>
+                <div style="font-weight:700; font-size:16px;">HUD: <span id="hud-theme-title">Cyan</span></div>
+                <div class="eyebrow" style="font-size:8px; margin-top:2px;">ACCENT PREVIEW</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accents picker -->
+          <div class="asym-card">
+            <div class="eyebrow" style="margin-bottom: 12px;">Accent unlocks</div>
+            <div class="theme-selector" style="justify-content: space-around; padding: 8px 0;">
+              <div class="theme-btn theme-btn-cyan active" onclick="setAccent('cyan')" title="Cyan (Streak 0)"></div>
+              <div class="theme-btn theme-btn-magenta" onclick="setAccent('magenta')" title="Magenta (Streak 7)"></div>
+              <div class="theme-btn theme-btn-acid" onclick="setAccent('acid')" title="Acid (Streak 30)"></div>
+              <div class="theme-btn theme-btn-mono" onclick="setAccent('mono')" title="Mono (Streak 90)"></div>
+            </div>
+          </div>
+
+          <!-- Shape cutters -->
+          <div class="asym-card">
+            <div class="eyebrow" style="margin-bottom: 16px;">Avatar Frame Crops</div>
+            <div class="avatar-frames-list">
+              <div class="avatar-frame-item active" onclick="setAvatarFrame('decagon')">
+                <div class="avatar-shape shape-decagon"></div>
+              </div>
+              <div class="avatar-frame-item" onclick="setAvatarFrame('squircle')">
+                <div class="avatar-shape shape-squircle"></div>
+              </div>
+              <div class="avatar-frame-item" onclick="setAvatarFrame('bevel')">
+                <div class="avatar-shape shape-bevel"></div>
+              </div>
+              <div class="avatar-frame-item" onclick="setAvatarFrame('gear')">
+                <div class="avatar-shape shape-gear"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 11: RIVALRY LOG ================= -->
+        <div class="screen-view" id="view-rivalry">
+          <div class="page-header">
+            <div class="eyebrow">Turf Conflicts</div>
+            <div class="page-title">BATTLE LOGS</div>
+          </div>
+
+          <div class="conflict-banner">
+            <div class="conflict-avatar">
+              <span class="material-symbols-rounded" style="color:#FFB020; font-size:24px; display:flex; justify-content:center; align-items:center; height:100%;">person</span>
+            </div>
+            <div>
+              <div style="font-weight:700; font-size:14px; color:#FFB020;">NEMESIS ENCOUNTER</div>
+              <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">@Nemesis01 has crossed into your claim zone.</p>
+            </div>
+          </div>
+
+          <div class="steals-log">
+            <div class="steal-log-item">
+              <div class="steal-log-left">
+                <div class="steal-log-circle steal-lost"></div>
+                <div>
+                  <div class="steal-title">Sector Loss</div>
+                  <div class="steal-time">2 hours ago • by @Nemesis01</div>
+                </div>
+              </div>
+              <div class="steal-area steal-area-lost">-0.012 km²</div>
+            </div>
+            <div class="steal-log-item">
+              <div class="steal-log-left">
+                <div class="steal-log-circle steal-won"></div>
+                <div>
+                  <div class="steal-title">Sector Captured</div>
+                  <div class="steal-time">1 day ago • by You</div>
+                </div>
+              </div>
+              <div class="steal-area steal-area-won">+0.045 km²</div>
+            </div>
+            <div class="steal-log-item">
+              <div class="steal-log-left">
+                <div class="steal-log-circle steal-lost"></div>
+                <div>
+                  <div class="steal-title">Sector Stolen</div>
+                  <div class="steal-time">3 days ago • by @Jogger_99</div>
+                </div>
+              </div>
+              <div class="steal-area steal-area-lost">-0.008 km²</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Navigation Bar -->
+      <div class="bottom-nav" id="device-nav">
+        <div class="nav-item active" onclick="navigateTo('dashboard')" id="nav-btn-dashboard">
+          <span class="material-symbols-rounded">home</span>
+          <span>HOME</span>
+        </div>
+        <div class="nav-item" onclick="navigateTo('territory')" id="nav-btn-territory">
+          <span class="material-symbols-rounded">map</span>
+          <span>MAP</span>
+        </div>
+        <div class="nav-item" onclick="navigateTo('leaderboard')" id="nav-btn-leaderboard">
+          <span class="material-symbols-rounded">leaderboard</span>
+          <span>RANKS</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Mockup interaction code -->
+<script>
+  let currentAccent = 'cyan';
+  let isRunSimulating = false;
+  let runTimerInterval = null;
+  let runDistanceVal = 0.0;
+  let runDurationSec = 0;
+  let activeRepsCount = 0;
+  let emergencyHoldTimer = null;
+  let emergencyHoldCharge = 0;
+
+  function setAccent(accent) {
+    // Remove active styles from sidebar controls
+    document.querySelectorAll('.theme-selector .theme-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Set matching color values
+    const root = document.documentElement;
+    if (accent === 'cyan') {
+      root.style.setProperty('--primary', 'var(--cyan-primary)');
+      root.style.setProperty('--primary-glow', 'var(--cyan-glow)');
+      document.querySelector('.theme-btn-cyan').classList.add('active');
+      document.getElementById('hud-theme-title').innerText = "Cyan";
+    } else if (accent === 'magenta') {
+      root.style.setProperty('--primary', 'var(--magenta-primary)');
+      root.style.setProperty('--primary-glow', 'var(--magenta-glow)');
+      document.querySelector('.theme-btn-magenta').classList.add('active');
+      document.getElementById('hud-theme-title').innerText = "Magenta";
+    } else if (accent === 'acid') {
+      root.style.setProperty('--primary', 'var(--acid-primary)');
+      root.style.setProperty('--primary-glow', 'var(--acid-glow)');
+      document.querySelector('.theme-btn-acid').classList.add('active');
+      document.getElementById('hud-theme-title').innerText = "Acid";
+    } else if (accent === 'mono') {
+      root.style.setProperty('--primary', 'var(--mono-primary)');
+      root.style.setProperty('--primary-glow', 'rgba(250,250,250,0.25)');
+      document.querySelector('.theme-btn-mono').classList.add('active');
+      document.getElementById('hud-theme-title').innerText = "Mono";
+    }
+    
+    currentAccent = accent;
+    triggerToast(`HUD accent swapped to ${accent.toUpperCase()}!`);
+  }
+
+  function navigateTo(viewId) {
+    // Hide all view screens
+    document.querySelectorAll('.screen-view').forEach(view => view.classList.remove('active'));
+    
+    // Show selected view
+    const viewElement = document.getElementById(`view-${viewId}`);
+    if (viewElement) {
+      viewElement.classList.add('active');
+    }
+
+    // Scroll to top
+    document.getElementById('scroll-content').scrollTop = 0;
+
+    // Control navigation highlights
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
+    
+    // Map navigation elements
+    if (viewId === 'dashboard') {
+      document.getElementById('nav-btn-dashboard').classList.add('active');
+    } else if (viewId === 'territory') {
+      document.getElementById('nav-btn-territory').classList.add('active');
+    } else if (viewId === 'leaderboard') {
+      document.getElementById('nav-btn-leaderboard').classList.add('active');
+    }
+  }
+
+  function triggerToast(text) {
+    const toast = document.getElementById('nudge-toast');
+    document.getElementById('nudge-toast-text').innerText = text;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2500);
+  }
+
+  function triggerNudge(name) {
+    triggerToast(`Sent alarm nudge check to @${name}!`);
+  }
+
+  function triggerBailout(name) {
+    triggerToast(`Active squats assist: helping to clear @${name}'s tax!`);
+    setTimeout(() => {
+      simulateRingingAlarm(15); // Trigger alarm verification stream with 15 reps goal
+    }, 1000);
+  }
+
+  // Ringing alarm screen triggers
+  function simulateRingingAlarm(customReps = 10) {
+    activeRepsCount = 0;
+    document.getElementById('active-count-num').innerHTML = `0 <span class="active-rep-fraction">/ ${customReps}</span>`;
+    navigateTo('active-alarm');
+    
+    // Simulate initial calibration state then frame errors
+    setTimeout(() => {
+      document.getElementById('active-cue-txt').innerText = "Stand Ready...";
+      document.getElementById('active-cue-txt').style.color = "var(--primary)";
+    }, 1500);
+  }
+
+  // Squats Count simulators
+  function simulateRepCount() {
+    activeRepsCount++;
+    const totalGoal = 10;
+    
+    // Visual skeleton changes
+    const leftLeg = document.getElementById('left-leg');
+    const rightLeg = document.getElementById('right-leg');
+    const angleLeft = document.getElementById('angle-left');
+    const angleRight = document.getElementById('angle-right');
+    const activeCue = document.getElementById('active-cue-txt');
+
+    if (activeRepsCount <= totalGoal) {
+      // Simulate Squat Down phase
+      leftLeg.setAttribute('x2', '100');
+      rightLeg.setAttribute('x2', '280');
+      angleLeft.innerText = "88°";
+      angleRight.innerText = "86°";
+      angleLeft.style.color = "var(--success)";
+      angleRight.style.color = "var(--success)";
+      activeCue.innerText = "Perfect Depth!";
+      activeCue.style.color = "var(--success)";
+
+      setTimeout(() => {
+        // Return to Stand phase
+        leftLeg.setAttribute('x2', '130');
+        rightLeg.setAttribute('x2', '250');
+        angleLeft.innerText = "165°";
+        angleRight.innerText = "167°";
+        angleLeft.style.color = "var(--primary)";
+        angleRight.style.color = "var(--primary)";
+        activeCue.innerText = "Rep Counted!";
+        activeCue.style.color = "var(--primary)";
+        
+        document.getElementById('active-count-num').innerHTML = `${activeRepsCount} <span class="active-rep-fraction">/ ${totalGoal}</span>`;
+        
+        if (activeRepsCount >= totalGoal) {
+          triggerToast("All squats verified! Stopping alarm...");
+          setTimeout(() => {
+            // Auto transition to Success
+            document.getElementById('success-streak-num').innerText = "13";
+            navigateTo('success');
+          }, 1000);
+        }
+      }, 500);
+    }
+  }
+
+  // Hold Escape Hatch simulator
+  const holdBtn = document.getElementById('emergency-hold-btn');
+  const chargeCircle = document.getElementById('hold-charge-circle');
+
+  function startHoldCharge(e) {
+    e.preventDefault();
+    emergencyHoldCharge = 200;
+    chargeCircle.style.strokeDashoffset = "200";
+    
+    emergencyHoldTimer = setInterval(() => {
+      emergencyHoldCharge -= 20;
+      chargeCircle.style.strokeDashoffset = emergencyHoldCharge;
+      
+      if (emergencyHoldCharge <= 0) {
+        clearInterval(emergencyHoldTimer);
+        triggerToast("Emergency stop triggered. Paid 2x Bailout Tax.");
+        setTimeout(() => {
+          navigateTo('dashboard');
+        }, 1200);
+      }
+    }, 200);
+  }
+
+  function stopHoldCharge() {
+    clearInterval(emergencyHoldTimer);
+    chargeCircle.style.strokeDashoffset = "200";
+  }
+
+  holdBtn.addEventListener('mousedown', startHoldCharge);
+  holdBtn.addEventListener('mouseup', stopHoldCharge);
+  holdBtn.addEventListener('mouseleave', stopHoldCharge);
+  holdBtn.addEventListener('touchstart', startHoldCharge);
+  holdBtn.addEventListener('touchend', stopHoldCharge);
+
+  // Active run simulator
+  function simulateActiveRun() {
+    navigateTo('territory');
+    toggleRunSimulation();
+  }
+
+  function toggleRunSimulation() {
+    const runBtn = document.getElementById('run-trigger');
+    const runIcon = document.getElementById('run-icon');
+    const loopHud = document.getElementById('loop-hud-closure');
+    const simUser = document.getElementById('sim-user');
+
+    if (!isRunSimulating) {
+      // Start run
+      isRunSimulating = true;
+      runIcon.innerText = "stop";
+      runBtn.classList.add('active');
+      loopHud.style.display = "flex";
+      triggerToast("GPS tracking started. Draw a closed loop!");
+      
+      runDurationSec = 0;
+      runDistanceVal = 0.0;
+
+      runTimerInterval = setInterval(() => {
+        runDurationSec++;
+        runDistanceVal += 0.03;
+        
+        // Update stats
+        const minutes = Math.floor(runDurationSec / 60).toString().padStart(2, '0');
+        const seconds = (runDurationSec % 60).toString().padStart(2, '0');
+        document.getElementById('hud-time').innerText = `${minutes}:${seconds}`;
+        document.getElementById('hud-dist').innerText = runDistanceVal.toFixed(2);
+
+        // Move marker slightly
+        const delta = Math.sin(runDurationSec * 0.5) * 15;
+        simUser.style.left = `${120 + delta}px`;
+
+        // Progress bar simulation
+        const progress = Math.min((runDurationSec / 30) * 100, 100);
+        document.getElementById('loop-bar').style.width = `${progress}%`;
+        
+        if (runDurationSec === 10) {
+          document.getElementById('map-nudge').style.display = "flex";
+        }
+      }, 1000);
+
+    } else {
+      // Stop run
+      isRunSimulating = false;
+      runIcon.innerText = "play_arrow";
+      runBtn.classList.remove('active');
+      loopHud.style.display = "none";
+      document.getElementById('map-nudge').style.display = "none";
+      clearInterval(runTimerInterval);
+      
+      triggerToast("Run saved. Generating Recap...");
+      setTimeout(() => {
+        navigateTo('run-details');
+      }, 1200);
+    }
+  }
+
+  function setAvatarFrame(frame) {
+    document.querySelectorAll('.avatar-frames-list .avatar-frame-item').forEach(item => item.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    
+    // Update preview card avatar frame
+    const previewAvatar = document.querySelector('#theme-preview-box .avatar-shape');
+    previewAvatar.className = `avatar-shape shape-${frame}`;
+    triggerToast(`Avatar frame updated to ${frame.toUpperCase()}!`);
+  }
+</script>
+
+</body>
+</html>

@@ -3,6 +3,7 @@ import 'package:awaken/core/router/app_router.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -92,30 +93,48 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPageChanged: (i) => setState(() => _page = i),
                   itemBuilder: (context, i) {
                     final page = _pages[i];
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(page.icon, size: 72, color: AppColors.primary),
-                        const SizedBox(height: 32),
-                        Text('AWAKEN', style: tt.eyebrow),
-                        const SizedBox(height: 12),
-                        Text(
-                          page.title,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium,
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
+                          topRight: Radius.circular(12),
+                          bottomLeft: Radius.circular(12),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          page.body,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: AppColors.mutedForeground,
-                                height: 1.5,
-                              ),
-                        ),
-                      ],
-                    );
+                        border: Border.all(color: AppColors.border, width: 0.8),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(page.icon, size: 72, color: AppColors.primary)
+                              .animate(key: ValueKey('icon_$i'))
+                              .scale(duration: 450.ms, curve: Curves.easeOutBack),
+                          const SizedBox(height: 32),
+                          Text('AWAKEN', style: tt.eyebrow),
+                          const SizedBox(height: 12),
+                          Text(
+                            page.title,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontFamily: 'SpaceGrotesk',
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            page.body,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.mutedForeground,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate(key: ValueKey('page_$i')).fadeIn(duration: 350.ms).slideY(begin: 0.08, end: 0);
                   },
                 ),
               ),

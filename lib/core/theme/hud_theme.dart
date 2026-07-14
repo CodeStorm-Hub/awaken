@@ -56,23 +56,23 @@ class HudTheme extends ThemeExtension<HudTheme> {
 
   static const cyan = HudTheme(
     id: HudThemeId.cyan,
-    primary: Color(0xFF4A9EFF),
-    glow: Color(0x664A9EFF),
-    scanline: Color(0x1A4A9EFF),
+    primary: Color(0xFF00F0FF),
+    glow: Color(0x6600F0FF),
+    scanline: Color(0x1A00F0FF),
   );
 
   static const magenta = HudTheme(
     id: HudThemeId.magenta,
-    primary: Color(0xFFE040FB),
-    glow: Color(0x66E040FB),
-    scanline: Color(0x1AE040FB),
+    primary: Color(0xFFD633FF),
+    glow: Color(0x66D633FF),
+    scanline: Color(0x1AD633FF),
   );
 
   static const acid = HudTheme(
     id: HudThemeId.acid,
-    primary: Color(0xFF76FF03),
-    glow: Color(0x6676FF03),
-    scanline: Color(0x1A76FF03),
+    primary: Color(0xFF39FF14),
+    glow: Color(0x6639FF14),
+    scanline: Color(0x1A39FF14),
   );
 
   static const mono = HudTheme(

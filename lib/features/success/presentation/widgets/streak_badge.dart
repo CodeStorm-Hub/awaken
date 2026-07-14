@@ -23,38 +23,71 @@ class StreakBadge extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.success.withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: AppColors.success.withValues(alpha: 0.5),
-                    width: 2,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.successGlow,
-                      blurRadius: 24,
-                      spreadRadius: 4,
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              for (int i = 0; i < 3; i++)
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border.all(
+                      color: AppColors.success.withValues(alpha: 0.3),
+                      width: 1.5,
                     ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: AppColors.success,
-                  size: 40,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                )
+                .animate(delay: (i * 150).ms)
+                .scale(
+                  begin: const Offset(0.3, 0.3),
+                  end: const Offset(1.8, 1.8),
+                  duration: 800.ms,
+                  curve: Curves.easeOutCubic,
+                )
+                .fadeOut(duration: 800.ms),
+
+              RotatedBox(
+                quarterTurns: 1,
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.success,
+                      width: 2.5,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.successGlow,
+                        blurRadius: 28,
+                        spreadRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: const RotatedBox(
+                    quarterTurns: 3,
+                    child: Icon(
+                      Icons.fitness_center_rounded,
+                      color: AppColors.success,
+                      size: 28,
+                    ),
+                  ),
                 ),
               )
               .animate()
               .scale(
-                begin: const Offset(0, 0),
-                end: const Offset(1, 1),
-                duration: 500.ms,
+                begin: const Offset(0.0, 0.0),
+                end: const Offset(1.0, 1.0),
+                duration: 600.ms,
                 curve: Curves.easeOutBack,
               )
               .fadeIn(duration: 200.ms),
+            ],
+          ),
 
           const SizedBox(height: 20),
 

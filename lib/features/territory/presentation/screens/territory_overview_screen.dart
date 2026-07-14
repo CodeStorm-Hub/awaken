@@ -179,17 +179,26 @@ class _OwnershipStats extends StatelessWidget {
       (sum, t) => sum + t.polygons.length,
     );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.15),
+                  AppColors.card,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.45)),
+            ),
             child: _StatColumn(
               label: 'Total owned',
               value:
@@ -198,16 +207,35 @@ class _OwnershipStats extends StatelessWidget {
               valueColor: AppColors.primary,
             ),
           ),
-          Container(width: 1, height: 40, color: AppColors.border),
-          Expanded(
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.secondary.withValues(alpha: 0.15),
+                  AppColors.card,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+              ),
+              border: Border.all(color: AppColors.secondary.withValues(alpha: 0.45)),
+            ),
             child: _StatColumn(
               label: 'Territories',
               value: '$polygonCount',
               hud: hud,
+              valueColor: AppColors.secondary,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -356,6 +384,16 @@ class _DecayRiskTile extends StatelessWidget {
                       ? 'Decays in 1 day'
                       : 'Decays in $days days',
                   style: TextStyle(color: color, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: (warning.daysUntilDecay / 7.0).clamp(0.0, 1.0),
+                    backgroundColor: AppColors.secondary.withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                    minHeight: 4,
+                  ),
                 ),
               ],
             ),

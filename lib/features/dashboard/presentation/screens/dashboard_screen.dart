@@ -12,19 +12,17 @@ import 'package:awaken/features/alarm/domain/services/alarm_bailout_service.dart
 import 'package:awaken/features/alarm/presentation/providers/alarm_providers.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/alarm/presentation/providers/squad_providers.dart';
-import 'package:awaken/features/alarm/presentation/widgets/squad_sheet.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/armed_alarm_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/digital_clock.dart';
-import 'package:awaken/features/dashboard/presentation/widgets/hud_theme_picker.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/stat_card.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/streak_ring.dart';
 import 'package:awaken/features/dashboard/presentation/widgets/week_trend_card.dart';
 import 'package:awaken/features/territory/presentation/providers/territory_providers.dart';
-import 'package:awaken/features/territory/presentation/widgets/nemesis_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -262,41 +260,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               if (_moreExpanded) ...[
                 const SizedBox(height: 12),
-
-                if (isSignedIn)
-                  ref
-                          .watch(nemesisProvider)
-                          .whenOrNull(
-                            data: (nemesis) => nemesis != null
-                                ? Padding(
-                                    padding: const EdgeInsets.only(bottom: 20),
-                                    child: NemesisCard(nemesis: nemesis),
-                                  )
-                                : null,
-                          ) ??
-                      const SizedBox.shrink(),
-
-                _TerritoryCard(
-                  tt: tt,
-                  onTap: () => context.go(AppRoutes.territory),
-                  onViewDetails: () =>
-                      context.push(AppRoutes.territoryOverview),
-                ),
-
-                const SizedBox(height: 16),
-                const HudThemePicker(),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => SquadSheet.show(context),
-                  child: const Text(
-                    'SQUAD TAXES',
-                    style: TextStyle(
-                      color: AppColors.accent,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.3,
+                  children: [
+                    _DevNavCard(
+                      label: 'TERRITORY MAP',
+                      subtitle: 'Run a loop, claim territory',
+                      icon: Icons.map_rounded,
+                      color: AppColors.primary,
+                      onTap: () => context.go(AppRoutes.territory),
                     ),
-                  ),
-                ),
+                    _DevNavCard(
+                      label: 'SQUAD TAXES',
+                      icon: Icons.groups_rounded,
+                      color: AppColors.accent,
+                      onTap: () => context.push(AppRoutes.squads),
+                    ),
+                    _DevNavCard(
+                      label: 'ANALYTICS',
+                      icon: Icons.bar_chart_rounded,
+                      color: AppColors.primary,
+                      onTap: () => context.push(AppRoutes.analytics),
+                    ),
+                    _DevNavCard(
+                      label: 'HUD SHOP',
+                      icon: Icons.color_lens_rounded,
+                      color: AppColors.success,
+                      onTap: () => context.push(AppRoutes.customization),
+                    ),
+                    _DevNavCard(
+                      label: 'BATTLE LOGS',
+                      icon: Icons.local_fire_department_rounded,
+                      color: AppColors.destructive,
+                      onTap: () => context.push(AppRoutes.rivalry),
+                    ),
+                    _DevNavCard(
+                      label: 'MAP SUMMARY',
+                      icon: Icons.info_outline_rounded,
+                      color: AppColors.foreground,
+                      onTap: () => context.push(AppRoutes.territoryOverview),
+                    ),
+                  ],
+                ).animate().fadeIn(duration: 200.ms),
               ],
 
               const SizedBox(height: 12),
@@ -964,80 +974,6 @@ class _NoAlarmCard extends StatelessWidget {
   }
 }
 
-class _TerritoryCard extends StatelessWidget {
-  const _TerritoryCard({
-    required this.tt,
-    required this.onTap,
-    required this.onViewDetails,
-  });
-
-  final AwakenTypography tt;
-  final VoidCallback onTap;
-  final VoidCallback onViewDetails;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
-              border: Border.all(
-                color: AppColors.accent.withValues(alpha: 0.4),
-                width: 0.8,
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.map_rounded, color: AppColors.accent),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Run a loop, claim territory',
-                    style: tt.statLabel.copyWith(
-                      fontSize: 14,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: onViewDetails,
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: Text(
-                      'Details',
-                      style: tt.statLabel.copyWith(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.accent,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ── Alarm list with swipe-to-delete ──────────────────────────────────────────
 
@@ -1182,3 +1118,68 @@ class _TestAlarmButton extends ConsumerWidget {
     );
   }
 }
+
+class _DevNavCard extends StatelessWidget {
+  const _DevNavCard({
+    required this.label,
+    this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final String? subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+            topRight: Radius.circular(8),
+            bottomLeft: Radius.circular(8),
+          ),
+          border: Border.all(color: AppColors.border, width: 0.8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'SpaceGrotesk',
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                color: color,
+                letterSpacing: 0.5,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle!,
+                style: const TextStyle(
+                  color: AppColors.mutedForeground,
+                  fontSize: 9,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+

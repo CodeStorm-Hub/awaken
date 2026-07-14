@@ -4,17 +4,17 @@ import 'package:flutter/material.dart';
 /// Never use raw hex values outside this file — always reference these constants.
 abstract final class AppColors {
   // ── Surfaces ──────────────────────────────────────────────────────
-  /// oklch(0 0 0) — absolute black app canvas
-  static const Color background = Color(0xFF000000);
+  /// Deep-depth dark background gradient start
+  static const Color background = Color(0xFF08080C);
 
-  /// oklch(0.16 0 0) — deep-grey raised cards/surfaces
-  static const Color card = Color(0xFF282828);
+  /// oklch(0.16 0 0) — glassmorphic deep-grey cards
+  static const Color card = Color(0xFF15161D);
 
   /// oklch(0.22 0 0) — chips, inactive tab backgrounds
-  static const Color secondary = Color(0xFF383838);
+  static const Color secondary = Color(0xFF22232B);
 
   /// oklch(0.20 0 0) — subtle fills, muted containers
-  static const Color muted = Color(0xFF333333);
+  static const Color muted = Color(0xFF1C1D24);
 
   // ── Text ──────────────────────────────────────────────────────────
   /// oklch(0.985 0 0) — primary text, near-white
@@ -24,18 +24,18 @@ abstract final class AppColors {
   static const Color mutedForeground = Color(0xFF9E9E9E);
 
   // ── Brand accents ─────────────────────────────────────────────────
-  /// oklch(0.68 0.18 247) — electric blue, core structural accent
-  static const Color primary = Color(0xFF4A9EFF);
+  /// Electric Cyan, core structural accent
+  static const Color primary = Color(0xFF00F0FF);
 
-  /// oklch(0.62 0.22 295) — electric purple, gamified HUD markers
-  static const Color accent = Color(0xFFA259FF);
+  /// Neon Purple, gamified HUD markers
+  static const Color accent = Color(0xFFD633FF);
 
   // ── Functional feedback ───────────────────────────────────────────
-  /// oklch(0.72 0.20 150) — perfect-rep / streak-up green
-  static const Color success = Color(0xFF34D399);
+  /// Neon Acid Green for perfect rep / loop closure success
+  static const Color success = Color(0xFF39FF14);
 
-  /// oklch(0.62 0.24 25) — bad-form / failure red
-  static const Color destructive = Color(0xFFF87171);
+  /// Neon Pinkish Red for out of frame / form failure
+  static const Color destructive = Color(0xFFFF3366);
 
   // ── Structural ────────────────────────────────────────────────────
   /// oklch(1 0 0 / 10%) — hairline separators
@@ -47,10 +47,10 @@ abstract final class AppColors {
   static const Color medalBronze = Color(0xFFC47A3A);
 
   // ── Glow variants (for CustomPainter BlurMaskFilter) ─────────────
-  static const Color primaryGlow = Color(0x664A9EFF);
-  static const Color accentGlow = Color(0x66A259FF);
-  static const Color successGlow = Color(0x6634D399);
-  static const Color destructiveGlow = Color(0x66F87171);
+  static const Color primaryGlow = Color(0x7700F0FF);
+  static const Color accentGlow = Color(0x77D633FF);
+  static const Color successGlow = Color(0x7739FF14);
+  static const Color destructiveGlow = Color(0x77FF3366);
 
   // ── Territory map overlays (dark basemap) ─────────────────────────
   /// Aurora teal — your claimed turf. Cool + luminous so streets stay
