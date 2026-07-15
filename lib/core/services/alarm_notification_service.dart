@@ -28,7 +28,11 @@ class AlarmNotificationPayload {
 abstract final class AlarmNotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
 
-  static const _channelId = 'awaken_alarm';
+  // v2: bumped from 'awaken_alarm' — Android notification channel settings
+  // (sound, vibration, audio-attributes usage) are locked in the first time a
+  // channel ID is created on-device; editing the fields below has no effect
+  // on an existing install unless the ID changes too.
+  static const _channelId = 'awaken_alarm_v2';
   static const _channelName = 'Alarm';
   static const _pendingRouteKey = 'awaken_pending_alarm_route';
 
@@ -54,15 +58,21 @@ abstract final class AlarmNotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(
-          const AndroidNotificationChannel(
+          AndroidNotificationChannel(
             _channelId,
             _channelName,
             description: 'Awaken wake-up alarm',
             importance: Importance.max,
             playSound: true,
+            sound: const RawResourceAndroidNotificationSound('alarm'),
+            // Alarm (not notification) usage: routes through the ALARM audio
+            // stream so the sound/vibration bypass Silent mode, the way a
+            // real alarm clock does.
+            audioAttributesUsage: AudioAttributesUsage.alarm,
             enableVibration: true,
+            vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
             enableLights: true,
-            ledColor: Color(0xFF4A9EFF),
+            ledColor: const Color(0xFF4A9EFF),
           ),
         );
   }

@@ -4,6 +4,7 @@ import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart'
     show AppRoutes, appRouterProvider;
 import 'package:awaken/core/services/alarm_audio_service.dart';
+import 'package:awaken/core/services/alarm_vibration_service.dart';
 import 'package:awaken/core/services/wake_lock_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/hud_theme.dart';
@@ -123,6 +124,7 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
     WakeLockService.enable();
     AlarmAudioService.start();
     AlarmAudioService.resetVolume();
+    AlarmVibrationService.start();
     _pipeline.start();
   }
 
@@ -166,6 +168,7 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
     _sessionCompleted = true;
     WakeLockService.disable();
     AlarmAudioService.stop();
+    AlarmVibrationService.stop();
   }
 
   @override
