@@ -87,4 +87,13 @@ x86/
 ._*
 Thumbs.db
 
+# -----------------------------------------------------------------------------
+# Claude Code Context Management (Antigravity & Sensitive/Log files)
+# -----------------------------------------------------------------------------
+.agents/
+.impeccable/
+.cursor/
+*logs.md
+*-error-log.md
+*_REPORT.md
 

@@ -124,6 +124,25 @@ abstract final class AlarmNotificationService {
     final scheduledTz = tz.TZDateTime.from(alarm.scheduledTime, tz.local);
     final payload = buildPayload(alarm);
 
+    // exactAllowWhileIdle requires SCHEDULE_EXACT_ALARM (Android 12+); if the
+    // user declined that permission (e.g. via the setup screen's "Save
+    // Anyway" option), AlarmManager throws a SecurityException and the alarm
+    // never gets registered with the OS at all. Fall back to an inexact mode
+    // that still fires (within a short OS-controlled window) rather than not
+    // firing at all.
+    final canScheduleExact =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        (await _plugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >()
+                ?.canScheduleExactNotifications() ??
+            false);
+    final scheduleMode = canScheduleExact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+
     await _plugin.zonedSchedule(
       id: _notifId(alarm),
       title: 'Wake Up Tax Due!',
@@ -131,14 +150,15 @@ abstract final class AlarmNotificationService {
       scheduledDate: scheduledTz,
       notificationDetails: _buildDetails(alarm.requiredReps),
       payload: payload,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
       // uiLocalNotificationDateInterpretation removed in v19 — zonedSchedule
       // has always interpreted scheduledDate as absolute (the only behavior
       // that parameter ever selected on iOS), so no logic changes here.
     );
 
     debugPrint(
-      '[Alarm] Scheduled id=${_notifId(alarm)} at ${alarm.scheduledTime}',
+      '[Alarm] Scheduled id=${_notifId(alarm)} at ${alarm.scheduledTime} '
+      '(mode=$scheduleMode)',
     );
   }
 

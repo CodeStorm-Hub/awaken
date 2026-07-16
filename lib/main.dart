@@ -25,7 +25,12 @@ void main() async {
   try {
     final localTimezone = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(localTimezone.identifier));
-  } catch (_) {
+  } catch (e) {
+    // Falling back to UTC silently would shift every zonedSchedule() call by
+    // the device's UTC offset, so an alarm set for a local wall-clock time
+    // would fire at the wrong moment (or appear to never fire in the
+    // expected window). Log it so a bad fallback is diagnosable.
+    debugPrint('[Timezone] Failed to resolve local timezone, using UTC: $e');
     tz.setLocalLocation(tz.UTC);
   }
 
