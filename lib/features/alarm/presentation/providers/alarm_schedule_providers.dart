@@ -33,14 +33,21 @@ class AlarmList extends _$AlarmList {
     ref.watch(isSignedInProvider);
     final alarms = await ref.read(alarmRepositoryProvider).getAlarms();
 
-    // Sync local active alarms to OS scheduler upon app load
+    // Sync local active alarms to OS scheduler upon app load. A scheduling
+    // failure here means the alarm record is lying about being armed, so
+    // flip it to inactive and persist that rather than leaving a phantom
+    // "active" alarm that silently never fires.
     final now = DateTime.now();
     for (final alarm in alarms) {
       if (alarm.isActive && alarm.scheduledTime.isAfter(now)) {
         try {
           await AlarmNotificationService.scheduleAlarm(alarm);
         } catch (e) {
-          debugPrint('[Alarm] schedule on load failed: $e');
+          debugPrint('[Alarm] schedule on load failed, deactivating: $e');
+          final deactivated = alarm.copyWith(isActive: false);
+          await ref.read(alarmRepositoryProvider).saveAlarm(deactivated);
+          final index = alarms.indexOf(alarm);
+          alarms[index] = deactivated;
         }
       }
     }
@@ -50,8 +57,12 @@ class AlarmList extends _$AlarmList {
 
   Future<void> addAlarm(AlarmEntity alarm) async {
     final repo = ref.read(alarmRepositoryProvider);
-    await repo.saveAlarm(alarm);
+    // Schedule with the OS first — only persist the alarm as active if the
+    // OS actually accepted it. Persisting first meant a scheduling failure
+    // (e.g. exact-alarm permission denied) left an "active" alarm on disk
+    // that was never registered with AlarmManager, so it silently never rang.
     await AlarmNotificationService.scheduleAlarm(alarm);
+    await repo.saveAlarm(alarm);
     state = AsyncData(
       [...state.value ?? [], alarm]
         ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime)),
@@ -62,10 +73,10 @@ class AlarmList extends _$AlarmList {
   /// only reschedules the notification when the alarm was actually active.
   Future<void> restoreAlarm(AlarmEntity alarm) async {
     final repo = ref.read(alarmRepositoryProvider);
-    await repo.saveAlarm(alarm);
     if (alarm.isActive) {
       await AlarmNotificationService.scheduleAlarm(alarm);
     }
+    await repo.saveAlarm(alarm);
     state = AsyncData(
       [...state.value ?? [], alarm]
         ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime)),
@@ -100,13 +111,13 @@ class AlarmList extends _$AlarmList {
   Future<void> toggleAlarm(AlarmEntity alarm) async {
     final updated = alarm.copyWith(isActive: !alarm.isActive);
     final repo = ref.read(alarmRepositoryProvider);
-    await repo.saveAlarm(updated);
 
     if (updated.isActive) {
       await AlarmNotificationService.scheduleAlarm(updated);
     } else {
       await AlarmNotificationService.cancelAlarm(updated);
     }
+    await repo.saveAlarm(updated);
 
     state = AsyncData(
       (state.value ?? []).map((a) => a.id == alarm.id ? updated : a).toList(),
