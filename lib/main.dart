@@ -24,7 +24,7 @@ void main() async {
   tz.initializeTimeZones();
   try {
     final localTimezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(localTimezone));
+    tz.setLocalLocation(tz.getLocation(localTimezone.identifier));
   } catch (e) {
     // Falling back to UTC silently would shift every zonedSchedule() call by
     // the device's UTC offset, so an alarm set for a local wall-clock time
