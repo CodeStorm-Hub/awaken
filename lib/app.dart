@@ -29,6 +29,15 @@ class _AwakenAppState extends ConsumerState<AwakenApp>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(activeRunProvider.notifier).restoreFromCheckpoint());
+      // Covers a cold-start race: flutter_local_notifications can deliver an
+      // alarm notification tap via the foreground-tap callback (fired during
+      // plugin init, before this widget tree existed) rather than through
+      // getNotificationAppLaunchDetails(). That callback stashes the route
+      // (see AlarmNotificationService._onForegroundTap) since it had no
+      // navigator context yet — consume it here as soon as one exists,
+      // rather than waiting for an AppLifecycleState.resumed transition that
+      // may never fire right after a genuine cold start.
+      unawaited(_navigatePendingAlarmRoute());
     });
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awaken/core/router/navigator_key.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:flutter/foundation.dart';
@@ -290,7 +292,23 @@ abstract final class AlarmNotificationService {
     final ctx = navigatorKey.currentContext;
     if (ctx != null && ctx.mounted) {
       GoRouter.of(ctx).go(_buildActiveRoute(response.payload));
+      return;
     }
+    // Cold start can deliver the tap via this callback (fired during plugin
+    // init, before runApp()'s widget tree exists) rather than through
+    // getNotificationAppLaunchDetails() — navigatorKey.currentContext is
+    // still null at that point. Previously this branch silently dropped the
+    // tap. Stash it the same way the background-isolate handler does, so
+    // AwakenApp's first-frame / resume check still picks it up.
+    debugPrint(
+      '[Alarm] Foreground tap with no navigator context yet — stashing '
+      'route id=${response.id}',
+    );
+    unawaited(
+      AlarmNotificationService.stashPendingRoute(
+        buildActiveRouteFromPayload(response.payload),
+      ),
+    );
   }
 }
 
