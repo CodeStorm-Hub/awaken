@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:awaken/core/constants/app_constants.dart';
 import 'package:awaken/core/router/app_router.dart';
+import 'package:awaken/core/services/battery_optimization_service.dart';
 import 'package:awaken/core/services/exact_alarm_permission_service.dart';
 import 'package:awaken/core/services/territory_decay_notification_service.dart';
 import 'package:awaken/core/theme/app_colors.dart';
@@ -58,6 +59,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final nextAlarm = ref.watch(nextAlarmProvider);
     final exactAlarmGranted = ref.watch(exactAlarmPermissionProvider);
     final exactAlarmDismissed = ref.watch(exactAlarmBannerDismissedProvider);
+    final batteryExempt = ref.watch(batteryOptimizationExemptProvider);
+    final batteryDismissed = ref.watch(
+      batteryOptimizationBannerDismissedProvider,
+    );
     final bailoutDismissed = ref.watch(bailoutBannerDismissedProvider);
     final guestSyncDismissed = ref.watch(guestSyncPromptDismissedProvider);
     final isSignedIn = ref.watch(isSignedInProvider);
@@ -134,6 +139,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     onDismiss: () {
                       ref
                               .read(exactAlarmBannerDismissedProvider.notifier)
+                              .state =
+                          true;
+                    },
+                  ),
+                ),
+
+              // ── Battery optimization exemption warning (Android) ───────
+              if (batteryExempt.value == false && !batteryDismissed)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _BatteryOptimizationWarningCard(
+                    tt: tt,
+                    onRequestExemption: () async {
+                      await BatteryOptimizationService.request();
+                      ref.invalidate(batteryOptimizationExemptProvider);
+                    },
+                    onDismiss: () {
+                      ref
+                              .read(
+                                batteryOptimizationBannerDismissedProvider
+                                    .notifier,
+                              )
                               .state =
                           true;
                     },
@@ -526,6 +553,87 @@ class _ExactAlarmWarningCard extends StatelessWidget {
                 minimumSize: const Size.fromHeight(44),
               ),
               child: const Text('ENABLE EXACT ALARMS'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatteryOptimizationWarningCard extends StatelessWidget {
+  const _BatteryOptimizationWarningCard({
+    required this.tt,
+    required this.onRequestExemption,
+    required this.onDismiss,
+  });
+
+  final AwakenTypography tt;
+  final VoidCallback onRequestExemption;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.destructive.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+        border: Border.all(
+          color: AppColors.destructive.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.battery_alert_rounded,
+                color: AppColors.destructive,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ALARM MAY BE KILLED IN THE BACKGROUND',
+                      style: tt.eyebrow.copyWith(color: AppColors.destructive),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Your phone may stop Awaken before the alarm rings to '
+                      'save battery. Exempt Awaken from battery optimization '
+                      'so your wake-up alarm can\'t be silently killed.',
+                      style: tt.statLabel.copyWith(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close, size: 18),
+                color: AppColors.mutedForeground,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Dismiss for now',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onRequestExemption,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.destructive,
+                foregroundColor: AppColors.foreground,
+                minimumSize: const Size.fromHeight(44),
+              ),
+              child: const Text('ALLOW BACKGROUND RUNNING'),
             ),
           ),
         ],

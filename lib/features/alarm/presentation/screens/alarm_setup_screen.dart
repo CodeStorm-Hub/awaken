@@ -6,6 +6,7 @@ import 'package:awaken/core/theme/app_colors.dart';
 import 'package:awaken/core/theme/app_typography.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_entity.dart';
 import 'package:awaken/features/alarm/domain/entities/alarm_exercise_type.dart';
+import 'package:awaken/features/alarm/domain/services/next_alarm_occurrence.dart';
 import 'package:awaken/features/alarm/presentation/providers/alarm_schedule_providers.dart';
 import 'package:awaken/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:flutter/material.dart';
@@ -35,16 +36,7 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
   /// still ahead, otherwise tomorrow) — mirrors the scheduling logic.
   String get _ringsInLabel {
     final now = DateTime.now();
-    var scheduled = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      _time.hour,
-      _time.minute,
-    );
-    if (!scheduled.isAfter(now)) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
+    final scheduled = nextAlarmOccurrence(_time, now);
     final diff = scheduled.difference(now);
     final h = diff.inHours;
     final m = diff.inMinutes % 60;
@@ -272,18 +264,7 @@ class _AlarmSetupScreenState extends ConsumerState<AlarmSetupScreen> {
         }
       }
 
-      final now = DateTime.now();
-      // Next occurrence of the selected time (today or tomorrow if past)
-      var scheduled = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        _time.hour,
-        _time.minute,
-      );
-      if (scheduled.isBefore(now.add(const Duration(minutes: 1)))) {
-        scheduled = scheduled.add(const Duration(days: 1));
-      }
+      final scheduled = nextAlarmOccurrence(_time, DateTime.now());
 
       final alarm = AlarmEntity(
         id: scheduled.millisecondsSinceEpoch.toString(),

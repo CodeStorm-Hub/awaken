@@ -27,6 +27,10 @@
     <!-- Foreground service for audio playback -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <!-- Lets the app prompt to exempt itself from Doze/battery-optimization
+         killing the process before a scheduled alarm fires (OEM skins like
+         MIUI/EMUI/ColorOS/One UI are the common failure case). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <!-- Required on Android 14+ when Geolocator starts a location FGS
          (territory runs use foregroundNotificationConfig). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>

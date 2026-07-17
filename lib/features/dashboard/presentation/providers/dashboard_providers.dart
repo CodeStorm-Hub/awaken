@@ -1,3 +1,4 @@
+import 'package:awaken/core/services/battery_optimization_service.dart';
 import 'package:awaken/core/services/exact_alarm_permission_service.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
 import 'package:awaken/features/dashboard/domain/entities/dashboard_stats_entity.dart';
@@ -12,6 +13,11 @@ part 'dashboard_providers.g.dart';
 /// Session-scoped dismiss for the exact-alarm permission banner.
 final exactAlarmBannerDismissedProvider = StateProvider<bool>((ref) => false);
 
+/// Session-scoped dismiss for the battery-optimization exemption banner.
+final batteryOptimizationBannerDismissedProvider = StateProvider<bool>(
+  (ref) => false,
+);
+
 /// Session-scoped dismiss for the guest "sign in to sync" prompt.
 final guestSyncPromptDismissedProvider = StateProvider<bool>((ref) => false);
 
@@ -23,6 +29,18 @@ final guestSyncPromptDismissedProvider = StateProvider<bool>((ref) => false);
 Future<bool?> exactAlarmPermission(Ref ref) async {
   if (!ExactAlarmPermissionService.isAndroid) return null;
   return ExactAlarmPermissionService.isGranted();
+}
+
+/// Android battery-optimization exemption state.
+///
+/// `null` when not applicable (iOS / desktop). `false` when Android and the
+/// app is still subject to battery optimization — OEM background killers
+/// (MIUI/EMUI/ColorOS/One UI) may terminate the app before a scheduled alarm
+/// fires even with exact-alarm permission granted.
+@Riverpod(keepAlive: true)
+Future<bool?> batteryOptimizationExempt(Ref ref) async {
+  if (!BatteryOptimizationService.isAndroid) return null;
+  return BatteryOptimizationService.isExempt();
 }
 
 /// Ticking clock — emits a new DateTime every second.

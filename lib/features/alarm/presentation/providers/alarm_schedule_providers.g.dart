@@ -85,7 +85,7 @@ final class AlarmListProvider
   AlarmList create() => AlarmList();
 }
 
-String _$alarmListHash() => r'd71f0ef920c87983562c300fb9f0fd4e8b93479f';
+String _$alarmListHash() => r'a68cc919f9f8f0963e1962127c4fc25cc8ae41fa';
 
 abstract class _$AlarmList extends $AsyncNotifier<List<AlarmEntity>> {
   FutureOr<List<AlarmEntity>> build();

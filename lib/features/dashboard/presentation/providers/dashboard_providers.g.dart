@@ -56,6 +56,60 @@ final class ExactAlarmPermissionProvider
 String _$exactAlarmPermissionHash() =>
     r'20137c1f310188110d4efd7f50e95ae6f06cfe68';
 
+/// Android battery-optimization exemption state.
+///
+/// `null` when not applicable (iOS / desktop). `false` when Android and the
+/// app is still subject to battery optimization — OEM background killers
+/// (MIUI/EMUI/ColorOS/One UI) may terminate the app before a scheduled alarm
+/// fires even with exact-alarm permission granted.
+
+@ProviderFor(batteryOptimizationExempt)
+final batteryOptimizationExemptProvider = BatteryOptimizationExemptProvider._();
+
+/// Android battery-optimization exemption state.
+///
+/// `null` when not applicable (iOS / desktop). `false` when Android and the
+/// app is still subject to battery optimization — OEM background killers
+/// (MIUI/EMUI/ColorOS/One UI) may terminate the app before a scheduled alarm
+/// fires even with exact-alarm permission granted.
+
+final class BatteryOptimizationExemptProvider
+    extends $FunctionalProvider<AsyncValue<bool?>, bool?, FutureOr<bool?>>
+    with $FutureModifier<bool?>, $FutureProvider<bool?> {
+  /// Android battery-optimization exemption state.
+  ///
+  /// `null` when not applicable (iOS / desktop). `false` when Android and the
+  /// app is still subject to battery optimization — OEM background killers
+  /// (MIUI/EMUI/ColorOS/One UI) may terminate the app before a scheduled alarm
+  /// fires even with exact-alarm permission granted.
+  BatteryOptimizationExemptProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'batteryOptimizationExemptProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$batteryOptimizationExemptHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<bool?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool?> create(Ref ref) {
+    return batteryOptimizationExempt(ref);
+  }
+}
+
+String _$batteryOptimizationExemptHash() =>
+    r'7ba819e31547056b891d507074e90f20b5c73f53';
+
 /// Ticking clock — emits a new DateTime every second.
 
 @ProviderFor(clock)
