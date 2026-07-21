@@ -108,6 +108,41 @@ void main() {
     expect(AppRoutes.success, '/alarm/success');
   });
 
+  test(
+    'success route builder forwards SuccessScreenArgs stats explicitly, '
+    'independent of live provider state',
+    () {
+      // Mirrors lib/core/router/app_router.dart success route builder: a
+      // SuccessScreenArgs extra must carry reps/duration/accessibility
+      // through untouched, so the screen never has to fall back to reading
+      // repCountProvider/sessionStartTimeProvider (which may already be
+      // reset/disposed by the time SuccessScreen builds).
+      const args = SuccessScreenArgs(
+        alarm: null,
+        repsCompleted: 12,
+        durationSeconds: 47,
+        usedAccessibilityMode: true,
+      );
+      Object? extra = args;
+
+      SuccessScreen screen;
+      if (extra is SuccessScreenArgs) {
+        screen = SuccessScreen(
+          alarm: extra.alarm,
+          repsCompleted: extra.repsCompleted,
+          durationSeconds: extra.durationSeconds,
+          usedAccessibilityMode: extra.usedAccessibilityMode,
+        );
+      } else {
+        screen = SuccessScreen(alarm: extra is AlarmEntity ? extra : null);
+      }
+
+      expect(screen.repsCompleted, 12);
+      expect(screen.durationSeconds, 47);
+      expect(screen.usedAccessibilityMode, isTrue);
+    },
+  );
+
   test('guest workout records locally and deactivates alarm', () async {
     final sessions = _RecordingSessionRepository();
     final alarms = _RecordingAlarmRepository()..saved.add(alarm);

@@ -107,9 +107,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.success,
-        builder: (context, state) => SuccessScreen(
-          alarm: state.extra is AlarmEntity ? state.extra as AlarmEntity : null,
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is SuccessScreenArgs) {
+            return SuccessScreen(
+              alarm: extra.alarm,
+              repsCompleted: extra.repsCompleted,
+              durationSeconds: extra.durationSeconds,
+              usedAccessibilityMode: extra.usedAccessibilityMode,
+            );
+          }
+          // Legacy/notification-deep-link fallback: bare AlarmEntity extra,
+          // no explicit stats — SuccessScreen falls back to live providers.
+          return SuccessScreen(alarm: extra is AlarmEntity ? extra : null);
+        },
       ),
       GoRoute(
         path: AppRoutes.onboarding,

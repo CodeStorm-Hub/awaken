@@ -21,6 +21,7 @@ import 'package:awaken/features/alarm/presentation/widgets/rep_counter_display.d
 import 'package:awaken/features/alarm/presentation/widgets/squad_tax_rail.dart';
 import 'package:awaken/features/alarm/presentation/widgets/tax_reveal_stamp.dart';
 import 'package:awaken/features/auth/presentation/providers/auth_providers.dart';
+import 'package:awaken/features/success/presentation/screens/success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -184,6 +185,22 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
     super.dispose();
   }
 
+  /// Captures the completed session's stats at the moment reps hit target,
+  /// so [SuccessScreen] never depends on the timing of autoDispose providers
+  /// that may already be reset by the time it builds.
+  SuccessScreenArgs _buildSuccessArgs(int repsCompleted) {
+    final startTime = ref.read(sessionStartTimeProvider);
+    final duration = startTime != null
+        ? DateTime.now().difference(startTime).inSeconds
+        : 0;
+    return SuccessScreenArgs(
+      alarm: widget.alarm,
+      repsCompleted: repsCompleted,
+      durationSeconds: duration,
+      usedAccessibilityMode: ref.read(accessibilitySessionProvider),
+    );
+  }
+
   Future<void> _onEmergencyStop() async {
     if (_sessionCompleted) return;
     HapticFeedback.heavyImpact();
@@ -301,9 +318,10 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
 
     if (next >= required) {
       _completeAlarmSession();
+      final successArgs = _buildSuccessArgs(next);
       Future.delayed(AppConstants.mediumAnim, () {
         if (!mounted) return;
-        _router.go(AppRoutes.success, extra: widget.alarm);
+        _router.go(AppRoutes.success, extra: successArgs);
       });
     }
   }
@@ -333,9 +351,10 @@ class _ActiveAlarmScreenState extends ConsumerState<ActiveAlarmScreen>
     });
     if (next >= required) {
       _completeAlarmSession();
+      final successArgs = _buildSuccessArgs(next);
       Future.delayed(AppConstants.mediumAnim, () {
         if (!mounted) return;
-        _router.go(AppRoutes.success, extra: widget.alarm);
+        _router.go(AppRoutes.success, extra: successArgs);
       });
     }
   }

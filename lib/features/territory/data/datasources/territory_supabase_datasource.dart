@@ -85,12 +85,23 @@ class TerritorySupabaseDatasource {
   Future<CaptureResultModel> captureTerritory(
     List<GeoPointEntity> loopPoints,
   ) async {
+    // Real device-clock span of the submitted points — lets the server
+    // cross-check claimed path length against actual elapsed time and
+    // reject geometrically-valid-but-instant (fabricated) captures.
+    final durationSeconds = loopPoints.length >= 2
+        ? loopPoints.last.timestamp
+              .difference(loopPoints.first.timestamp)
+              .inSeconds
+        : null;
+
     final result = await _client.rpc<List<dynamic>>(
       'capture_territory',
       params: {
         'new_geom': TerritoryGeoCodec.pointsToPolygonEwkt(loopPoints),
         // Server re-validates path length / point density (anti-forge).
         'run_path': TerritoryGeoCodec.pointsToLineStringEwkt(loopPoints),
+        if (durationSeconds != null && durationSeconds > 0)
+          'duration_seconds': durationSeconds,
       },
     );
     if (result.isEmpty) {

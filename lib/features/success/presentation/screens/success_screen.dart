@@ -17,9 +17,40 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class SuccessScreen extends ConsumerStatefulWidget {
-  const SuccessScreen({super.key, this.alarm});
+/// Explicit session-result payload passed via route `extra` from
+/// [ActiveAlarmScreen] so this screen never depends on the timing of
+/// autoDispose providers (`repCountProvider`, `sessionStartTimeProvider`)
+/// that may already be reset/disposed by the time this screen builds.
+class SuccessScreenArgs {
+  const SuccessScreenArgs({
+    this.alarm,
+    required this.repsCompleted,
+    required this.durationSeconds,
+    required this.usedAccessibilityMode,
+  });
+
   final AlarmEntity? alarm;
+  final int repsCompleted;
+  final int durationSeconds;
+  final bool usedAccessibilityMode;
+}
+
+class SuccessScreen extends ConsumerStatefulWidget {
+  const SuccessScreen({
+    super.key,
+    this.alarm,
+    this.repsCompleted,
+    this.durationSeconds,
+    this.usedAccessibilityMode,
+  });
+
+  final AlarmEntity? alarm;
+
+  /// When null (e.g. a bare notification deep link), falls back to reading
+  /// the live provider state — see [SuccessScreenArgs].
+  final int? repsCompleted;
+  final int? durationSeconds;
+  final bool? usedAccessibilityMode;
 
   @override
   ConsumerState<SuccessScreen> createState() => _SuccessScreenState();
@@ -37,13 +68,19 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
   @override
   void initState() {
     super.initState();
-    _repsCompleted = ref.read(repCountProvider);
-    _usedAccessibilityMode = ref.read(accessibilitySessionProvider);
+    _repsCompleted = widget.repsCompleted ?? ref.read(repCountProvider);
+    _usedAccessibilityMode =
+        widget.usedAccessibilityMode ?? ref.read(accessibilitySessionProvider);
     _streakBefore = ref.read(dashboardStatsProvider).value?.currentStreak ?? 0;
-    final startTime = ref.read(sessionStartTimeProvider);
-    _durationSeconds = startTime != null
-        ? DateTime.now().difference(startTime).inSeconds
-        : 0;
+    final passedDuration = widget.durationSeconds;
+    if (passedDuration != null) {
+      _durationSeconds = passedDuration;
+    } else {
+      final startTime = ref.read(sessionStartTimeProvider);
+      _durationSeconds = startTime != null
+          ? DateTime.now().difference(startTime).inSeconds
+          : 0;
+    }
     _caloriesBurned = SessionEntity.estimateCalories(_repsCompleted);
 
     // Record session to Supabase if signed in (fire-and-forget — don't block UI)
@@ -69,6 +106,7 @@ class _SuccessScreenState extends ConsumerState<SuccessScreen> {
               repsCompleted: _repsCompleted,
               durationSeconds: _durationSeconds,
               caloriesBurned: _caloriesBurned,
+              usedAccessibilityMode: _usedAccessibilityMode,
             ),
           );
 

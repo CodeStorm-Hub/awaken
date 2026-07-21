@@ -10,6 +10,7 @@ class SessionEntity {
     required this.repsCompleted,
     required this.durationSeconds,
     required this.caloriesBurned,
+    this.usedAccessibilityMode = false,
   });
 
   /// Stable user id for workouts completed while signed out (local-only).
@@ -23,6 +24,13 @@ class SessionEntity {
   final int durationSeconds;
   final int caloriesBurned;
 
+  /// Whether any reps in this session were counted via the tap-to-simulate
+  /// accessibility fallback rather than camera-verified. Not used to block
+  /// anything client-side — recorded so a disproportionate rate on an
+  /// account can be flagged for review, since nothing else in the dismissal
+  /// path is server-verified.
+  final bool usedAccessibilityMode;
+
   static int estimateCalories(int reps) => (reps * 0.35).round().clamp(1, 999);
 
   Map<String, dynamic> toJson() => {
@@ -33,6 +41,7 @@ class SessionEntity {
     'reps_completed': repsCompleted,
     'duration_seconds': durationSeconds,
     'calories_burned': caloriesBurned,
+    'used_accessibility_mode': usedAccessibilityMode,
   };
 
   factory SessionEntity.fromJson(Map<String, dynamic> json) => SessionEntity(
@@ -43,5 +52,6 @@ class SessionEntity {
     repsCompleted: json['reps_completed'] as int,
     durationSeconds: json['duration_seconds'] as int,
     caloriesBurned: json['calories_burned'] as int,
+    usedAccessibilityMode: json['used_accessibility_mode'] as bool? ?? false,
   );
 }

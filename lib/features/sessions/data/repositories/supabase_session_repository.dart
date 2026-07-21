@@ -16,6 +16,7 @@ class SupabaseSessionRepository implements SessionRepository {
       'reps_completed': session.repsCompleted,
       'duration_seconds': session.durationSeconds,
       'calories_burned': session.caloriesBurned,
+      'used_accessibility_mode': session.usedAccessibilityMode,
     });
 
     // Update streak after recording a successful session
